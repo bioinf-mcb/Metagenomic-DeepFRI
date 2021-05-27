@@ -1,0 +1,9 @@
+__pycache__/
+tmp/
+cmake-build-debug/
+.idea/
+local/
+SwissCompressed/
+SWISS-MODEL_Repository/
+swiss_processed/
+.clang-format
