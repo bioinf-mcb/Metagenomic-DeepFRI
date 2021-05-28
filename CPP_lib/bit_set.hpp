@@ -21,11 +21,8 @@ struct BitSet {
     delete[] data;
   }
 
-  void set_bit(unsigned int i, bool value) const {
-    if (value)
-      data[i / 8] |= true << (i % 8);
-    else
-      data[i / 8] &= ~(true << (i % 8));
+  void set_bit(unsigned int i) const {
+    data[i / 8] |= true << (i % 8);
   }
 
   bool get_bit(unsigned int i) const {

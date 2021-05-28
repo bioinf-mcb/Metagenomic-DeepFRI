@@ -5,6 +5,10 @@
 #include <fstream>
 #include <iostream>
 
+static inline float distance(float* array, int i, int j){
+  return powf(array[i*3] - array[j*3],2) + powf(array[i*3+1] - array[j*3+1],2) + powf(array[i*3+2] - array[j*3+2],2);
+}
+
 class ContactMapper{
  private:
   BitSet* bit_set;
@@ -24,14 +28,8 @@ class ContactMapper{
     delete this;
   }
 
-  float distance(float* array, int i, int j){
-    return sqrtf(powf(array[i*3] - array[j*3],2)+powf(array[i*3+1] - array[j*3+1],2)+powf(array[i*3+2] - array[j*3+2],2));
-  }
-
-  void fun(const boost::python::numpy::ndarray &position_array, const boost::python::numpy::ndarray &groups_array, std::string name){
-
-    int atom_size = (int)position_array.shape(0);
-    int seq_size = (int)groups_array.shape(0);
+  void GenerateContactMap(const boost::python::numpy::ndarray &position_array, const boost::python::numpy::ndarray &groups_array, std::string name){
+    int seq_size = (int)groups_array.shape(0) - 1;
     int bits_size = (int)(seq_size *(seq_size -1) / 2);
     int bytes_size = bits_size/8;
     if (bits_size % 8 > 0) {
@@ -42,33 +40,31 @@ class ContactMapper{
       delete bit_set;
       bit_set = new BitSet(bits_size);
     }
-
     std::memset(bit_set->data, 0, bytes_size);
 
-    auto atom_positions = reinterpret_cast<float*>(position_array.get_data());
-    auto group_counts = reinterpret_cast<int*>(groups_array.get_data());
+    auto atom_position = reinterpret_cast<float*>(position_array.get_data());
+    auto start_group_index = reinterpret_cast<int *>(groups_array.get_data());
 
-    int group_i = 0;
+    for (int group_a = 0; group_a < seq_size; ++group_a) {
+      for (int group_b = group_a + 1; group_b < seq_size; ++group_b) {
 
-    for (int i = 0; i < atom_size; ++i) {
-      if (i== group_counts[group_i]){
-        ++group_i;
-      }
-      if (group_i == seq_size)
-        break;
+        bool group_connected = false;
 
-      int group_j = group_i+1;
+        for (int atom_i = start_group_index[group_a]; atom_i < start_group_index[group_a + 1]; ++atom_i) {
+          for (int atom_j = start_group_index[group_b]; atom_j < start_group_index[group_b + 1]; ++atom_j) {
+            if (distance(atom_position, atom_i, atom_j) <= 36.0f) {
+              group_connected = true;
+              auto bit_index = int(bits_size - (seq_size - group_a) * ((seq_size - group_a) - 1) / 2 + group_b - group_a - 1);
+              bit_set->set_bit(bit_index);
+              break;
+            }
+          }
 
-      for (int j = group_counts[group_i]; j < atom_size; ++j) {
-        if (j == group_counts[group_j]){
-          ++group_j;
+          if (group_connected) {
+            break;
+          }
         }
-        if (distance(atom_positions,i,j) <= 6.0f){
-          int bit_index = int(bits_size - (seq_size -group_i)*((seq_size -group_i)-1)/2 + group_j - group_i - 1);
-          bit_set->set_bit(bit_index, true);
-          j = group_counts[group_j];
-          ++group_j;
-        }
+
       }
     }
 
@@ -84,10 +80,10 @@ boost::shared_ptr<ContactMapper> create_mapper(){
         boost::mem_fn(&ContactMapper::Destroy));
 }
 
-BOOST_PYTHON_MODULE (ContactMapper){
+BOOST_PYTHON_MODULE (libContactMapper){
   boost::python::class_<ContactMapper, boost::shared_ptr<ContactMapper>,
       boost::noncopyable>("contact_mapper", boost::python::no_init)
       .def("__init__", boost::python::make_constructor(&create_mapper))
-      .def("fun", &ContactMapper::fun)
+      .def("generate_contact_map", &ContactMapper::GenerateContactMap)
   ;
 }

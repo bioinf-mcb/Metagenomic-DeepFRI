@@ -7,3 +7,7 @@ SwissCompressed/
 SWISS-MODEL_Repository/
 swiss_processed/
 .clang-format
+PDB_Compressed*
+CPP_lib/cmake-build-release/
+
+
