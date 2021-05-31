@@ -5,8 +5,16 @@
 #include <fstream>
 #include <iostream>
 
+namespace py = boost::python;
+namespace np = py::numpy;
+
 static inline float distance(float* array, int i, int j){
   return powf(array[i*3] - array[j*3],2) + powf(array[i*3+1] - array[j*3+1],2) + powf(array[i*3+2] - array[j*3+2],2);
+}
+
+inline void DestroyCapsule(PyObject* self) {
+  auto * b = reinterpret_cast<bool*>( PyCapsule_GetPointer(self, nullptr) );
+  delete [] b;
 }
 
 class ContactMapper{
@@ -28,7 +36,7 @@ class ContactMapper{
     delete this;
   }
 
-  void GenerateContactMap(const boost::python::numpy::ndarray &position_array, const boost::python::numpy::ndarray &groups_array, std::string name){
+  void GenerateContactMap(const np::ndarray &position_array, const np::ndarray &groups_array, std::string save_path){
     int seq_size = (int)groups_array.shape(0) - 1;
     int bits_size = (int)(seq_size *(seq_size -1) / 2);
     int bytes_size = bits_size/8;
@@ -59,7 +67,6 @@ class ContactMapper{
               break;
             }
           }
-
           if (group_connected) {
             break;
           }
@@ -68,9 +75,54 @@ class ContactMapper{
       }
     }
 
-    std::ofstream writer(name, std::ios::out | std::ios::binary);
+    std::ofstream writer(save_path, std::ios::out | std::ios::binary);
     writer.write((char*)bit_set->data, bytes_size);
     writer.close();
+  }
+
+  np::ndarray LoadCmap(std::string path) {
+    std::ifstream reader(path, std::ios::in | std::ios::binary | std::ios::ate);
+
+    int bytes_size = reader.tellg();
+    if (bit_set->size < bytes_size) {
+      delete bit_set;
+      bit_set = new BitSet(bytes_size*8);
+    }
+    std::memset(bit_set->data, 0, bytes_size);
+    int n = int((1 + sqrtf(64 * bytes_size + 1)) / 2);
+
+    reader.seekg(0, std::ios::beg);
+    reader.read((char*) bit_set->data, bytes_size);
+    reader.close();
+
+    bool * const data = new bool[n * n];
+    for (int k = 0; k < int(n * (n - 1) / 2); ++k) {
+      if (bit_set->get_bit(k)) {
+        int i = int(n - 2 - int(sqrtf(-8 * k + 4 * n * (n - 1) - 7) / 2.0 - 0.5));
+        int j = int(k + i + 1 - n * (n - 1) / 2 + (n - i) * ((n - i) - 1) / 2);
+        data[i * n + j] = true;
+        data[j * n + i] = true;
+      }
+    }
+    for (int i = 0; i < n; ++i) {
+      data[i*n + i] = true;
+    }
+
+    np::dtype dt = np::dtype::get_builtin<bool>();
+    py::tuple shape = py::make_tuple(n, n);
+    py::tuple stride = py::make_tuple(sizeof(bool) * n, sizeof(bool));
+
+    // https://stackoverflow.com/questions/57068443/setting-owner-in-boostpythonndarray-so-that-data-is-owned-and-managed-by-pyt
+    PyObject* capsule = ::PyCapsule_New((void*)data, nullptr, (PyCapsule_Destructor)&DestroyCapsule);
+    py::handle<> capsule_handle{capsule};
+    py::object capsule_owner{capsule_handle};
+
+    return np::from_data(data,
+                         dt,
+                         shape,
+                         stride,
+                         capsule_owner
+                         );
   }
 };
 
@@ -85,5 +137,6 @@ BOOST_PYTHON_MODULE (libContactMapper){
       boost::noncopyable>("contact_mapper", boost::python::no_init)
       .def("__init__", boost::python::make_constructor(&create_mapper))
       .def("generate_contact_map", &ContactMapper::GenerateContactMap)
+      .def("load_cmap", &ContactMapper::LoadCmap)
   ;
 }
