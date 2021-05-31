@@ -1,4 +1,5 @@
-import numpy
+
+
 from bitarray import bitarray
 import pathlib
 import numpy as np
@@ -7,46 +8,61 @@ import matplotlib.pyplot as plt
 import time
 import tqdm
 from libContactMapper import contact_mapper
+from Bio import SeqUtils
+
+
+output_dir = pathlib.Path("./database")
+output_dir.mkdir(exist_ok=True)
+(output_dir/'seq').mkdir(exist_ok=True)
+(output_dir/'cmap').mkdir(exist_ok=True)
+save_path = str(output_dir.absolute())
+
 
 db_source = pathlib.Path('./SWISS-MODEL_Repository')
 pdb_files = list(db_source.glob('**/*.pdb'))
 
 cm = contact_mapper()
 
-# file = pdb_files[0]
-# for file in tqdm.tqdm(pdb_files[0:10]):
-for file in pdb_files[0:1000]:
+protein_letters = dict()
+for k,v in SeqUtils.IUPACData.protein_letters_3to1_extended.items():
+    protein_letters[str.upper(k)] = v
 
+
+# file = pdb_files[0]
+# file = pathlib.Path("/home/soliareofastora/Downloads/1a0a.pdb")
+# for file in tqdm.tqdm(pdb_files[0:10]):
+for file in tqdm.tqdm(pdb_files[0:10000]):
+    
     sequence = []
     positions = []
     groups = []
-    save_path = pathlib.Path("./swiss_processed")/(file.stem + ".bin")
 
     with open(file, 'r') as f:
         line = f.readline()
         while line != "":
-            if line.startswith("SEQRES"):
-                print("SEQRES present! Use seqres", file)
-            elif line.startswith("ATOM"):
-                if line[77] != 'H':
+            if line.startswith("ATOM"):
+                if line[76] != 'H' and line[17] != ' ':
                     sequence.append(line[17:20])
                     positions.append([line[30:38], line[38:46], line[46:54]])
-                    groups.append(line[22:26])
-            elif line.startswith("TER"):
-                break
+                    groups.append(line[21:26])
             line = f.readline()
 
-    # start = time.time()
+    _, groups_index = np.unique(groups, return_index=True)
+    if len(groups_index) < 9:
+        print("Proteins shorter than 9 groups are not supported")
+        continue
 
-    groups = np.array(groups, dtype=np.int32)
-    unique, index = np.unique(groups, return_index=True)
-    sequence = np.array(sequence)[index]
-    if len(sequence) < 9:
-        print("Proteins shorter than 8 amino groups are not supported")
+    sequence = [sequence[i] for i in groups_index]
+    sequence = ''.join([protein_letters[s] for s in sequence])
+    with open(save_path + "/seq/" + file.stem + ".faa", "w") as f:
+        f.write(">" + file.stem + "\n" + sequence + "\n")
 
     positions = np.array(positions, dtype=np.float32)
-    index = np.append(index, groups.shape[0]).astype(np.int32)
-    cm.generate_contact_map(positions, index, str(save_path.absolute()))
+    groups_index = np.append(groups_index, positions.shape[0]).astype(np.int32)
+    cm.generate_contact_map(positions, groups_index, save_path + "/cmap/" + file.stem + ".bin")
+
+
+
 
     # print("C++ calculate and save cmap",' %.4f' % (time.time() - start))
     #
@@ -66,7 +82,6 @@ for file in pdb_files[0:1000]:
     # plt.title(f'C++ cmap Sequence length {len(sequence)}')
     # plt.show()
 
-
     # np.fill_diagonal(pyamino_contact_map, 0)
     # plt.imshow(pyamino_contact_map, vmin=0, vmax=1)
     # plt.title(f'Py cmap Sequence length {len(sequence)}')
@@ -78,7 +93,6 @@ for file in pdb_files[0:1000]:
     # plt.imshow(amino_contact_map, vmin=0, vmax=1)
     # plt.title('Loaded and processed contact map')
     # plt.show()
-
 
     # plt.imshow(amino_contact_map, vmin=0, vmax=1)
     # plt.title("Generated contact map")
