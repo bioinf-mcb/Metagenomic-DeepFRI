@@ -23,7 +23,7 @@ class ContactMapper{
 
  public:
   ContactMapper(){
-    bit_set = new BitSet(100);
+    bit_set = new BitSet(1000);
     Py_Initialize();
     boost::python::numpy::initialize();
   }
@@ -36,7 +36,7 @@ class ContactMapper{
     delete this;
   }
 
-  void GenerateContactMap(const np::ndarray &position_array, const np::ndarray &groups_array, std::string save_path){
+  void SaveContactMap(const np::ndarray &position_array, const np::ndarray &groups_array, std::string save_path){
     int seq_size = (int)groups_array.shape(0) - 1;
     int bits_size = (int)(seq_size *(seq_size -1) / 2);
     int bytes_size = bits_size/8;
@@ -81,7 +81,7 @@ class ContactMapper{
     writer.close();
   }
 
-  np::ndarray LoadCmap(const std::string& path) {
+  np::ndarray LoadContactMap(const std::string& path) {
     std::ifstream reader(path, std::ios::in | std::ios::binary | std::ios::ate);
     auto bytes_size = reader.tellg();
     if (bit_set->size < bytes_size) {
@@ -133,7 +133,7 @@ BOOST_PYTHON_MODULE (libContactMapper){
   boost::python::class_<ContactMapper, boost::shared_ptr<ContactMapper>,
       boost::noncopyable>("contact_mapper", boost::python::no_init)
       .def("__init__", boost::python::make_constructor(&create_mapper))
-      .def("generate_contact_map", &ContactMapper::GenerateContactMap)
-      .def("load_cmap", &ContactMapper::LoadCmap)
+      .def("save_contact_map", &ContactMapper::SaveContactMap)
+      .def("load_contact_map", &ContactMapper::LoadContactMap)
   ;
 }

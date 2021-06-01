@@ -50,7 +50,7 @@ with pathlib.Path('/home/soliareofastora/genomics_data/SWISS-MODEL_Repository/6b
         f.write(">" + save_name + "\n" + sequence + "\n")
 
     groups_index = np.append(groups_index, positions.shape[0]).astype(np.int32)
-    cm.generate_contact_map(positions, groups_index, save_path + "/cmap/" + save_name + ".bin")
+    cm.save_contact_map(positions, groups_index, save_path + "/cmap/" + save_name + ".bin")
 
 
 
