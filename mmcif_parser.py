@@ -10,9 +10,6 @@ def parse_mmcif(file):
     label_counter = -1
     line = file.readline()
     while line != "":
-        if line.startswith("ATOM"):
-            break
-
         if line.startswith('_refine_hist.pdbx_number_atoms_protein'):
             n_atoms = int(line.split()[-1])
             sequence = np.empty(n_atoms, dtype=np.dtype('<U3'))
@@ -37,11 +34,13 @@ def parse_mmcif(file):
                 z = label_counter
 
         line = file.readline()
+        if line.startswith("ATOM"):
+            break
 
     index = 0
     if n_atoms > 0:
         while line != '':
-            if line.startswith('#'):
+            if line.startswith('loop_'):
                 break
             if line.startswith('ATOM'):
                 atom = line.split()
@@ -56,10 +55,9 @@ def parse_mmcif(file):
         sequence.resize(index)
         positions.resize((index, 3))
         groups.resize(index)
-
     else:
         while line != '':
-            if line.startswith('#'):
+            if line.startswith('loop_'):
                 break
             if line.startswith('ATOM'):
                 atom = line.split()

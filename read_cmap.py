@@ -7,7 +7,7 @@ cm = contact_mapper()
 
 # save_path ='/home/soliareofastora/genomics_data/database/cmap/6bz7.bin'
 save_path = '/home/soliareofastora/genomics_data/database/cmap/1_468_6fqx.3.A_60806a71dafdd895ba140273.bin'
-
+save_path = '/home/soliareofastora/genomics_data/database/cmap/1a0a.bin'
 
 start = time.time()
 loaded_bits = bitarray(endian="little")
