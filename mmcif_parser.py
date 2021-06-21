@@ -11,10 +11,12 @@ def parse_mmcif(file):
     line = file.readline()
     while line != "":
         if line.startswith('_refine_hist.pdbx_number_atoms_protein'):
-            n_atoms = int(line.split()[-1])
-            sequence = np.empty(n_atoms, dtype=np.dtype('<U3'))
-            positions = np.empty((n_atoms, 3), dtype=np.float32)
-            groups = np.empty(n_atoms, dtype=np.dtype('<U10'))
+            n = line.split()[-1]
+            if n != '?' and n != '0':
+                n_atoms = int(n)
+                sequence = np.empty(n_atoms, dtype=np.dtype('<U3'))
+                positions = np.empty((n_atoms, 3), dtype=np.float32)
+                groups = np.empty(n_atoms, dtype=np.dtype('<U10'))
 
         if line.startswith('_atom_site.'):
             label_counter += 1
@@ -37,8 +39,8 @@ def parse_mmcif(file):
         if line.startswith("ATOM"):
             break
 
-    index = 0
     if n_atoms > 0:
+        index = 0
         while line != '':
             if line.startswith('loop_'):
                 break
@@ -51,6 +53,8 @@ def parse_mmcif(file):
                     positions[index][1] = atom[y]
                     positions[index][2] = atom[z]
                     index += 1
+                    if index == n_atoms:
+                        break
             line = file.readline()
         sequence.resize(index)
         positions.resize((index, 3))
@@ -61,10 +65,10 @@ def parse_mmcif(file):
                 break
             if line.startswith('ATOM'):
                 atom = line.split()
-                if len(atom[residue]) == 3 and atom[atom_symbol] == "H":
+                if len(atom[residue]) == 3 and atom[atom_symbol] != "H":
                     sequence.append(atom[residue])
                     groups.append(''.join([atom[assembly], atom[sequence_id]]))
-                    positions.append(atom[x], atom[y], atom[z])
+                    positions.append([atom[x], atom[y], atom[z]])
             line = file.readline()
         positions = np.array(positions, dtype=np.float32)
 

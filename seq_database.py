@@ -1,6 +1,12 @@
 from bio_magic import sequence_similarity_score
 
 
+import mmseqs
+
+
+
+
+
 class SeqDatabase:
     def __init__(self):
         self.db_sequences = ['MIP', 'Swiss', 'PDB']
