@@ -1,50 +1,29 @@
 import argparse
-import time
-
-from Bio import SeqUtils
 import gzip
-from itertools import repeat
 import multiprocessing
-import numpy as np
-import pathlib
+import shutil
 import traceback
 
+from itertools import repeat
+import numpy as np
+
+from CONFIG import *
 from libContactMapper import contact_mapper
-from mmcif_parser import parse_mmcif
-from pdb_parser import parse_pdb
-
-import shutil
-
-
-INPUT_FILE_PATTERNS = [
-    '**/*.pdb',
-    '**/*.pdb.gz',
-    '**/*.cif',
-    '**/*.cif.gz'
-]
-
-
-PROTEIN_LETTERS = dict()
-for k, v in SeqUtils.IUPACData.protein_letters_3to1_extended.items():
-    PROTEIN_LETTERS[str.upper(k)] = v
-PROTEIN_LETTERS["UNK"] = "X"
-
-MAX_CHAIN_LENGTH = 2500
+from structure_files_parsers.parse_mmcif import parse_mmcif
+from structure_files_parsers.parse_pdb import parse_pdb
+from utils import create_chunks
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", required=True)
-    parser.add_argument("-o", "--output", required=True)
-    parser.add_argument("--override", action="store_true", help="(not implemented) Override existing files in output directory")
+    parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
+    parser.add_argument("-o", "--output", required=False, default=CONTACT_MAP_DATASET_PATH)
+    parser.add_argument("--overwrite", action="store_true",
+                        help="Override existing")
     return parser.parse_args()
 
 
-def create_chunks(lst, n):
-    return [lst[i::n] for i in range(n)]
-
-
-def extract_camp_and_seq(protein_structure_files, save_path):
+def process_files(protein_structure_files, save_path):
     cm = contact_mapper()
     for file in protein_structure_files:
         try:
@@ -101,35 +80,48 @@ def extract_camp_and_seq(protein_structure_files, save_path):
             continue
 
 
-def main():
-    args = parse_args()
-    input_dir = pathlib.Path(args.input)
-    output_dir = pathlib.Path(args.output)
-
-    output_dir.mkdir(exist_ok=True)
+def update_contact_dataset(input_dir, output_dir, overwrite=False):
+    output_dir.mkdir(exist_ok=True, parents=True)
     (output_dir / 'seq').mkdir(exist_ok=True)
     (output_dir / 'cmap').mkdir(exist_ok=True)
     save_path = str(output_dir.absolute())
-    print("Save path: ", save_path)
+    print("output path: ", save_path)
 
-    for pattern in INPUT_FILE_PATTERNS:
-        protein_structure_files = np.array(list(input_dir.glob(pattern)))
-        if len(protein_structure_files) == 0:
+    structure_files = dict()
+
+    for pattern in STRUCTURE_FILES_PATTERNS:
+        pattern_structures = np.array(list(input_dir.glob("**/*" + pattern)))
+        pattern_ids = np.array([x.name[:-len(pattern)] for x in pattern_structures])
+        if len(pattern_structures) == 0:
             continue
 
-        file_names = [x.name for x in protein_structure_files]
-        _, index = np.unique(file_names, return_index=True)
-        protein_structure_files = protein_structure_files[index]
-        print("Processing ", len(protein_structure_files), pattern, " files.")
+        _, index = np.unique(pattern_ids, return_index=True)
+        pattern_structures = pattern_structures[index]
+        pattern_ids = pattern_ids[index]
+        print("Found", len(pattern_structures), pattern, "files")
 
-        x = int(len(protein_structure_files) / 1000)
-        chunks = create_chunks(protein_structure_files, max(multiprocessing.cpu_count(), x))
+        structure_files.update(zip(pattern_ids, pattern_structures))
 
-        with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
-            p.starmap(extract_camp_and_seq, zip(chunks,repeat(save_path)))
+    if len(structure_files) == 0:
+        print("No structure files found")
+        return
+
+    if not overwrite:
+        existing_file_ids = set([x.name[:-4] for x in (output_dir / 'cmap').glob("**/*.bin")])
+        print("Existing files:", len(existing_file_ids))
+        for id in list(structure_files.keys()):
+            if id in existing_file_ids:
+                structure_files.pop(id)
+
+    x = int(len(structure_files) / 10000)
+    chunks = create_chunks(list(structure_files.values()), max(multiprocessing.cpu_count(), x))
+
+    print("Processing", len(structure_files), "files")
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
+        p.starmap(process_files, zip(chunks, repeat(save_path)))
 
     sequence_files = list((output_dir / 'seq').glob("**/*.faa"))
-    print("Merging " + str(len(sequence_files)) + " faa files.")
+    print("Merging " + str(len(sequence_files)) + " sequence files.")
     with open(output_dir / 'merged_sequences.faa', 'wb') as writer:
         for seq_file in sequence_files:
             with open(seq_file, 'rb') as reader:
@@ -137,4 +129,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    input_dir = pathlib.Path(args.input)
+    output_dir = pathlib.Path(args.output)
+    overwrite = args.overwrite
+    update_contact_dataset(input_dir, output_dir, overwrite)
