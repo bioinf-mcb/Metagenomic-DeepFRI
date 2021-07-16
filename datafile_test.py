@@ -1,4 +1,6 @@
 import gzip
+import time
+
 import numpy as np
 
 from CONFIG import *
@@ -45,11 +47,19 @@ with open(save_path + "/seq/" + save_name + ".faa", "w") as f:
     f.write(">" + save_name + "\n" + sequence + "\n")
 
 
-
+start = time.time()
 initialize()
+
+print(time.time()-start)
+start = time.time()
 save_atoms(positions, group_indexes, save_path + "/cmap/" + save_name + ".bin")
+
+print(time.time()-start)
+start = time.time()
 loaded = load_contact_map(save_path + "/cmap/" + save_name + ".bin", 6)
 
+print(time.time()-start)
+start = time.time()
 import matplotlib.pyplot as plt
 
 plt.imshow(loaded)

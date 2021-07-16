@@ -10,6 +10,17 @@ from Bio import SeqIO
 from CPP_lib.libAtomDistanceIO import load_contact_map
 from matplotlib import pyplot as plt
 
+
+# todo add contact threshold as parameter for pipeline and test
+# mainly I should copy code from chromwell_process_fasta.py it looks like the type of job i need to fo
+# get hold onto downloaded models
+# read trough configs and inits
+
+
+
+
+
+
 def main_loop():
     # while True:
     faa_files = list(QUERY_FOLDER_PATH.glob("**/*.faa"))
@@ -27,7 +38,7 @@ def main_loop():
         work_path = (WORK_PATH / creation_time)
     work_path.mkdir()
 
-    target_databases = sorted(list(TARGET_MMSEQS_DATABASE_PATH.iterdir()))[-1]
+    target_databases = sorted(list(MMSEQS_DATABASES_PATH.iterdir()))[-1]
     # todo if there are more than 3 databases remove oldest? count how many loops are using specific database?
 
     run_command(f"mmseqs createdb {query_file} {work_path / 'queryDB'} --dbtype 1")
@@ -53,12 +64,12 @@ def main_loop():
         target_id = output_data["target"].iloc[i]
         query_sequence = all_query_sequences[query_id]
 
-        with open(CONTACT_MAP_DATASET_PATH/"seq"/(target_id + ".faa")) as f:
+        with open(ATOMS_DATASET_PATH / "seq" / (target_id + ".faa")) as f:
             for record in SeqIO.parse(f, "fasta"):
                 target_sequence = record.seq
 
-        target_cmap = load_contact_map(str(CONTACT_MAP_DATASET_PATH/"cmap"/(target_id + ".bin")),ANGSTROM_CONTACT_THRESHOLD)
-        query_cmap = load_contact_map(str(CONTACT_MAP_DATASET_PATH/"cmap"/(query_id + ".bin")), ANGSTROM_CONTACT_THRESHOLD)
+        target_cmap = load_contact_map(str(ATOMS_DATASET_PATH / "cmap" / (target_id + ".bin")), ANGSTROM_CONTACT_THRESHOLD)
+        query_cmap = load_contact_map(str(ATOMS_DATASET_PATH / "cmap" / (query_id + ".bin")), ANGSTROM_CONTACT_THRESHOLD)
 
         fig = plt.figure(figsize=(16, 8))
         fig.add_subplot(1, 2, 1)
