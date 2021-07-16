@@ -2,8 +2,8 @@
 // Created by soliareofastora on 23.03.2021.
 //
 
-#ifndef LINESOCCER__BIT_SET_HPP_
-#define LINESOCCER__BIT_SET_HPP_
+#ifndef BIT_SET_HPP_
+#define BIT_SET_HPP_
 
 struct BitSet {
   unsigned char *data;
@@ -34,4 +34,4 @@ struct BitSet {
   }
 };
 
-#endif  // LINESOCCER__BIT_SET_HPP_
+#endif  // BIT_SET_HPP_

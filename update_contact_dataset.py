@@ -8,7 +8,7 @@ from itertools import repeat
 import numpy as np
 
 from CONFIG import *
-from libContactMapper import contact_mapper
+from CPP_lib.libAtomDistanceIO import save_atoms
 from structure_files_parsers.parse_mmcif import parse_mmcif
 from structure_files_parsers.parse_pdb import parse_pdb
 from utils import create_chunks
@@ -24,7 +24,6 @@ def parse_args():
 
 
 def process_files(protein_structure_files, save_path):
-    cm = contact_mapper()
     for file in protein_structure_files:
         try:
             save_name = file.name
@@ -71,7 +70,7 @@ def process_files(protein_structure_files, save_path):
             with open(save_path + "/seq/" + save_name + ".faa", "w") as f:
                 f.write(">" + save_name + "\n" + sequence + "\n")
 
-            cm.save_contact_map(positions, group_indexes, save_path + "/cmap/" + save_name + ".bin")
+            save_atoms(positions, group_indexes, save_path + "/cmap/" + save_name + ".bin")
 
         except Exception:
             print("EXCEPTION DURING FILE PROCESSING ", str(file))

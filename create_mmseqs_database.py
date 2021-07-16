@@ -19,7 +19,7 @@ def parse_args():
 
 def create_mmseq_db(contact_dir, output_dir):
     output_dir.mkdir(exist_ok=True, parents=True)
-    creation_time = str(int(time.time()))
+    creation_time = str(time.time())
     db_path = (output_dir / creation_time)
 
     while db_path.exists():
@@ -28,7 +28,7 @@ def create_mmseq_db(contact_dir, output_dir):
     db_path.mkdir()
 
     # todo save contact_dir if more than one contact datasets are required
-    run_command(f"mmseqs createdb {contact_dir / 'merged_sequences.faa'} {db_path / DEFAULT_MMSEQS_NAME}")
+    run_command(f"mmseqs createdb {contact_dir / 'merged_sequences.faa'} {db_path / DEFAULT_MMSEQS_NAME} --dbtype 1")
     run_command(f"mmseqs createindex {db_path / DEFAULT_MMSEQS_NAME} {TMP_FOLDER_PATH}")
 
 
