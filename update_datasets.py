@@ -10,6 +10,7 @@ import numpy as np
 
 from CONFIG import *
 from CPP_lib.libAtomDistanceIO import save_atoms
+from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from structure_files_parsers.parse_mmcif import parse_mmcif
 from structure_files_parsers.parse_pdb import parse_pdb
 from utils import create_chunks, run_command
@@ -33,21 +34,21 @@ def parse_args():
 def load_file_extract_and_save_atoms(protein_structure_files, save_path):
     for file in protein_structure_files:
         try:
-            save_name = file.name
-            if save_name.endswith('.pdb'):
-                save_name = save_name.replace('.pdb', '')
+            file_id = file.name
+            if file_id.endswith('.pdb'):
+                file_id = file_id.replace('.pdb', '')
                 with open(file, 'r') as f:
                     atom_amino_group, positions, groups = parse_pdb(f)
-            elif save_name.endswith('.pdb.gz'):
-                save_name = save_name.replace('.pdb.gz', '')
+            elif file_id.endswith('.pdb.gz'):
+                file_id = file_id.replace('.pdb.gz', '')
                 with gzip.open(file, 'rt') as f:
                     atom_amino_group, positions, groups = parse_mmcif(f)
-            elif save_name.endswith('.cif'):
-                save_name = save_name.replace('.cif', '')
+            elif file_id.endswith('.cif'):
+                file_id = file_id.replace('.cif', '')
                 with open(file, 'r') as f:
                     atom_amino_group, positions, groups = parse_mmcif(f)
-            elif save_name.endswith('.cif.gz'):
-                save_name = save_name.replace('.cif.gz', '')
+            elif file_id.endswith('.cif.gz'):
+                file_id = file_id.replace('.cif.gz', '')
                 with gzip.open(file, 'rt') as f:
                     atom_amino_group, positions, groups = parse_mmcif(f)
             else:
@@ -74,11 +75,9 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
                 group_indexes = np.append(groups, positions.shape[0]).astype(np.int32)
 
             sequence = ''.join([PROTEIN_LETTERS[atom_amino_group[i]] for i in group_indexes[:-1]])
-            with open(save_path + "/seq/" + save_name + ".faa", "w") as f:
-                f.write(">" + save_name + "\n" + sequence + "\n")
-
-            save_atoms(positions, group_indexes, save_path + "/cmap/" + save_name + ".bin")
-
+            with open(save_path + "/seq/" + file_id + ".faa", "w") as f:
+                f.write(">" + file_id + "\n" + sequence + "\n")
+            save_atoms(positions, group_indexes, save_path + "/positions/" + file_id + ".bin")
         except Exception:
             print("EXCEPTION DURING FILE PROCESSING ", str(file))
             trace = traceback.format_exc()
@@ -89,7 +88,7 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
 def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrite):
     atoms_path.mkdir(exist_ok=True, parents=True)
     (atoms_path / 'seq').mkdir(exist_ok=True)
-    (atoms_path / 'cmap').mkdir(exist_ok=True)
+    (atoms_path / 'positions').mkdir(exist_ok=True)
     save_path = str(atoms_path.absolute())
     print("Atoms will be stored in: ", save_path)
 
@@ -113,7 +112,7 @@ def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrit
         return
 
     if not overwrite:
-        existing_file_ids = set([x.name[:-4] for x in (atoms_path / 'cmap').glob("**/*.bin")])
+        existing_file_ids = set([x.name[:-4] for x in (atoms_path / 'positions').glob("**/*.bin")])
         print("Existing files:", len(existing_file_ids))
         for id in list(structure_files.keys()):
             if id in existing_file_ids:
@@ -122,6 +121,7 @@ def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrit
     x = int(len(structure_files) / 10000)
     chunks = create_chunks(list(structure_files.values()), max(multiprocessing.cpu_count(), x))
 
+    initialize_CPP_LIB()
     print("Processing", len(structure_files), "files")
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
         p.starmap(load_file_extract_and_save_atoms, zip(chunks, repeat(save_path)))

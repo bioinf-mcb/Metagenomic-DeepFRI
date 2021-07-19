@@ -10,9 +10,9 @@ from structure_files_parsers.parse_pdb import parse_pdb
 
 
 
-file = pathlib.Path('/home/soliareofastora/genomics_data/PDB_Compressed/5ezz.cif.gz')
+file = pathlib.Path('/home/soliareofastora/data/structure_files/Q8/0T/I0/swissmodel/87_199_5yqr.1.A_60823e8737a6a2a0adacc9f8.pdb')
 
-save_path = '/home/soliareofastora/genomics_data/tmp'
+save_path = '/home/soliareofastora/tmp'
 
 save_name = file.name
 if save_name.endswith('.pdb'):
@@ -43,9 +43,9 @@ groupsx.sort()
 group_indexes = np.append(groupsx, positions.shape[0]).astype(np.int32)
 len(group_indexes)
 sequence = ''.join([PROTEIN_LETTERS[atom_amino_group[i]] for i in group_indexes[:-1]])
-with open(save_path + "/seq/" + save_name + ".faa", "w") as f:
-    f.write(">" + save_name + "\n" + sequence + "\n")
-
+# with open(save_path + "/seq/" + save_name + ".faa", "w") as f:
+#     f.write(">" + save_name + "\n" + sequence + "\n")
+print(len(sequence))
 
 start = time.time()
 initialize()

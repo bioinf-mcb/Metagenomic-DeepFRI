@@ -30,8 +30,8 @@ static void SaveAtoms(const np::ndarray &position_array, const np::ndarray &grou
   writer.close();
 }
 
-static np::ndarray LoadContactMap(const std::string& path, float angstrom_contact_threshold=6) {
-  std::ifstream reader(path, std::ios::in | std::ios::binary);
+static np::ndarray LoadContactMap(const std::string& load_path, float angstrom_contact_threshold=6) {
+  std::ifstream reader(load_path, std::ios::in | std::ios::binary);
   int groups_size;
   reader.read(reinterpret_cast <char *>(&groups_size), 4);
   int* groups_index = new int[groups_size];
@@ -40,43 +40,40 @@ static np::ndarray LoadContactMap(const std::string& path, float angstrom_contac
   float* atom_positions = new float[atom_count * 3];
   reader.read(reinterpret_cast <char *>(atom_positions), 4 * atom_count * 3);
   reader.close();
-
   int seq_size = groups_size - 1;
-  bool * const data = new bool[(int)pow(seq_size,2)];
-  std::memset(data, 0, (int)pow(seq_size,2));
+
+  bool * const output_data = new bool[(int)pow(seq_size,2)];
+  std::memset(output_data, 0, (int)pow(seq_size,2));
 
   float distance_threshold = powf(angstrom_contact_threshold, 2);
 
   for (int group_a = 0; group_a < seq_size; ++group_a) {
-    data[group_a * seq_size + group_a] = true;
+    output_data[group_a * seq_size + group_a] = true;
     for (int group_b = group_a + 1; group_b < seq_size; ++group_b) {
       bool group_connected = false;
 
       for (int atom_i = groups_index[group_a]; atom_i < groups_index[group_a + 1]; ++atom_i) {
         for (int atom_j = groups_index[group_b]; atom_j < groups_index[group_b + 1]; ++atom_j) {
-
           if (distance(atom_positions, atom_i, atom_j) <= distance_threshold) {
             group_connected = true;
-            data[group_a * seq_size + group_b] = true;
-            data[group_a + group_b * seq_size] = true;
+            output_data[group_a * seq_size + group_b] = true;
+            output_data[group_a + group_b * seq_size] = true;
             break;
           }
-
         }
-        if (group_connected) {
+        if (group_connected)
           break;
-        }
       }
 
     }
   }
 
   // https://stackoverflow.com/questions/57068443/setting-owner-in-boostpythonndarray-so-that-data-is-owned-and-managed-by-pyt
-  PyObject* capsule = ::PyCapsule_New((void*)data, nullptr, (PyCapsule_Destructor)&DestroyCapsule);
+  PyObject* capsule = ::PyCapsule_New((void*) output_data, nullptr, (PyCapsule_Destructor)&DestroyCapsule);
   py::handle<> capsule_handle{capsule};
   py::object capsule_owner{capsule_handle};
 
-  return np::from_data(data,
+  return np::from_data(output_data,
                        np::dtype::get_builtin<bool>(),
                        py::make_tuple(seq_size, seq_size),
                        py::make_tuple(sizeof(bool) * seq_size, sizeof(bool)),
