@@ -143,7 +143,6 @@ def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrit
     db_path.mkdir()
     print("Creating new mmseqs2 database in " + str(db_path))
 
-    # todo save contact_dir if more than one contact datasets are required
     run_command(f"mmseqs createdb {atoms_path / 'merged_sequences.faa'} {db_path / DEFAULT_MMSEQS_NAME} --dbtype 1")
     run_command(f"mmseqs createindex {db_path / DEFAULT_MMSEQS_NAME} {tmp_path}")
 

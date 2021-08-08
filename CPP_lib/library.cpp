@@ -52,9 +52,9 @@ static np::ndarray LoadContactMap(const std::string& load_path, float angstrom_c
     for (int group_b = group_a + 1; group_b < seq_size; ++group_b) {
       bool group_connected = false;
 
-      for (int atom_i = groups_index[group_a]; atom_i < groups_index[group_a + 1]; ++atom_i) {
-        for (int atom_j = groups_index[group_b]; atom_j < groups_index[group_b + 1]; ++atom_j) {
-          if (distance(atom_positions, atom_i, atom_j) <= distance_threshold) {
+      for (int atom_a = groups_index[group_a]; atom_a < groups_index[group_a + 1]; ++atom_a) {
+        for (int atom_b = groups_index[group_b]; atom_b < groups_index[group_b + 1]; ++atom_b) {
+          if (distance(atom_positions, atom_a, atom_b) <= distance_threshold) {
             group_connected = true;
             output_data[group_a * seq_size + group_b] = true;
             output_data[group_a + group_b * seq_size] = true;

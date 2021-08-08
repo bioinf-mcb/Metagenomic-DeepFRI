@@ -5,7 +5,7 @@ def run_command(command, timeout=-1):
     if type(command) == str:
         command = str.split(command, ' ')
 
-    print(str.join(" ", command))
+    # print(str.join(" ", command))
 
     try:
         if timeout > 0:
