@@ -1,5 +1,4 @@
 import pathlib
-
 from Bio import SeqUtils
 
 
@@ -22,13 +21,17 @@ STRUCTURE_FILES_PATTERNS = [
 DATA_ROOT = pathlib.Path.home() / "data"
 STRUCTURE_FILES_PATH = DATA_ROOT / "structure_files"
 ATOMS_DATASET_PATH = DATA_ROOT / "atoms_dataset"
+
+FOLDSEEK_DATABASES_PATH = DATA_ROOT / "foldseek_db"
 MMSEQS_DATABASES_PATH = DATA_ROOT / "mmseqs_db"
-DEFAULT_MMSEQS_NAME = "targetDB"
+
+TARGET_DB_NAME = "targetDB"
 
 WORK_PATH = DATA_ROOT / "workspace"
-QUERY_FOLDER_PATH = DATA_ROOT / "query"
-TMP_FOLDER_PATH = DATA_ROOT / "TMP"
+QUERY_PATH = DATA_ROOT / "query"
+TMP_PATH = DATA_ROOT / "TMP"
+FINISHED_PATH = DATA_ROOT / "finished"
 
 
-
+FOLDSEEK_BIN_PATH = "/home/soliareofastora/foldseek/bin/"
 

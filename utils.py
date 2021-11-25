@@ -1,17 +1,21 @@
+import os
 import subprocess
+
+ENV_PATHS = set()
 
 
 def run_command(command, timeout=-1):
     if type(command) == str:
         command = str.split(command, ' ')
 
-    # print(str.join(" ", command))
+    my_env = os.environ.copy()
+    my_env["PATH"] += ":"+str.join(":", ENV_PATHS)
 
     try:
         if timeout > 0:
-            completed_process = subprocess.run(command, timeout=timeout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            completed_process = subprocess.run(command, timeout=timeout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
         else:
-            completed_process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            completed_process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timeout")
@@ -21,6 +25,10 @@ def run_command(command, timeout=-1):
         raise RuntimeError(f"during execution: {' '.join(command)} exception occurred\n{error_info}")
     else:
         return completed_process.stdout.decode('utf-8')
+
+
+def add_path_to_env(path):
+    ENV_PATHS.add(path)
 
 
 def create_chunks(lst, n):

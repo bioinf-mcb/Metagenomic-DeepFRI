@@ -1,0 +1,3 @@
+[submodule "DeepFRI"]
+	path = DeepFRI
+	url = https://github.com/SoliareofAstora/DeepFRI.git

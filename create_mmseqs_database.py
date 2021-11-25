@@ -13,7 +13,7 @@ from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from structure_files_parsers.parse_mmcif import parse_mmcif
 from structure_files_parsers.parse_pdb import parse_pdb
-from utils import create_chunks, run_command
+from utils import create_chunks, run_command, add_path_to_env
 
 
 # Use this script to extract atoms positions from large text-based PDB/cif files
@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
     parser.add_argument("--atoms", required=False, default=ATOMS_DATASET_PATH)
     parser.add_argument("-o", "--output", required=False, default=MMSEQS_DATABASES_PATH)
-    parser.add_argument("-t", "--temporary", required=False, default=TMP_FOLDER_PATH)
+    parser.add_argument("-t", "--temporary", required=False, default=TMP_PATH)
     parser.add_argument("--overwrite", action="store_true", help="Override existing")
     return parser.parse_args()
 
@@ -132,6 +132,7 @@ def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrit
         for seq_file in sequence_files:
             with open(seq_file, 'rb') as reader:
                 shutil.copyfileobj(reader, writer)
+    shutil.rmtree(atoms_path / 'seq')
 
     # create new mmseqs2 database
     output_path.mkdir(exist_ok=True, parents=True)
@@ -141,10 +142,12 @@ def update_atoms_dataset(input_path, atoms_path, output_path, tmp_path, overwrit
         creation_time = str(int(time.time()))
         db_path = (output_path / creation_time)
     db_path.mkdir()
-    print("Creating new mmseqs2 database in " + str(db_path))
 
-    run_command(f"mmseqs createdb {atoms_path / 'merged_sequences.faa'} {db_path / DEFAULT_MMSEQS_NAME} --dbtype 1")
-    run_command(f"mmseqs createindex {db_path / DEFAULT_MMSEQS_NAME} {tmp_path}")
+    print("Creating new mmseqs2 database in " + str(db_path))
+    run_command(f"mmseqs createdb {atoms_path / 'merged_sequences.faa'} {db_path / TARGET_DB_NAME} --dbtype 1")
+
+    print("Indexing new mmseqs2 database in " + str(db_path))
+    run_command(f"mmseqs createindex {db_path / TARGET_DB_NAME} {tmp_path}")
 
 
 if __name__ == '__main__':
