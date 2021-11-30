@@ -22,7 +22,6 @@ DATA_ROOT = pathlib.Path.home() / "data"
 STRUCTURE_FILES_PATH = DATA_ROOT / "structure_files"
 ATOMS_DATASET_PATH = DATA_ROOT / "atoms_dataset"
 
-FOLDSEEK_DATABASES_PATH = DATA_ROOT / "foldseek_db"
 MMSEQS_DATABASES_PATH = DATA_ROOT / "mmseqs_db"
 
 TARGET_DB_NAME = "targetDB"
