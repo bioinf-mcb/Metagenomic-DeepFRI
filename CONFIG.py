@@ -31,7 +31,3 @@ WORK_PATH = DATA_ROOT / "workspace"
 QUERY_PATH = DATA_ROOT / "query"
 TMP_PATH = DATA_ROOT / "TMP"
 FINISHED_PATH = DATA_ROOT / "finished"
-
-
-FOLDSEEK_BIN_PATH = "/home/soliareofastora/foldseek/bin/"
-
