@@ -6,15 +6,15 @@ from Bio import pairwise2
 from Bio import SeqIO
 
 from CONFIG import *
-from CPP_lib.libAtomDistanceIO import load_contact_map, initialize
+from CPP_lib.libAtomDistanceIO import load_contact_map
+from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from DeepFRI.deepfrier import Predictor
-from utils import add_path_to_env
-from run_mmseqs_search import run_mmseqs_search
+from utils.run_mmseqs_search import run_mmseqs_search
 # chromwell_process_fasta.py looks like the type of script i need to create
 
 
 def main_pipeline():
-    initialize()
+    initialize_cpp_lib()
     pipeline_start = str(time.time())
     faa_files = list(QUERY_PATH.glob("**/*.faa"))
 
@@ -34,6 +34,7 @@ def main_pipeline():
                 shutil.copyfileobj(reader, writer)
 
     output_data = run_mmseqs_search(work_path / 'merged_sequences.faa', work_path)
+    return
 
     # shutil.rmtree(work_path)
 
