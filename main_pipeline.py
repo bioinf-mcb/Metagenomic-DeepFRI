@@ -36,6 +36,7 @@ def main_pipeline():
     with open(ATOMS_DATASET_PATH / "merged_sequences.faa", "r") as f:
         target_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
 
+    # format: alignments[query_id] = {"target_id": target_id, "alignment": alignment}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs)
     unaligned_queries = query_seqs.keys() - alignments.keys()
 

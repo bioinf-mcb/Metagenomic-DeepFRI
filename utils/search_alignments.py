@@ -1,7 +1,7 @@
 import pandas as pd
+import pathos
+
 from Bio import pairwise2
-import multiprocessing
-from pathos.multiprocessing import ProcessingPool as Pool
 
 
 def align(query_seq, target_seq):
@@ -23,7 +23,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     queries = list(map(lambda x: query_seqs[x], mmseqs_search_output["query"]))
     targets = list(map(lambda x: target_seqs[x], mmseqs_search_output["target"]))
 
-    with Pool(processes=multiprocessing.cpu_count()) as p:
+    with pathos.multiprocessing.ProcessingPool(processes=pathos.multiprocessing.cpu_count()) as p:
         alignments = p.map(align, queries, targets)
 
     query_alignments = dict()
