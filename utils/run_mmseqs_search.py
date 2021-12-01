@@ -11,8 +11,8 @@ def run_mmseqs_search(query_file, work_path):
 
     query_db = work_path / 'queryDB'
     target_db = target_database_path / TARGET_DB_NAME
-    result_db = work_path / 'resultDB'
-    output_file = work_path / 'resultDB.m8'
+    result_db = work_path / 'search_resultDB'
+    output_file = result_db.with_suffix('.m8')
 
     mmseqs_createdb(query_file, query_db)
     mmseqs_search(query_db, target_db, result_db)
