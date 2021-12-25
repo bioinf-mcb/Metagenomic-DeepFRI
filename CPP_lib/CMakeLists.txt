@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_library(AtomDistanceIO SHARED
         library.cpp
-        )
+        AtomFileIO.cpp PythonUtils.cpp)
 
 
 target_include_directories(AtomDistanceIO PUBLIC ~/miniconda3/include/python3.8)
