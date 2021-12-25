@@ -10,8 +10,6 @@ from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
 from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
-
-
 # cromwell_process_fasta.py looks like the type of script i need to create
 
 
@@ -50,7 +48,7 @@ def main_pipeline():
     if len(alignments) > 0:
         gcn_params = models_config["gcn"]["models"]["mf"]
         gcn = Predictor.Predictor(gcn_params, gcn=True)
-
+        print(f"Using GCN for {len(alignments)} proteins")
         for query_id in alignments.keys():
             alignment = alignments[query_id]
             query_seq = query_seqs[query_id]
@@ -62,20 +60,20 @@ def main_pipeline():
                                                          alignment["alignment"].seqB,
                                                          1)
             gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
-        gcn.export_csv("result_gcn.csv", verbose=True)
+        gcn.export_csv("result_gcn.csv", verbose=False)
         del gcn
     else:
-        print("No alignments found")
+        print("No aligned contact maps found")
 
     if len(unaligned_queries) > 0:
         cnn_params = models_config["cnn"]["models"]["mf"]
         cnn = Predictor.Predictor(cnn_params, gcn=False)
-
+        print(f"Using CNN for {len(unaligned_queries)} proteins")
         for query_id in unaligned_queries:
             cnn.predict_from_sequence(query_seqs[query_id], query_id)
-
-        cnn.export_csv("result_cnn.csv", verbose=True)
+        cnn.export_csv("result_cnn.csv", verbose=False)
         del cnn
+
     shutil.rmtree(work_path)
 
 
