@@ -11,8 +11,8 @@ import numpy as np
 from CONFIG import *
 from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
-from structure_files_parsers.parse_mmcif import parse_mmcif
-from structure_files_parsers.parse_pdb import parse_pdb
+from utils.structure_files_parsers.parse_mmcif import parse_mmcif
+from utils.structure_files_parsers.parse_pdb import parse_pdb
 from utils.utils import create_chunks
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
@@ -28,8 +28,8 @@ from utils.mmseqs_utils import mmseqs_createindex
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
-    parser.add_argument("--atoms", required=False, default=ATOMS_DATASET_PATH)
-    parser.add_argument("-o", "--output", required=False, default=MMSEQS_DATABASES_PATH)
+    parser.add_argument("-o", "--output", required=False, default=ATOMS_DATASET_PATH)
+    parser.add_argument("-db", "--database", required=False, default=MMSEQS_DATABASES_PATH)
     parser.add_argument("--overwrite", action="store_true", help="Override existing")
     return parser.parse_args()
 
@@ -156,8 +156,8 @@ if __name__ == '__main__':
     args = parse_args()
 
     input_path = pathlib.Path(args.input)
-    atoms_path = pathlib.Path(args.atoms)
     output_path = pathlib.Path(args.output)
+    db_path = pathlib.Path(args.database)
     overwrite = args.overwrite
 
-    update_atoms_dataset(input_path, atoms_path, output_path, overwrite)
+    update_atoms_dataset(input_path, output_path, db_path, overwrite)
