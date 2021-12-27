@@ -24,6 +24,9 @@ def main_pipeline():
     work_path.mkdir()
 
     query_faa_files = list(QUERY_PATH.glob("**/*.faa"))
+    if len(query_faa_files) == 0:
+        print("No query protein files found terminating")
+        return 0
     with open(work_path / 'merged_query_sequences.faa', 'wb') as writer:
         for seq_file in query_faa_files:
             with open(seq_file, 'rb') as reader:
@@ -34,16 +37,18 @@ def main_pipeline():
 
     with open(work_path / 'merged_query_sequences.faa', "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
-    with open(ATOMS_DATASET_PATH / "merged_sequences.faa", "r") as f:
+    with open(SEQ_CMAP_DATASET_PATH / "merged_sequences.faa", "r") as f:
         target_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
 
     # alignments[query_id] = {"target_id": target_id, "alignment": alignment}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs)
     unaligned_queries = query_seqs.keys() - alignments.keys()
 
-    # todo add this path to config?
-    with open("/data/trained_models/model_config.json") as json_file:
-        models_config = json.load(json_file)
+    if not (DATA_ROOT / "trained_models/model_config.json").exists():
+        print("Please run post_setup.py script to download model weights")
+        return 1
+    with open(DATA_ROOT / "trained_models/model_config.json") as json_file:
+        models_config = json.loads(json_file.read().replace("./trained_models/", f"{DATA_ROOT}/trained_models/"))
 
     if len(alignments) > 0:
         gcn_params = models_config["gcn"]["models"]["mf"]
@@ -54,7 +59,7 @@ def main_pipeline():
             query_seq = query_seqs[query_id]
             target_id = alignment["target_id"]
 
-            query_contact_map = load_aligned_contact_map(str(ATOMS_DATASET_PATH / "positions" / (target_id + ".bin")),
+            query_contact_map = load_aligned_contact_map(str(SEQ_CMAP_DATASET_PATH / "positions" / (target_id + ".bin")),
                                                          ANGSTROM_CONTACT_THRESHOLD,
                                                          alignment["alignment"].seqA,
                                                          alignment["alignment"].seqB,

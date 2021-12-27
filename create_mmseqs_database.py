@@ -9,6 +9,7 @@ from itertools import repeat
 import numpy as np
 
 from CONFIG import *
+from utils.bio_config import *
 from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from utils.structure_files_parsers.parse_mmcif import parse_mmcif
@@ -28,7 +29,7 @@ from utils.mmseqs_utils import mmseqs_createindex
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
-    parser.add_argument("-o", "--output", required=False, default=ATOMS_DATASET_PATH)
+    parser.add_argument("-o", "--output", required=False, default=SEQ_CMAP_DATASET_PATH)
     parser.add_argument("-db", "--database", required=False, default=MMSEQS_DATABASES_PATH)
     parser.add_argument("--overwrite", action="store_true", help="Override existing")
     return parser.parse_args()
