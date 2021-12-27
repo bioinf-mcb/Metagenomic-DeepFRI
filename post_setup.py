@@ -1,3 +1,5 @@
+import requests
+
 from CONFIG import *
 
 
@@ -16,7 +18,8 @@ def main():
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
         if not pathlib.Path("newest_trained_models.tar.gz").exists():
             print(" Downloading models, approx 800MB")
-            run_command(f"wget {TRAINED_MODELS_DOWNLOAD_URL}")
+            r = requests.get(TRAINED_MODELS_DOWNLOAD_URL, allow_redirects=True)
+            open('newest_trained_models.tar.gz', 'wb').write(r.content)
         print(f"unloading models into {DATA_ROOT} directory")
         run_command(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
 
