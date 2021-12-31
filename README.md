@@ -16,7 +16,7 @@
    ```
 2. Run docker! `-u $(id -u):$(id -g)` is used to make sure all files created by container are accessible for users
    ```
-   docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data soliareofastora/metagenomic-deepfri
+   docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data --name metagenomic-deepfri soliareofastora/metagenomic-deepfri
    ```
 3. Inside docker run `post_setup.py` script to create folder structure and to download DeepFRI model weights
    ```
@@ -45,7 +45,7 @@
    python post_setup.py
    ```
 
-## mmseqs2 database setup 
+## Mmseqs2 database setup 
 
 Main feature of this project  is its ability to find similar protein chains 
 using mmseqs2 with known structures to use aligned contact maps as input to GCN from DeepFRI.
@@ -55,6 +55,8 @@ using mmseqs2 with known structures to use aligned contact maps as input to GCN 
 
 This script will parse structure files and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH`.
 It will also create a mmseqs2 database in `MMSEQS_DATABASES_PATH`. This operation will append new structures to existing ones.
+
+
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
@@ -62,9 +64,15 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
 1. Upload `.faa` files into `QUERY_PATH`
 2. Run `main_pipeline.py`
-3. Go grab a coffee
 4. Collect results from `FINISHED_PATH`
 
+## Useful docker commands
+```
+docker build -t soliareofastora/metagenomic-deepfri .
+docker push soliareofastora/metagenomic-deepfri
+docker pull soliareofastora/metagenomic-deepfri
+docker run -it -u $(id -u):$(id -g) -v /data:/data --name metagenomic-deepfri soliareofastora/metagenomic-deepfri
+```
 ## Contributing
 
 If you have a suggestion that would make this project better, email me or fork the repo and create a pull request.

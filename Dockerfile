@@ -6,7 +6,7 @@ RUN apt upgrade -y
 RUN apt install mmseqs2 -y
 RUN apt-get install libboost-numpy1.71 libboost-python1.71 -y
 
-WORKDIR /metagenomic_deepfri
+WORKDIR /metagenomic-deepfri
 
 COPY setup.py setup.py
 RUN pip3 install .
