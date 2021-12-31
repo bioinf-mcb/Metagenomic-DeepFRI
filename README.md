@@ -16,7 +16,7 @@
    ```
 2. Run docker! `-u $(id -u):$(id -g)` is used to make sure all files created by container are accessible for users
    ```
-   docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data --name metagenomic-deepfri soliareofastora/metagenomic-deepfri
+   docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data soliareofastora/metagenomic-deepfri
    ```
 3. Inside docker run `post_setup.py` script to create folder structure and to download DeepFRI model weights
    ```
@@ -71,7 +71,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 docker build -t soliareofastora/metagenomic-deepfri .
 docker push soliareofastora/metagenomic-deepfri
 docker pull soliareofastora/metagenomic-deepfri
-docker run -it -u $(id -u):$(id -g) -v /data:/data --name metagenomic-deepfri soliareofastora/metagenomic-deepfri
+docker run -it -u $(id -u):$(id -g) -v /data:/data soliareofastora/metagenomic-deepfri
 ```
 ## Contributing
 

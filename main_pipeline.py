@@ -31,6 +31,7 @@ def main_pipeline():
         for seq_file in query_faa_files:
             with open(seq_file, 'rb') as reader:
                 shutil.copyfileobj(reader, writer)
+            # todo remove query_file
 
     query_file = work_path / 'merged_query_sequences.faa'
     mmseqs_search_output = run_mmseqs_search(query_file, work_path)
@@ -65,7 +66,8 @@ def main_pipeline():
                                                          alignment["alignment"].seqB,
                                                          1)
             gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
-        gcn.export_csv("result_gcn.csv", verbose=False)
+        (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
+        gcn.export_csv(FINISHED_PATH / work_start / "result_gcn.csv", verbose=False)
         del gcn
     else:
         print("No aligned contact maps found")
@@ -76,9 +78,12 @@ def main_pipeline():
         print(f"Using CNN for {len(unaligned_queries)} proteins")
         for query_id in unaligned_queries:
             cnn.predict_from_sequence(query_seqs[query_id], query_id)
-        cnn.export_csv("result_cnn.csv", verbose=False)
+
+        (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
+        cnn.export_csv(FINISHED_PATH / work_start / "result_cnn.csv", verbose=False)
         del cnn
 
+    shutil.copy(work_path / 'merged_query_sequences.faa', FINISHED_PATH / work_start / 'sequences.faa')
     shutil.rmtree(work_path)
 
 
