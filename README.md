@@ -63,7 +63,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 ## Running experiments
 
 1. Upload `.faa` files into `QUERY_PATH`
-2. Run `main_pipeline.py`
+2. Run `python3 main_pipeline.py`
 4. Collect results from `FINISHED_PATH`
 
 ## Useful docker commands
