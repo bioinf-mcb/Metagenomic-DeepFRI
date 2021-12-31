@@ -13,7 +13,11 @@ def parse_mmcif(file):
         if line.startswith('_refine_hist.pdbx_number_atoms_protein'):
             n = line.split()[-1]
             if n != '?' and n != '0':
-                n_atoms = int(n)
+                try:
+                    n_atoms = int(n)
+                except ValueError:
+                    line = file.readline()
+                    continue
                 sequence = np.empty(n_atoms, dtype=np.dtype('<U3'))
                 positions = np.empty((n_atoms, 3), dtype=np.float32)
                 groups = np.empty(n_atoms, dtype=np.dtype('<U10'))
