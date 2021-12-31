@@ -1,9 +1,7 @@
 import pandas as pd
+
 from CONFIG import *
-from utils.mmseqs_utils import mmseqs_createdb
-from utils.mmseqs_utils import mmseqs_search
-from utils.mmseqs_utils import mmseqs_convertalis
-from utils.mmseqs_utils import MMSEQS_COLUMN_NAMES
+from utils.mmseqs_utils import *
 
 
 def run_mmseqs_search(query_file, work_path):
