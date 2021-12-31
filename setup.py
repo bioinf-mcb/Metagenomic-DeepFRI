@@ -1,8 +1,6 @@
 from setuptools import find_packages
 from setuptools import setup
 
-from utils.utils import run_command
-
 setup(
     name="metagenomic-deepFRI",
     version="0.1",
@@ -23,5 +21,5 @@ setup(
     packages=find_packages(),
 )
 
-print("Please install additional apt-get packages")
+print("If installing manually, please get additional apt-get packages")
 print("apt-get install libboost-numpy1.71-dev libboost-python1.71-dev")
