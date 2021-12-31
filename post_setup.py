@@ -1,9 +1,10 @@
-import requests
-
 from CONFIG import *
+from utils.utils import run_command
+from utils.utils import download_file
 
 
 def main():
+    print("Creating folders structure based on CONFIG.py")
     DATA_ROOT.mkdir(exist_ok=True, parents=True)
     STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
     SEQ_CMAP_DATASET_PATH.mkdir(exist_ok=True, parents=True)
@@ -14,14 +15,17 @@ def main():
     FINISHED_PATH.mkdir(exist_ok=True, parents=True)
 
     if not (DATA_ROOT / "trained_models/model_config.json").exists():
-        from utils.utils import run_command
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
+
         if not pathlib.Path("newest_trained_models.tar.gz").exists():
             print(" Downloading models, approx 800MB")
-            r = requests.get(TRAINED_MODELS_DOWNLOAD_URL, allow_redirects=True)
-            open('newest_trained_models.tar.gz', 'wb').write(r.content)
+            download_file(DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, 'newest_trained_models.tar.gz')
+
         print(f"unloading models into {DATA_ROOT} directory")
         run_command(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
+    else:
+        print("Found model weights")
+    print("All good and ready to go!")
 
 
 if __name__ == "__main__":

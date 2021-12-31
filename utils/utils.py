@@ -1,4 +1,6 @@
 import os
+import requests
+import shutil
 import subprocess
 
 ENV_PATHS = set()
@@ -29,6 +31,12 @@ def run_command(command, timeout=-1):
         raise RuntimeError(f"during execution: {' '.join(command)} exception occurred\n{error_info}")
     else:
         return completed_process.stdout.decode('utf-8')
+
+
+def download_file(url, path):
+    with requests.get(url, stream=True) as r:
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 
 def create_chunks(lst, n):

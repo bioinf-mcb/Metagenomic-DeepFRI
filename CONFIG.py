@@ -16,4 +16,4 @@ WORK_PATH = DATA_ROOT / "workspace"
 QUERY_PATH = DATA_ROOT / "query"
 FINISHED_PATH = DATA_ROOT / "finished"
 
-TRAINED_MODELS_DOWNLOAD_URL = "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz"
+DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL = "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz"
