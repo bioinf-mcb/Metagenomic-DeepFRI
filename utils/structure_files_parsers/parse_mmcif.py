@@ -20,24 +20,25 @@ def parse_mmcif(file):
 
         if line.startswith('_atom_site.'):
             label_counter += 1
-            if line.startswith('_atom_site.type_symbol'):
+            if line.startswith('_atom_site.type_symbol '):
                 atom_symbol = label_counter
-            if line.startswith('_atom_site.label_asym_id'):
+            if line.startswith('_atom_site.label_asym_id '):
                 assembly = label_counter
-            if line.startswith('_atom_site.label_seq_id'):
+            if line.startswith('_atom_site.label_seq_id '):
                 sequence_id = label_counter
-            if line.startswith('_atom_site.label_comp_id'):
+            if line.startswith('_atom_site.label_comp_id '):
                 residue = label_counter
-            if line.startswith('_atom_site.Cartn_x'):
+            if line.startswith('_atom_site.Cartn_x '):
                 x = label_counter
-            if line.startswith('_atom_site.Cartn_y'):
+            if line.startswith('_atom_site.Cartn_y '):
                 y = label_counter
-            if line.startswith('_atom_site.Cartn_z'):
+            if line.startswith('_atom_site.Cartn_z '):
                 z = label_counter
 
         line = file.readline()
         if line.startswith("ATOM"):
-            break
+            if label_counter > 0:
+                break
 
     if n_atoms > 0:
         index = 0
