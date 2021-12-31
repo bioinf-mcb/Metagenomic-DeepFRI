@@ -69,7 +69,7 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
             groups.sort()
 
             if len(groups) < 9:
-                print("Files containing protein chains shorter than 9 amino acids are considered corrupted ", file)
+                # print("Files containing protein chains shorter than 9 amino acids are considered corrupted ", file)
                 continue
 
             if len(groups) > MAX_CHAIN_LENGTH:
