@@ -29,7 +29,7 @@ from utils.mmseqs_utils import mmseqs_createindex
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
-    parser.add_argument("-o", "--output", required=False, default=SEQ_CMAP_DATASET_PATH)
+    parser.add_argument("-o", "--output", required=False, default=SEQ_ATOMS_DATASET_PATH)
     parser.add_argument("-db", "--database", required=False, default=MMSEQS_DATABASES_PATH)
     parser.add_argument("--overwrite", action="store_true", help="Override existing")
     return parser.parse_args()
@@ -69,7 +69,7 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
             groups.sort()
 
             if len(groups) < 9:
-                # print("Proteins shorter than 9 amino acids are not supported", file)
+                print("Files containing protein chains shorter than 9 amino acids are considered corrupted ", file)
                 continue
 
             if len(groups) > MAX_CHAIN_LENGTH:
@@ -89,15 +89,16 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
             continue
 
 
-def update_atoms_dataset(input_path, atoms_path, output_path, overwrite):
+def update_atoms_dataset(input_path, atoms_path, db_path, overwrite):
     atoms_path.mkdir(exist_ok=True, parents=True)
     (atoms_path / 'seq').mkdir(exist_ok=True)
     (atoms_path / 'positions').mkdir(exist_ok=True)
     save_path = str(atoms_path.absolute())
-    print("Atoms will be stored in: ", save_path)
+    print("Sequences and Atoms positions will be stored in: ", save_path)
 
+    print("Searching for structure files in: ", input_path)
     structure_files = dict()
-
+    # todo optimization use input_path.glob once!
     for pattern in STRUCTURE_FILES_PATTERNS:
         pattern_structures = np.array(list(input_path.glob("**/*" + pattern)))
         pattern_ids = np.array([x.name[:-len(pattern)] for x in pattern_structures])
@@ -117,19 +118,23 @@ def update_atoms_dataset(input_path, atoms_path, output_path, overwrite):
 
     if not overwrite:
         existing_positions = set([x.name[:-4] for x in (atoms_path / 'positions').glob("**/*.bin")])
-        print("Existing files:", len(existing_positions))
+        print("Found ", len(existing_positions), " already processed structures")
+        existing_counter = 0
         for id in list(structure_files.keys()):
             if id in existing_positions:
                 structure_files.pop(id)
+                existing_counter += 1
+        print("Found ", existing_counter, " duplicated IDs")
 
+    print("Processing", len(structure_files), "files")
     x = int(len(structure_files) / 10000)
     chunks = create_chunks(list(structure_files.values()), max(multiprocessing.cpu_count(), x))
 
     initialize_CPP_LIB()
-    print("Processing", len(structure_files), "files")
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
         p.starmap(load_file_extract_and_save_atoms, zip(chunks, repeat(save_path)))
 
+    # todo optimization maybe store sequences separated instead of chugging them into one too big to handle file?
     sequence_files = list((atoms_path / 'seq').glob("**/*.faa"))
     print("Merging " + str(len(sequence_files)) + " sequence files.")
     with open(atoms_path / 'merged_sequences.faa', 'wb') as writer:
@@ -138,19 +143,20 @@ def update_atoms_dataset(input_path, atoms_path, output_path, overwrite):
                 shutil.copyfileobj(reader, writer)
 
     # create new mmseqs2 database
-    output_path.mkdir(exist_ok=True, parents=True)
+    db_path.mkdir(exist_ok=True, parents=True)
     creation_time = str(int(time.time()))
-    db_path = (output_path / creation_time)
-    while db_path.exists():
+    mmseqs2_path = (db_path / creation_time)
+    while mmseqs2_path.exists():
+        time.sleep(1)
         creation_time = str(int(time.time()))
-        db_path = (output_path / creation_time)
-    db_path.mkdir()
+        mmseqs2_path = (db_path / creation_time)
+    mmseqs2_path.mkdir()
 
-    print("Creating new mmseqs2 database in " + str(db_path))
-    mmseqs_createdb(atoms_path / 'merged_sequences.faa', db_path / TARGET_DB_NAME)
+    print("Creating new mmseqs2 database in " + str(mmseqs2_path))
+    mmseqs_createdb(atoms_path / 'merged_sequences.faa', mmseqs2_path / TARGET_DB_NAME)
 
-    print("Indexing new mmseqs2 database in " + str(db_path))
-    mmseqs_createindex(db_path / TARGET_DB_NAME)
+    print("Indexing new mmseqs2 database in " + str(mmseqs2_path))
+    mmseqs_createindex(mmseqs2_path / TARGET_DB_NAME)
 
 
 if __name__ == '__main__':

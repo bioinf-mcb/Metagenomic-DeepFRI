@@ -37,7 +37,7 @@ def main_pipeline():
 
     with open(work_path / 'merged_query_sequences.faa', "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
-    with open(SEQ_CMAP_DATASET_PATH / "merged_sequences.faa", "r") as f:
+    with open(SEQ_ATOMS_DATASET_PATH / "merged_sequences.faa", "r") as f:
         target_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
 
     # alignments[query_id] = {"target_id": target_id, "alignment": alignment}
@@ -59,7 +59,7 @@ def main_pipeline():
             query_seq = query_seqs[query_id]
             target_id = alignment["target_id"]
 
-            query_contact_map = load_aligned_contact_map(str(SEQ_CMAP_DATASET_PATH / "positions" / (target_id + ".bin")),
+            query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / "positions" / (target_id + ".bin")),
                                                          ANGSTROM_CONTACT_THRESHOLD,
                                                          alignment["alignment"].seqA,
                                                          alignment["alignment"].seqB,

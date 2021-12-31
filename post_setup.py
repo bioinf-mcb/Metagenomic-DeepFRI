@@ -7,7 +7,7 @@ def main():
     print("Creating folders structure based on CONFIG.py")
     DATA_ROOT.mkdir(exist_ok=True, parents=True)
     STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
-    SEQ_CMAP_DATASET_PATH.mkdir(exist_ok=True, parents=True)
+    SEQ_ATOMS_DATASET_PATH.mkdir(exist_ok=True, parents=True)
 
     MMSEQS_DATABASES_PATH.mkdir(exist_ok=True, parents=True)
     WORK_PATH.mkdir(exist_ok=True, parents=True)
@@ -18,10 +18,10 @@ def main():
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
 
         if not pathlib.Path("newest_trained_models.tar.gz").exists():
-            print(" Downloading models, approx 800MB")
+            print("Downloading model weights, approx 800MB")
             download_file(DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, 'newest_trained_models.tar.gz')
 
-        print(f"unloading models into {DATA_ROOT} directory")
+        print(f"unloading models into {DATA_ROOT/'trained_models'} directory")
         run_command(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
     else:
         print("Found model weights")
