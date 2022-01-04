@@ -83,8 +83,10 @@ def main_pipeline():
 
     (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
     shutil.copy(work_path / "merged_query_sequences.faa", FINISHED_PATH / work_start / "sequences.faa")
-    shutil.copy(work_path / "result_gcn.csv", FINISHED_PATH / work_start / "result_gcn.csv")
-    shutil.copy(work_path / "result_cnn.csv", FINISHED_PATH / work_start / "result_cnn.csv")
+    if (work_path / "result_gcn.csv").exists():
+        shutil.copy(work_path / "result_gcn.csv", FINISHED_PATH / work_start / "result_gcn.csv")
+    if (work_path / "result_cnn.csv").exists():
+        shutil.copy(work_path / "result_cnn.csv", FINISHED_PATH / work_start / "result_cnn.csv")
 
     shutil.rmtree(work_path)
 
