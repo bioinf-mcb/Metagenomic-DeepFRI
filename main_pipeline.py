@@ -13,6 +13,7 @@ from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 # cromwell_process_fasta.py looks like the type of script i need to create
 
+
 def main_pipeline():
     initialize_cpp_lib()
 
@@ -36,12 +37,12 @@ def main_pipeline():
     query_file = work_path / 'merged_query_sequences.faa'
     mmseqs_search_output = run_mmseqs_search(query_file, work_path)
 
-    with open(work_path / 'merged_query_sequences.faa', "r") as f:
-        query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
     target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
+    with open(query_file, "r") as f:
+        query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
 
     # alignments[query_id] = {"target_id": target_id, "alignment": alignment}
-    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs)
+    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, work_path)
     unaligned_queries = query_seqs.keys() - alignments.keys()
 
     if not (DATA_ROOT / "trained_models/model_config.json").exists():

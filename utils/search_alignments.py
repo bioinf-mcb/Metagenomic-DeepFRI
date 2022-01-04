@@ -1,4 +1,6 @@
+import json
 import pandas as pd
+import pathlib
 import pathos
 
 from Bio import pairwise2
@@ -20,7 +22,10 @@ def align(query_seq, target_seq):
     return None
 
 
-def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader):
+def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader, work_path: pathlib.Path):
+    json_file = work_path / "alignments.json"
+    if json_file.exists():
+        return json.load(open(json_file, "r"))
 
     queries = list(map(lambda x: query_seqs[x], mmseqs_search_output["query"]))
     targets = list(map(lambda x: target_seqs[x], mmseqs_search_output["target"]))
@@ -41,4 +46,5 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
         if alignment.score > query_alignments[query_id]["alignment"].score:
             query_alignments[query_id] = {"target_id": target_id, "alignment": alignment}
 
+    json.dump(query_alignments, open(json_file, "w"))
     return query_alignments
