@@ -1,7 +1,7 @@
 import argparse
 import gzip
+import os
 import multiprocessing
-import shutil
 import time
 import traceback
 
@@ -14,7 +14,7 @@ from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from utils.structure_files_parsers.parse_mmcif import parse_mmcif
 from utils.structure_files_parsers.parse_pdb import parse_pdb
-from utils.utils import create_chunks
+from utils.utils import create_chunks, run_command
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
 
@@ -46,7 +46,7 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
             elif file_id.endswith('.pdb.gz'):
                 file_id = file_id.replace('.pdb.gz', '')
                 with gzip.open(file, 'rt') as f:
-                    atom_amino_group, positions, groups = parse_mmcif(f)
+                    atom_amino_group, positions, groups = parse_pdb(f)
             elif file_id.endswith('.cif'):
                 file_id = file_id.replace('.cif', '')
                 with open(file, 'r') as f:
@@ -134,13 +134,8 @@ def update_atoms_dataset(input_path, atoms_path, db_path, overwrite):
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
         p.starmap(load_file_extract_and_save_atoms, zip(chunks, repeat(save_path)))
 
-    # todo optimization maybe store sequences separated instead of chugging them into one too big to handle file?
-    sequence_files = list((atoms_path / 'seq').glob("**/*.faa"))
-    print("Merging " + str(len(sequence_files)) + " sequence files.")
-    with open(atoms_path / 'merged_sequences.faa', 'wb') as writer:
-        for seq_file in sequence_files:
-            with open(seq_file, 'rb') as reader:
-                shutil.copyfileobj(reader, writer)
+    print("Merging sequence files for mmseqs2")
+    os.system(f"cat {atoms_path / 'seq'}/* > {atoms_path / 'merged_sequences.faa'}")
 
     # create new mmseqs2 database
     db_path.mkdir(exist_ok=True, parents=True)
@@ -152,10 +147,10 @@ def update_atoms_dataset(input_path, atoms_path, db_path, overwrite):
         mmseqs2_path = (db_path / creation_time)
     mmseqs2_path.mkdir()
 
-    print("Creating new mmseqs2 database in " + str(mmseqs2_path))
+    print("Creating new mmseqs2 database " + str(mmseqs2_path))
     mmseqs_createdb(atoms_path / 'merged_sequences.faa', mmseqs2_path / TARGET_DB_NAME)
 
-    print("Indexing new mmseqs2 database in " + str(mmseqs2_path))
+    print("Indexing new mmseqs2 database " + str(mmseqs2_path))
     mmseqs_createindex(mmseqs2_path / TARGET_DB_NAME)
 
 

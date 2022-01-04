@@ -10,8 +10,8 @@ from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
 from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
+from utils.seq_file_loader import SeqFileLoader
 # cromwell_process_fasta.py looks like the type of script i need to create
-
 
 def main_pipeline():
     initialize_cpp_lib()
@@ -38,8 +38,7 @@ def main_pipeline():
 
     with open(work_path / 'merged_query_sequences.faa', "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
-    with open(SEQ_ATOMS_DATASET_PATH / "merged_sequences.faa", "r") as f:
-        target_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
+    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
 
     # alignments[query_id] = {"target_id": target_id, "alignment": alignment}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs)
@@ -66,8 +65,7 @@ def main_pipeline():
                                                          alignment["alignment"].seqB,
                                                          1)
             gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
-        (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
-        gcn.export_csv(FINISHED_PATH / work_start / "result_gcn.csv", verbose=False)
+        gcn.export_csv(work_path / "result_gcn.csv", verbose=False)
         del gcn
     else:
         print("No aligned contact maps found")
@@ -79,11 +77,14 @@ def main_pipeline():
         for query_id in unaligned_queries:
             cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-        (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
-        cnn.export_csv(FINISHED_PATH / work_start / "result_cnn.csv", verbose=False)
+        cnn.export_csv(work_path / "result_cnn.csv", verbose=False)
         del cnn
 
-    shutil.copy(work_path / 'merged_query_sequences.faa', FINISHED_PATH / work_start / 'sequences.faa')
+    (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
+    shutil.copy(work_path / "merged_query_sequences.faa", FINISHED_PATH / work_start / "sequences.faa")
+    shutil.copy(work_path / "result_gcn.csv", FINISHED_PATH / work_start / "result_gcn.csv")
+    shutil.copy(work_path / "result_cnn.csv", FINISHED_PATH / work_start / "result_cnn.csv")
+
     shutil.rmtree(work_path)
 
 

@@ -6,7 +6,7 @@ setup(
     version="0.1",
     description="Pipeline for searching and aligning contact maps for proteins",
     author="Piotr Kucharski",
-    author_email="piotr1kucharski@gmail.com",
+    author_email="soliareofastorauj@gmail.com",
     url="https://github.com/bioinf-mcb/metagenomic-deepFRI",
     download_url="https://github.com/bioinf-mcb/metagenomic-deepFRI",
     license="GNU GPLv3",
@@ -21,5 +21,6 @@ setup(
     packages=find_packages(),
 )
 
-print("If installing manually, please get additional apt-get packages")
+print("If installing manually, please get additional packages")
 print("apt-get install libboost-numpy1.71-dev libboost-python1.71-dev")
+print("apt install mmseqs2")

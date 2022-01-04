@@ -3,6 +3,8 @@ import pathos
 
 from Bio import pairwise2
 
+from utils.seq_file_loader import SeqFileLoader
+
 
 def align(query_seq, target_seq):
     best_alignment = None
@@ -18,7 +20,7 @@ def align(query_seq, target_seq):
     return None
 
 
-def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: dict):
+def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader):
 
     queries = list(map(lambda x: query_seqs[x], mmseqs_search_output["query"]))
     targets = list(map(lambda x: target_seqs[x], mmseqs_search_output["target"]))
