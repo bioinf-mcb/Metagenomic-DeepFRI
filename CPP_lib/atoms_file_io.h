@@ -2,15 +2,18 @@
 // Created by soliareofastora on 24.12.2021.
 //
 
+#ifndef ATOMS_FILE_IO
+#define ATOMS_FILE_IO
+
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
 #include <fstream>
-#include <iostream>
 
 namespace py = boost::python;
 namespace np = py::numpy;
 
-static void SaveAtoms(const np::ndarray &position_array, const np::ndarray &groups_array, const std::string &save_path) {
+
+static void SaveAtomsFile(const np::ndarray &position_array, const np::ndarray &groups_array, const std::string &save_path) {
   int chain_length = (int) groups_array.shape(0);
   int* group_indexes = reinterpret_cast<int*>(groups_array.get_data());
   int atom_count = group_indexes[chain_length - 1];
@@ -23,8 +26,8 @@ static void SaveAtoms(const np::ndarray &position_array, const np::ndarray &grou
   writer.close();
 }
 
-static std::tuple<int, int*, float*> ParseAtomFile(const std::string& file_path){
-  // parse file
+
+static std::tuple<int, int*, float*> LoadAtomsFile(const std::string& file_path){
   std::ifstream reader(file_path, std::ios::in | std::ios::binary);
 
   int chain_length;
@@ -42,3 +45,5 @@ static std::tuple<int, int*, float*> ParseAtomFile(const std::string& file_path)
 
   return std::make_tuple(chain_length, group_indexes, atoms_positions);
 }
+
+#endif

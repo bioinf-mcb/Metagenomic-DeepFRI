@@ -2,9 +2,11 @@
 // Created by soliareofastora on 24.12.2021.
 //
 
+#ifndef PYTHON_UTILS
+#define PYTHON_UTILS
+
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
-#include <iostream>
 
 namespace py = boost::python;
 namespace np = py::numpy;
@@ -33,3 +35,5 @@ static np::ndarray CreateNumpyArray(bool* array, int size){
                        py::make_tuple(sizeof(bool) * size, sizeof(bool)),
                        capsule_owner);
 }
+
+#endif

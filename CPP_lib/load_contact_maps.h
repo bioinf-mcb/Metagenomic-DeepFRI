@@ -1,28 +1,27 @@
 //
-// Created by soliareofastora on 27.05.2021.
+// Created by soliareofastora on 04.01.2022.
 //
 
-#include <boost/python.hpp>
-#include <boost/python/numpy.hpp>
+#ifndef LOAD_CONTACT_MAPS
+#define LOAD_CONTACT_MAPS
+
 #include <cmath>
 #include <iostream>
 #include <queue>
 
-#include "AtomFileIO.cpp"
-#include "PythonUtils.cpp"
-
-namespace py = boost::python;
-namespace np = py::numpy;
+#include "atoms_file_io.h"
+#include "python_utils.h"
 
 static float Distance(float* array, int i, int j) {
   return sqrtf(powf(array[i * 3] - array[j * 3], 2) + powf(array[i * 3 + 1] - array[j * 3 + 1], 2) + powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
 }
 
-static std::pair<bool*, int> LoadArrayContactMap(const std::string& file_path, const float angstrom_contact_threshold){
+
+static std::pair<bool*, int> LoadDenseContactMap(const std::string& file_path, const float angstrom_contact_threshold){
   int chain_length;
   int* group_indexes;
   float* atoms_positions;
-  std::tie(chain_length, group_indexes, atoms_positions) = ParseAtomFile(file_path);
+  std::tie(chain_length, group_indexes, atoms_positions) = LoadAtomsFile(file_path);
 
   // allocate output array
   bool* const output_data = new bool[(int) pow(chain_length, 2)];
@@ -56,18 +55,12 @@ static std::pair<bool*, int> LoadArrayContactMap(const std::string& file_path, c
   return std::make_pair(output_data, chain_length);
 }
 
-static np::ndarray LoadContactMap(const std::string& file_path, const float angstrom_contact_threshold) {
-  bool* contact_map;
-  int chain_length;
-  std::tie(contact_map, chain_length) = LoadArrayContactMap(file_path, angstrom_contact_threshold);
-  return CreateNumpyArray(contact_map, chain_length);
-}
 
 static std::vector<std::pair<int, int>>* LoadSparseContactMap(const std::string& file_path, const float angstrom_contact_threshold){
   int chain_length;
   int* group_indexes;
   float* atoms_positions;
-  std::tie(chain_length, group_indexes, atoms_positions) = ParseAtomFile(file_path);
+  std::tie(chain_length, group_indexes, atoms_positions) = LoadAtomsFile(file_path);
 
   // fill up vector with sparse atom contacts
   std::vector<std::pair<int, int>>* sparse_contacts = new std::vector<std::pair<int, int>>();
@@ -96,6 +89,15 @@ static std::vector<std::pair<int, int>>* LoadSparseContactMap(const std::string&
   delete[] atoms_positions;
   return sparse_contacts;
 }
+
+
+static np::ndarray LoadContactMap(const std::string& file_path, const float angstrom_contact_threshold) {
+  bool* contact_map;
+  int chain_length;
+  std::tie(contact_map, chain_length) = LoadDenseContactMap(file_path, angstrom_contact_threshold);
+  return CreateNumpyArray(contact_map, chain_length);
+}
+
 
 static np::ndarray LoadAlignedContactMap(const std::string& file_path, float angstrom_contact_threshold, const std::string& query_alignment, const std::string& target_alignment, const int generated_contacts) {
   std::vector<std::pair<int, int>>* sparse_target_contacts = LoadSparseContactMap(file_path, angstrom_contact_threshold);
@@ -157,9 +159,4 @@ static np::ndarray LoadAlignedContactMap(const std::string& file_path, float ang
   return CreateNumpyArray(output_data, query_index);
 }
 
-BOOST_PYTHON_MODULE (libAtomDistanceIO) {
-  py::def("initialize", Initialize);
-  py::def("save_atoms", SaveAtoms);
-  py::def("load_contact_map", LoadContactMap);
-  py::def("load_aligned_contact_map", LoadAlignedContactMap);
-}
+#endif

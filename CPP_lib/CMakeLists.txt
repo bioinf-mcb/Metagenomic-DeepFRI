@@ -4,8 +4,10 @@ project(GenomicLibrary)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(AtomDistanceIO SHARED
-        library.cpp
-        AtomFileIO.cpp PythonUtils.cpp)
+        library_definition.cpp
+        atoms_file_io.h
+        python_utils.h
+        load_contact_maps.h)
 
 
 target_include_directories(AtomDistanceIO PUBLIC ~/miniconda3/include/python3.8)
