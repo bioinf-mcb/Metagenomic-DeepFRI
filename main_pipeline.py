@@ -52,9 +52,9 @@ def main_pipeline():
         models_config = json.loads(json_file.read().replace("./trained_models/", f"{DATA_ROOT}/trained_models/"))
 
     if len(alignments) > 0:
+        print(f"Using GCN for {len(alignments)} proteins")
         gcn_params = models_config["gcn"]["models"]["mf"]
         gcn = Predictor.Predictor(gcn_params, gcn=True)
-        print(f"Using GCN for {len(alignments)} proteins")
         for query_id in alignments.keys():
             alignment = alignments[query_id]
             query_seq = query_seqs[query_id]
@@ -72,15 +72,16 @@ def main_pipeline():
         print("No aligned contact maps found")
 
     if len(unaligned_queries) > 0:
+        print(f"Using CNN for {len(unaligned_queries)} proteins")
         cnn_params = models_config["cnn"]["models"]["mf"]
         cnn = Predictor.Predictor(cnn_params, gcn=False)
-        print(f"Using CNN for {len(unaligned_queries)} proteins")
         for query_id in unaligned_queries:
             cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
         cnn.export_csv(work_path / "result_cnn.csv", verbose=False)
         del cnn
 
+    print("Finished! Saving output files to ", FINISHED_PATH / work_start)
     (FINISHED_PATH / work_start).mkdir(parents=True, exist_ok=True)
     shutil.copy(work_path / "merged_query_sequences.faa", FINISHED_PATH / work_start / "sequences.faa")
     if (work_path / "result_gcn.csv").exists():

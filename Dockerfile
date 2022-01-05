@@ -9,6 +9,11 @@ RUN apt-get install libboost-numpy1.71 libboost-python1.71 -y
 WORKDIR /metagenomic-deepfri
 
 COPY setup.py setup.py
-RUN pip3 install .
+RUN pip install .
+
+COPY post_setup.py CONFIG.py ./
+COPY utils/utils.py utils/utils.py
+# download weights into docker and remove unpacked files to save on docker image size
+RUN python post_setup.py && rm -rf /data
 
 COPY . .

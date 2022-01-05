@@ -19,19 +19,15 @@ from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
 
 
-# todo remake this comment into --help command
-# Use this script to extract atoms positions from large text-based PDB/cif files
-# and save them in space efficient binary file.
-# for file specification please head over to CPP_lib
-# Sequences will be extracted along the way and stored in mmseqs2 db
-
-
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH)
-    parser.add_argument("-o", "--output", required=False, default=SEQ_ATOMS_DATASET_PATH)
-    parser.add_argument("-db", "--database", required=False, default=MMSEQS_DATABASES_PATH)
-    parser.add_argument("--overwrite", action="store_true", help="Override existing")
+    parser = argparse.ArgumentParser(description="Read structure files from -i to extract sequence and atom positions. "
+                                                 "Save them in -o as .faa and .bin files. "
+                                                 "Create and index new MMSEQS2 database in -db")
+
+    parser.add_argument("-i", "--input", required=False, default=STRUCTURE_FILES_PATH, help="Path to folder with structure files")
+    parser.add_argument("-o", "--output", required=False, default=SEQ_ATOMS_DATASET_PATH, help="Path to folder with sequences and atom positions")
+    parser.add_argument("-db", "--database", required=False, default=MMSEQS_DATABASES_PATH, help="Path to create new MMSEQS2 database")
+    parser.add_argument("--overwrite", action="store_true", help="Flag to override existing sequence and atom positions")
     return parser.parse_args()
 
 
@@ -91,37 +87,31 @@ def load_file_extract_and_save_atoms(protein_structure_files, save_path):
 
 def update_atoms_dataset(input_path, atoms_path, db_path, overwrite):
     atoms_path.mkdir(exist_ok=True, parents=True)
-    (atoms_path / 'seq').mkdir(exist_ok=True)
-    (atoms_path / 'positions').mkdir(exist_ok=True)
     save_path = str(atoms_path.absolute())
     print("Sequences and Atoms positions will be stored in: ", save_path)
+    (atoms_path / 'seq').mkdir(exist_ok=True)
+    (atoms_path / 'positions').mkdir(exist_ok=True)
 
     print("Searching for structure files in: ", input_path)
     structure_files = dict()
-    # todo optimization use input_path.glob once!
     for pattern in STRUCTURE_FILES_PATTERNS:
-        pattern_structures = np.array(list(input_path.glob("**/*" + pattern)))
-        pattern_ids = np.array([x.name[:-len(pattern)] for x in pattern_structures])
-        if len(pattern_structures) == 0:
+        pattern_structure_files = np.array(list(input_path.glob("**/*" + pattern)))
+        pattern_structure_ids = np.array([x.name[:-len(pattern)] for x in pattern_structure_files])
+        if len(pattern_structure_files) == 0:
             continue
-
-        _, index = np.unique(pattern_ids, return_index=True)
-        pattern_structures = pattern_structures[index]
-        pattern_ids = pattern_ids[index]
-        print("Found", len(pattern_structures), pattern, "files")
-
-        structure_files.update(zip(pattern_ids, pattern_structures))
+        print("Found", len(pattern_structure_files), pattern, "files")
+        structure_files.update(zip(pattern_structure_ids, pattern_structure_files))
 
     if len(structure_files) == 0:
         print("No structure files found")
         return
 
     if not overwrite:
-        existing_positions = set([x.name[:-4] for x in (atoms_path / 'positions').glob("**/*.bin")])
-        print("Found ", len(existing_positions), " already processed structures")
+        existing_structures = set([x.name[:-4] for x in (atoms_path / 'positions').glob("**/*.bin")])
+        print("Found ", len(existing_structures), " already processed structures")
         existing_counter = 0
         for id in list(structure_files.keys()):
-            if id in existing_positions:
+            if id in existing_structures:
                 structure_files.pop(id)
                 existing_counter += 1
         print("Found ", existing_counter, " duplicated IDs")
