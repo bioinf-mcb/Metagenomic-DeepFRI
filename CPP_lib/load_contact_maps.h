@@ -63,7 +63,7 @@ static std::vector<std::pair<int, int>>* LoadSparseContactMap(const std::string&
   std::tie(chain_length, group_indexes, atoms_positions) = LoadAtomsFile(file_path);
 
   // fill up vector with sparse atom contacts
-  std::vector<std::pair<int, int>>* sparse_contacts = new std::vector<std::pair<int, int>>();
+  auto* sparse_contacts = new std::vector<std::pair<int, int>>();
   sparse_contacts->reserve(chain_length * 10);
 
   for (int group_a = 0; group_a < chain_length; ++group_a) {
