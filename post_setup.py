@@ -14,7 +14,7 @@ def main():
     QUERY_PATH.mkdir(exist_ok=True, parents=True)
     FINISHED_PATH.mkdir(exist_ok=True, parents=True)
 
-    if not (DATA_ROOT / "trained_models/model_config.json").exists():
+    if not DEEPFRI_MODEL_WEIGHTS_JSON_PATH.exists():
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
 
         if not pathlib.Path("newest_trained_models.tar.gz").exists():

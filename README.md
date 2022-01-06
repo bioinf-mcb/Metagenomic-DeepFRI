@@ -21,11 +21,11 @@
     ```
     sudo apt-get install libboost-numpy1.71 libboost-python1.71
    ```
-4. Edit `CONFIG.py` to set up your folder structure
+4. Edit `CONFIG.py` to customize your folder structure (optional)
    ```
    nano CONFIG.py
    ```
-5. Run `post_setup.py` script to create folder structure and to download DeepFRI model weights
+5. Run `post_setup.py` script to create folder structure according to `CONFIG.py` and to download DeepFRI model weights
    ```
    python post_setup.py
    ```
@@ -34,7 +34,7 @@
    ```
    mkdir /DATA_ROOT
    ```
-2. Run docker, `-u $(id -u):$(id -g)` is used to make sure all files created by container are accessible for users
+2. Docker run! `-u $(id -u):$(id -g)` is used to make sure all files created by container are accessible for users
    ```
    docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data soliareofastora/metagenomic-deepfri
    ```
@@ -64,7 +64,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 ## Running experiments
 
 1. Upload `.faa` files into `QUERY_PATH`
-2. Run `python3 main_pipeline.py`
+2. Run `python3 main.py`
 4. Collect results from `FINISHED_PATH`
 
 ## Useful docker commands

@@ -16,3 +16,4 @@ WORK_PATH = DATA_ROOT / "workspace"
 
 TARGET_DB_NAME = "targetDB"
 DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL = "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz"
+DEEPFRI_MODEL_WEIGHTS_JSON_PATH = DATA_ROOT / "trained_models/model_config.json"

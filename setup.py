@@ -7,8 +7,8 @@ setup(
     description="Pipeline for searching and aligning contact maps for proteins",
     author="Piotr Kucharski",
     author_email="soliareofastorauj@gmail.com",
-    url="https://github.com/bioinf-mcb/metagenomic-deepFRI",
-    download_url="https://github.com/bioinf-mcb/metagenomic-deepFRI",
+    url="https://github.com/SoliareofAstora/Metagenomic-DeepFRI",
+    download_url="https://github.com/SoliareofAstora/Metagenomic-DeepFRI",
     license="GNU GPLv3",
     install_requires=[
         "biopython==1.79",
