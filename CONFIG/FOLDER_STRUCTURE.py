@@ -1,8 +1,5 @@
 import pathlib
 
-MAX_CHAIN_LENGTH = 2500
-ANGSTROM_CONTACT_THRESHOLD = 6
-
 # user's folder structure
 DATA_ROOT = pathlib.Path("/data")
 STRUCTURE_FILES_PATH = DATA_ROOT / "structure_files"

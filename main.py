@@ -1,8 +1,8 @@
 import shutil
-import time
 
-from CONFIG import *
+from CONFIG.FOLDER_STRUCTURE import *
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
+from utils.utils import create_unix_time_folder
 
 if __name__ == '__main__':
     if not DEEPFRI_MODEL_WEIGHTS_JSON_PATH.exists():
@@ -15,17 +15,12 @@ if __name__ == '__main__':
         exit(0)
     print("Query files found: ", query_faa_files)
 
+    # todo fancier way of selecting target database
     target_database_path = sorted(list(MMSEQS_DATABASES_PATH.iterdir()))[-1]
     target_db = target_database_path / TARGET_DB_NAME
     print("Target database: ", target_database_path)
 
-    work_start = str(time.time())
-    work_path = (WORK_PATH / work_start)
-    while work_path.exists():
-        time.sleep(1)
-        work_start = str(time.time())
-        work_path = (WORK_PATH / work_start)
-    work_path.mkdir(parents=True)
+    work_path = create_unix_time_folder(WORK_PATH)
     print("Work path: ", work_path)
 
     query_file = work_path / 'merged_query_sequences.faa'

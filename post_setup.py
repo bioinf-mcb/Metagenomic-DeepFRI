@@ -1,4 +1,4 @@
-from CONFIG import *
+from CONFIG.FOLDER_STRUCTURE import *
 from utils.utils import run_command
 from utils.utils import download_file
 

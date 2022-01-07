@@ -21,9 +21,9 @@
     ```
     sudo apt-get install libboost-numpy1.71 libboost-python1.71
    ```
-4. Edit `CONFIG.py` to customize your folder structure (optional)
+4. (optional) Edit `CONFIG/FOLDER_STRUCTURE.py` to customize your folder structure 
    ```
-   nano CONFIG.py
+   nano CONFIG/FOLDER_STRUCTURE.py
    ```
 5. Run `post_setup.py` script to create folder structure according to `CONFIG.py` and to download DeepFRI model weights
    ```

@@ -4,7 +4,8 @@ import shutil
 from Bio import SeqIO
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG import *
+from CONFIG.FOLDER_STRUCTURE import *
+from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD
 from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
 from utils.run_mmseqs_search import run_mmseqs_search

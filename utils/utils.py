@@ -1,7 +1,9 @@
 import os
+import pathlib
 import requests
 import shutil
 import subprocess
+import time
 
 ENV_PATHS = set()
 
@@ -41,3 +43,15 @@ def download_file(url, path):
 
 def create_chunks(lst, n):
     return [lst[i::n] for i in range(n)]
+
+
+def create_unix_time_folder(parent_path):
+    parent_path = pathlib.Path(parent_path)
+    start = str(time.time())
+    path = (parent_path / start)
+    while path.exists():
+        time.sleep(1)
+        start = str(time.time())
+        path = (parent_path / start)
+    path.mkdir(parents=True)
+    return path

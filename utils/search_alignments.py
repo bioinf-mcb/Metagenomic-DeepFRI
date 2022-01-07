@@ -5,6 +5,7 @@ import pathos
 
 from Bio import pairwise2
 
+from CONFIG.RUNTIME_PARAMETERS import *
 from utils.seq_file_loader import SeqFileLoader
 
 
@@ -30,7 +31,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     queries = list(map(lambda x: query_seqs[x], mmseqs_search_output["query"]))
     targets = list(map(lambda x: target_seqs[x], mmseqs_search_output["target"]))
 
-    with pathos.multiprocessing.ProcessingPool(processes=pathos.multiprocessing.cpu_count()) as p:
+    with pathos.multiprocessing.ProcessingPool(processes=CPU_COUNT) as p:
         alignments = p.map(align, queries, targets)
 
     query_alignments = dict()
