@@ -1,5 +1,4 @@
 import tempfile
-
 from utils.utils import run_command
 
 MMSEQS_COLUMN_NAMES = ["query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start",

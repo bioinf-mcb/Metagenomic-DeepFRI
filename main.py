@@ -1,6 +1,9 @@
 import shutil
 
-from CONFIG.FOLDER_STRUCTURE import *
+from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, MMSEQS_DATABASES_PATH, TARGET_DB_NAME, WORK_PATH, FINISHED_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_PATH
+from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATED_CONTACTS
+
+
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
 from utils.utils import create_unix_time_folder
 
@@ -30,4 +33,12 @@ if __name__ == '__main__':
                 shutil.copyfileobj(reader, writer)
             # todo remove query_file
 
-    metagenomic_deepfri_pipeline(query_file, target_db, work_path)
+    metagenomic_deepfri_pipeline(query_file, target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATED_CONTACTS)
+    print("Finished! Saving output files to ", FINISHED_PATH / work_path.name)
+    (FINISHED_PATH / work_path.name).mkdir(parents=True, exist_ok=True)
+    shutil.copy(query_file, FINISHED_PATH / work_path.name)
+    if (work_path / "result_gcn.csv").exists():
+        shutil.copy(work_path / "result_gcn.csv", FINISHED_PATH / work_path.name)
+    if (work_path / "result_cnn.csv").exists():
+        shutil.copy(work_path / "result_cnn.csv", FINISHED_PATH / work_path.name)
+    shutil.rmtree(work_path)

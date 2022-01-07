@@ -4,7 +4,7 @@ from utils.utils import download_file
 
 
 def main():
-    print("Creating folders structure based on CONFIG.py")
+    print("Creating folders structure based on CONFIG/FOLDER_STRUCTURE.py")
     DATA_ROOT.mkdir(exist_ok=True, parents=True)
     STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
     SEQ_ATOMS_DATASET_PATH.mkdir(exist_ok=True, parents=True)

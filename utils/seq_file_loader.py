@@ -1,6 +1,6 @@
 import pathlib
-
 from Bio import SeqIO
+from CONFIG.FOLDER_STRUCTURE import SEQUENCES
 
 
 class SeqFileLoader:
@@ -8,6 +8,6 @@ class SeqFileLoader:
         self.path = pathlib.Path(path)
 
     def __getitem__(self, protein_id):
-        with open(self.path / "seq" / protein_id, "r") as f:
+        with open(self.path / SEQUENCES / protein_id, "r") as f:
             sequence = SeqIO.parse(f, "fasta").seq
         return sequence
