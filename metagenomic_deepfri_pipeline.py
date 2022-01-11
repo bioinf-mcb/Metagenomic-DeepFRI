@@ -55,7 +55,7 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
                                                              generated_contact)
                 gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
 
-            gcn.export_csv(work_path / f"gcn_{mode}.csv", verbose=False)
+            gcn.export_csv(work_path / f"results_gcn_{mode}.csv", verbose=False)
             del gcn
 
         if len(unaligned_queries) > 0:
@@ -64,5 +64,5 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
             for query_id in unaligned_queries:
                 cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-            cnn.export_csv(work_path / f"cnn_{mode}.csv", verbose=False)
+            cnn.export_csv(work_path / f"results_cnn_{mode}.csv", verbose=False)
             del cnn
