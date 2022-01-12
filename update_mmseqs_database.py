@@ -36,8 +36,8 @@ def parse_args():
 
 def parse_structure_file(structure_file, save_path):
     file_id = structure_file.name
-    sequence_path = save_path / SEQUENCES / (file_id + ".faa")
-    atoms_path = save_path / ATOMS / (file_id + ".bin")
+    sequence_path = pathlib.Path(save_path) / SEQUENCES / (file_id + ".faa")
+    atoms_path = pathlib.Path(save_path) / ATOMS / (file_id + ".bin")
 
     try:
         if file_id.endswith('.pdb'):
@@ -74,8 +74,8 @@ def parse_structure_file(structure_file, save_path):
             return
 
         if len(groups) > MAX_CHAIN_LENGTH:
-            print(f"Protein chains with more than {MAX_CHAIN_LENGTH} are truncated. {str(structure_file)}\n"
-                  f"Change CONFIG/RUNTIME_PARAMETERS.py :MAX_CHAIN_LENGTH and rerun this script with --overwrite to apply process this file again")
+            # print(f"Protein chains with more than {MAX_CHAIN_LENGTH} are truncated. {str(structure_file)}\n"
+            #       f"Change CONFIG/RUNTIME_PARAMETERS.py :MAX_CHAIN_LENGTH and rerun this script with --overwrite to apply process this file again")
             group_indexes = groups[:MAX_CHAIN_LENGTH]
             group_indexes = np.append(group_indexes, groups[MAX_CHAIN_LENGTH]).astype(np.int32)
         else:
@@ -84,7 +84,7 @@ def parse_structure_file(structure_file, save_path):
         sequence = ''.join([PROTEIN_LETTERS[atom_amino_group[i]] for i in group_indexes[:-1]])
         with open(sequence_path, "w") as f:
             f.write(">" + file_id + "\n" + sequence + "\n")
-        save_atoms(positions, group_indexes, atoms_path)
+        save_atoms(positions, group_indexes, str(atoms_path))
 
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))

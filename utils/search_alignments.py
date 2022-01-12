@@ -17,7 +17,7 @@ def align(query_seq, target_seq):
         if alignment.score > best_score:
             best_score = alignment.score
             best_alignment = alignment
-
+    # save identity score of output
     if best_alignment is not None:
         return best_alignment
     return None
