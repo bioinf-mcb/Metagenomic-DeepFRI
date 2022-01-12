@@ -9,5 +9,5 @@ class SeqFileLoader:
 
     def __getitem__(self, protein_id):
         with open(self.path / SEQUENCES / (protein_id + ".faa"), "r") as f:
-            sequence = SeqIO.parse(f, "fasta").seq
+            sequence = SeqIO.read(f, "fasta").seq
         return sequence

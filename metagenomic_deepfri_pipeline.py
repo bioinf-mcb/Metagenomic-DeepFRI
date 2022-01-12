@@ -3,7 +3,7 @@ import json
 from Bio import SeqIO
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_PATH
+from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_PATH, ATOMS
 
 from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
@@ -48,7 +48,7 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
                 query_seq = query_seqs[query_id]
                 target_id = alignment["target_id"]
 
-                query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / "positions" / (target_id + ".bin")),
+                query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
                                                              contact_threshold,
                                                              alignment["alignment"].seqA,
                                                              alignment["alignment"].seqB,

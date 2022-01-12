@@ -36,8 +36,6 @@ def parse_args():
 
 def parse_structure_file(structure_file, save_path):
     file_id = structure_file.name
-    sequence_path = pathlib.Path(save_path) / SEQUENCES / (file_id + ".faa")
-    atoms_path = pathlib.Path(save_path) / ATOMS / (file_id + ".bin")
 
     try:
         if file_id.endswith('.pdb'):
@@ -64,6 +62,9 @@ def parse_structure_file(structure_file, save_path):
         print("EXCEPTION WHILE READING FILE ", str(structure_file))
         logging.error(traceback.format_exc())
         return
+
+    sequence_path = pathlib.Path(save_path) / SEQUENCES / (file_id + ".faa")
+    atoms_path = pathlib.Path(save_path) / ATOMS / (file_id + ".bin")
 
     try:
         _, groups = np.unique(groups, return_index=True)
