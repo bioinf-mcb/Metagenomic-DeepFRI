@@ -2,8 +2,8 @@ import argparse
 import gzip
 import logging
 import multiprocessing
-import os
 import pathlib
+import shutil
 import traceback
 
 from itertools import repeat
@@ -131,8 +131,12 @@ def main(input_path, atoms_path, db_path, overwrite):
     with multiprocessing.Pool(processes=CPU_COUNT) as p:
         p.starmap(parse_structure_file, zip(structure_files.values(), repeat(save_path)))
 
-    print("Merging sequence files for mmseqs2")
-    os.system(f"cat {atoms_path / SEQUENCES}/* > {atoms_path / 'merged_sequences.faa'}")
+    sequence_files = list((atoms_path / SEQUENCES).glob("**/*.faa"))
+    print("Merging " + str(len(sequence_files)) + " sequence files for mmseqs2")
+    with open(atoms_path / 'merged_sequences.faa', 'wb') as writer:
+        for seq_file in sequence_files:
+            with open(seq_file, 'rb') as reader:
+                shutil.copyfileobj(reader, writer)
 
     mmseqs2_path = create_unix_time_folder(db_path)
     print("Creating new mmseqs2 database " + str(mmseqs2_path))
