@@ -15,7 +15,7 @@ from utils.seq_file_loader import SeqFileLoader
 
 
 def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_threshold, generated_contact):
-    elapsed_time_handler = ElapsedTimeHandler(work_path / "metadata_runtime.txt")
+    elapsed_time_handler = ElapsedTimeHandler(work_path / "metadata_runtime.csv")
 
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, work_path)
     elapsed_time_handler.log("mmseqs2")
@@ -65,7 +65,7 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
 
             gcn.export_csv(work_path / f"results_gcn_{mode}.csv", verbose=False)
             del gcn
-            elapsed_time_handler.log(f"DeepFri_GCN_{mode}")
+            elapsed_time_handler.log(f"deepfri_gcn_{mode}")
 
         if len(unaligned_queries) > 0:
             cnn_params = models_config["cnn"]["models"][mode]
@@ -75,4 +75,4 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
 
             cnn.export_csv(work_path / f"results_cnn_{mode}.csv", verbose=False)
             del cnn
-            elapsed_time_handler.log(f"DeepFri_CNN_{mode}")
+            elapsed_time_handler.log(f"deepfri_cnn_{mode}")
