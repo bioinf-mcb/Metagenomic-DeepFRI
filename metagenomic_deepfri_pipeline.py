@@ -39,7 +39,6 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     if len(unaligned_queries) > 0:
         print(f"Using CNN for {len(unaligned_queries)} proteins")
     initialize_cpp_lib()
-    elapsed_time_handler.reset()
 
     # mf = molecular_function
     # bp = biological_process
@@ -47,40 +46,38 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     # ec = enzyme_commission
     # ['mf', 'bp', 'cc', 'ec']
     for mode in ['mf', 'bp', 'cc', 'ec']:
+        elapsed_time_handler.reset()
+        
         print("Processing mode: ", mode)
         if len(alignments) > 0:
             output_file = work_path / f"results_gcn_{mode}.csv"
-            if output_file.exists():
-                continue
+            if not output_file.exists():
+                gcn_params = models_config["gcn"]["models"][mode]
+                gcn = Predictor.Predictor(gcn_params, gcn=True)
+                for query_id in alignments.keys():
+                    alignment = alignments[query_id]
+                    query_seq = query_seqs[query_id]
+                    target_id = alignment["target_id"]
 
-            gcn_params = models_config["gcn"]["models"][mode]
-            gcn = Predictor.Predictor(gcn_params, gcn=True)
-            for query_id in alignments.keys():
-                alignment = alignments[query_id]
-                query_seq = query_seqs[query_id]
-                target_id = alignment["target_id"]
+                    query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
+                                                                 contact_threshold,
+                                                                 alignment["alignment"].seqA,
+                                                                 alignment["alignment"].seqB,
+                                                                 generated_contact)
+                    gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
 
-                query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
-                                                             contact_threshold,
-                                                             alignment["alignment"].seqA,
-                                                             alignment["alignment"].seqB,
-                                                             generated_contact)
-                gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
-
-            gcn.export_csv(output_file, verbose=False)
-            del gcn
-            elapsed_time_handler.log(f"deepfri_gcn_{mode}")
+                gcn.export_csv(output_file, verbose=False)
+                del gcn
+                elapsed_time_handler.log(f"deepfri_gcn_{mode}")
 
         if len(unaligned_queries) > 0:
             output_file = work_path / f"results_cnn_{mode}.csv"
-            if output_file.exists():
-                continue
+            if not output_file.exists():
+                cnn_params = models_config["cnn"]["models"][mode]
+                cnn = Predictor.Predictor(cnn_params, gcn=False)
+                for query_id in unaligned_queries:
+                    cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-            cnn_params = models_config["cnn"]["models"][mode]
-            cnn = Predictor.Predictor(cnn_params, gcn=False)
-            for query_id in unaligned_queries:
-                cnn.predict_from_sequence(query_seqs[query_id], query_id)
-
-            cnn.export_csv(output_file, verbose=False)
-            del cnn
-            elapsed_time_handler.log(f"deepfri_cnn_{mode}")
+                cnn.export_csv(output_file, verbose=False)
+                del cnn
+                elapsed_time_handler.log(f"deepfri_cnn_{mode}")
