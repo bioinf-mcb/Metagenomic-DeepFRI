@@ -32,7 +32,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     # format of output JSON file:
     # alignments = dict[query_id]
     #     "target_id": target_id,
-    #     "identity" : alignment_sequence_identity(alignment)
+    #     "sequence_identity" : alignment_sequence_identity(alignment)
     #     "alignment": alignment = biopython.alignment
     #         seqA = query_sequence
     #         seqB = target_sequence
@@ -56,11 +56,11 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
         target_id = mmseqs_search_output["target"].iloc[i]
 
         if query_id not in query_alignments.keys():
-            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment, "identity": alignment_sequences_identity(alignment)}
+            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment, "sequence_identity": alignment_sequences_identity(alignment)}
             continue
 
         if alignment.score > query_alignments[query_id]["alignment"].score:
-            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment, "identity": alignment_sequences_identity(alignment)}
+            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment, "sequence_identity": alignment_sequences_identity(alignment)}
 
     json.dump(query_alignments, open(json_file, "w"),  indent=4, sort_keys=True)
     return query_alignments
