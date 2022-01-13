@@ -7,8 +7,10 @@ class ElapsedTimeHandler(object):
         self.start = time.time()
 
     def log(self, name):
+        text = f"{name},{time.time() - self.start}\n"
+        print(text[:-1])    # omitting newline
         with open(self.path, "a") as f:
-            f.write(f"{name},{time.time() - self.start}\n")
+            f.write(text)
         self.reset()
 
     def reset(self):

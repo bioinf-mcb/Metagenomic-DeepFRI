@@ -49,6 +49,10 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     for mode in ['mf', 'bp', 'cc', 'ec']:
         print("Processing mode: ", mode)
         if len(alignments) > 0:
+            output_file = work_path / f"results_gcn_{mode}.csv"
+            if output_file.exists():
+                continue
+
             gcn_params = models_config["gcn"]["models"][mode]
             gcn = Predictor.Predictor(gcn_params, gcn=True)
             for query_id in alignments.keys():
@@ -63,16 +67,20 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
                                                              generated_contact)
                 gcn.predict_with_cmap(query_seq, query_contact_map, query_id)
 
-            gcn.export_csv(work_path / f"results_gcn_{mode}.csv", verbose=False)
+            gcn.export_csv(output_file, verbose=False)
             del gcn
             elapsed_time_handler.log(f"deepfri_gcn_{mode}")
 
         if len(unaligned_queries) > 0:
+            output_file = work_path / f"results_cnn_{mode}.csv"
+            if output_file.exists():
+                continue
+
             cnn_params = models_config["cnn"]["models"][mode]
             cnn = Predictor.Predictor(cnn_params, gcn=False)
             for query_id in unaligned_queries:
                 cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-            cnn.export_csv(work_path / f"results_cnn_{mode}.csv", verbose=False)
+            cnn.export_csv(output_file, verbose=False)
             del cnn
             elapsed_time_handler.log(f"deepfri_cnn_{mode}")
