@@ -38,7 +38,10 @@ if __name__ == '__main__':
     finished_path = FINISHED_PATH / work_path.name
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True, exist_ok=True)
-    shutil.copy(query_file, finished_path)
+    os.system(f"cp {query_file} {finished_path}")
     os.system(f"cp {work_path}/results* {finished_path}")
+    os.system(f"cp {work_path}/alignments.json {finished_path}")
+    os.system(f"cp {work_path}/search_resultDB.m8 {finished_path}")
+    os.system(f"cp {work_path}/metadata* {finished_path}")
 
     shutil.rmtree(work_path)
