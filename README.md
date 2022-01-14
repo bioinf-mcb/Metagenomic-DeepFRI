@@ -1,7 +1,7 @@
 # Metagenomic-DeepFRI
 
 ## About The Project
-
+Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.
 ### Built With
 
 * [DeepFRI](https://github.com/flatironinstitute/DeepFRI)
