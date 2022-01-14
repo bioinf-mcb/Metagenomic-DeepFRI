@@ -26,7 +26,6 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     elapsed_time_handler.log("mmseqs2")
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    elapsed_time_handler.reset()
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, work_path)
     elapsed_time_handler.log("alignments")
     unaligned_queries = query_seqs.keys() - alignments.keys()
