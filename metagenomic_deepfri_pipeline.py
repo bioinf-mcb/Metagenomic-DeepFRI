@@ -3,7 +3,7 @@ import json
 from Bio import SeqIO
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_PATH, ATOMS
+from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS
 
 from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
@@ -30,8 +30,8 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     elapsed_time_handler.log("alignments")
     unaligned_queries = query_seqs.keys() - alignments.keys()
 
-    with open(DEEPFRI_MODEL_WEIGHTS_JSON_PATH) as json_file:
-        json_string = json_file.read().replace("./trained_models", f"{DEEPFRI_MODEL_WEIGHTS_JSON_PATH.parent}")
+    with open(DEEPFRI_MODEL_WEIGHTS_JSON_FILE) as json_file:
+        json_string = json_file.read().replace("./trained_models", f"{DEEPFRI_MODEL_WEIGHTS_JSON_FILE.parent}")
         models_config = json.loads(json_string)
 
     if len(alignments) > 0:

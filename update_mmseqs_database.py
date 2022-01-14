@@ -19,7 +19,7 @@ from utils.structure_files_parsers.parse_mmcif import parse_mmcif
 from utils.structure_files_parsers.parse_pdb import parse_pdb
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
-from utils.utils import create_unix_time_folder
+from utils.utils import create_unix_time_folder, merge_files_binary
 
 
 def parse_args():
@@ -35,23 +35,23 @@ def parse_args():
 
 
 def parse_structure_file(structure_file, save_path):
-    file_id = structure_file.name
+    protein_id = structure_file.name
 
     try:
-        if file_id.endswith('.pdb'):
-            file_id = file_id.replace('.pdb', '')
+        if protein_id.endswith('.pdb'):
+            protein_id = protein_id.replace('.pdb', '')
             with open(structure_file, 'r') as f:
                 atom_amino_group, positions, groups = parse_pdb(f)
-        elif file_id.endswith('.pdb.gz'):
-            file_id = file_id.replace('.pdb.gz', '')
+        elif protein_id.endswith('.pdb.gz'):
+            protein_id = protein_id.replace('.pdb.gz', '')
             with gzip.open(structure_file, 'rt') as f:
                 atom_amino_group, positions, groups = parse_pdb(f)
-        elif file_id.endswith('.cif'):
-            file_id = file_id.replace('.cif', '')
+        elif protein_id.endswith('.cif'):
+            protein_id = protein_id.replace('.cif', '')
             with open(structure_file, 'r') as f:
                 atom_amino_group, positions, groups = parse_mmcif(f)
-        elif file_id.endswith('.cif.gz'):
-            file_id = file_id.replace('.cif.gz', '')
+        elif protein_id.endswith('.cif.gz'):
+            protein_id = protein_id.replace('.cif.gz', '')
             with gzip.open(structure_file, 'rt') as f:
                 atom_amino_group, positions, groups = parse_mmcif(f)
         else:
@@ -63,8 +63,8 @@ def parse_structure_file(structure_file, save_path):
         logging.error(traceback.format_exc())
         return
 
-    sequence_path = pathlib.Path(save_path) / SEQUENCES / (file_id + ".faa")
-    atoms_path = pathlib.Path(save_path) / ATOMS / (file_id + ".bin")
+    sequence_path = pathlib.Path(save_path) / SEQUENCES / (protein_id + ".faa")
+    atoms_path = pathlib.Path(save_path) / ATOMS / (protein_id + ".bin")
 
     try:
         _, groups = np.unique(groups, return_index=True)
@@ -84,7 +84,7 @@ def parse_structure_file(structure_file, save_path):
 
         sequence = ''.join([PROTEIN_LETTERS[atom_amino_group[i]] for i in group_indexes[:-1]])
         with open(sequence_path, "w") as f:
-            f.write(">" + file_id + "\n" + sequence + "\n")
+            f.write(F">{protein_id}\n{sequence}\n")
         save_atoms(positions, group_indexes, str(atoms_path))
 
     except Exception:
@@ -120,9 +120,9 @@ def main(input_path, atoms_path, db_path, overwrite):
         existing_structures = set([x.name[:-4] for x in (atoms_path / ATOMS).glob("**/*.bin")])
         print("Found ", len(existing_structures), " already processed structures")
         duplicated_ids_counter = 0
-        for id in list(structure_files.keys()):
-            if id in existing_structures:
-                structure_files.pop(id)
+        for structure_id in list(structure_files.keys()):
+            if structure_id in existing_structures:
+                structure_files.pop(structure_id)
                 duplicated_ids_counter += 1
         print("Found ", duplicated_ids_counter, " duplicated IDs")
 
@@ -133,10 +133,7 @@ def main(input_path, atoms_path, db_path, overwrite):
 
     sequence_files = list((atoms_path / SEQUENCES).glob("**/*.faa"))
     print("Merging " + str(len(sequence_files)) + " sequence files for mmseqs2")
-    with open(atoms_path / 'merged_sequences.faa', 'wb') as writer:
-        for seq_file in sequence_files:
-            with open(seq_file, 'rb') as reader:
-                shutil.copyfileobj(reader, writer)
+    merge_files_binary(sequence_files, atoms_path / 'merged_sequences.faa')
 
     mmseqs2_path = create_unix_time_folder(db_path)
     print("Creating new mmseqs2 database " + str(mmseqs2_path))

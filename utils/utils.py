@@ -55,3 +55,10 @@ def create_unix_time_folder(parent_path):
         path = (parent_path / start)
     path.mkdir(parents=True)
     return path
+
+
+def merge_files_binary(file_paths: list, output_path: pathlib.Path):
+    with open(output_path, 'wb') as writer:
+        for input_file in file_paths:
+            with open(input_file, 'rb') as reader:
+                shutil.copyfileobj(reader, writer)
