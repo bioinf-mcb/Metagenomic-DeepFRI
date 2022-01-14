@@ -6,7 +6,7 @@ from utils.mmseqs_utils import *
 def run_mmseqs_search(query_file, target_db, work_path):
     query_db = work_path / 'queryDB'
     result_db = work_path / 'search_resultDB'
-    output_file = result_db.with_suffix('.m8')
+    output_file = work_path / 'mmseqs2_search_results.m8'
 
     if not output_file.exists():
         mmseqs_createdb(query_file, query_db)

@@ -2,7 +2,7 @@ import os
 import shutil
 
 from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, MMSEQS_DATABASES_PATH, TARGET_DB_NAME, WORK_PATH, FINISHED_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_PATH
-from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATED_CONTACTS
+from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS
 
 
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
@@ -34,14 +34,14 @@ if __name__ == '__main__':
                 shutil.copyfileobj(reader, writer)
             # todo remove query_file
 
-    metagenomic_deepfri_pipeline(query_file, target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATED_CONTACTS)
+    metagenomic_deepfri_pipeline(query_file, target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
     finished_path = FINISHED_PATH / work_path.name
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True, exist_ok=True)
     os.system(f"cp {query_file} {finished_path}")
     os.system(f"cp {work_path}/results* {finished_path}")
     os.system(f"cp {work_path}/alignments.json {finished_path}")
-    os.system(f"cp {work_path}/search_resultDB.m8 {finished_path}")
+    os.system(f"cp {work_path}/mmseqs2_search_results.m8 {finished_path}")
     os.system(f"cp {work_path}/metadata* {finished_path}")
 
     shutil.rmtree(work_path)

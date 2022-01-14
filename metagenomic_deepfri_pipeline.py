@@ -15,14 +15,15 @@ from utils.seq_file_loader import SeqFileLoader
 
 
 def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_threshold, generated_contact):
+    with open(query_file, "r") as f:
+        query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
+    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
+    print(f"\nRunning metagenomic_deepfri_pipeline for {len(query_seqs)} sequences\n")
+
     elapsed_time_handler = ElapsedTimeHandler(work_path / "metadata_runtime.csv")
 
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, work_path)
     elapsed_time_handler.log("mmseqs2")
-
-    with open(query_file, "r") as f:
-        query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
-    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
     elapsed_time_handler.reset()
@@ -47,7 +48,7 @@ def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_thres
     # ['mf', 'bp', 'cc', 'ec']
     for mode in ['mf', 'bp', 'cc', 'ec']:
         elapsed_time_handler.reset()
-        
+
         print("Processing mode: ", mode)
         if len(alignments) > 0:
             output_file = work_path / f"results_gcn_{mode}.csv"
