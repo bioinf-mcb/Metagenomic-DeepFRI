@@ -4,11 +4,11 @@ from setuptools import setup
 setup(
     name="metagenomic-deepFRI",
     version="0.1",
-    description="Pipeline for searching and aligning contact maps for proteins",
+    description="Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
     author="Piotr Kucharski",
     author_email="soliareofastorauj@gmail.com",
-    url="https://github.com/SoliareofAstora/Metagenomic-DeepFRI",
-    download_url="https://github.com/SoliareofAstora/Metagenomic-DeepFRI",
+    url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
+    download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     license="GNU GPLv3",
     install_requires=[
         "biopython==1.79",

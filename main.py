@@ -8,7 +8,8 @@ from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTA
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
 from utils.utils import create_unix_time_folder, merge_files_binary
 
-if __name__ == '__main__':
+
+def main():
     if not DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists():
         print("Please run post_setup.py script to download and unzip model weights")
         exit(1)
@@ -18,7 +19,9 @@ if __name__ == '__main__':
     if len(query_faa_files) == 0:
         print(f"No protein sequences files found in {QUERY_PATH}. Terminating")
         exit(0)
-    print("Query files to be processed: ", query_faa_files)
+    print(f"Query files to be processed: {len(query_faa_files)}")
+    for file in query_faa_files:
+        print(f"\t{file}")
 
     # todo fancier way of selecting target database. target databases named with letters will have priority
     target_database_path = sorted(list(MMSEQS_DATABASES_PATH.iterdir()))[-1]
@@ -30,7 +33,7 @@ if __name__ == '__main__':
 
     query_file = work_path / 'merged_query_sequences.faa'
     merge_files_binary(query_faa_files, query_file)
-    # todo remove query_faa_files from QUERY_PATH so they dont get processed again
+    # todo remove query_faa_files from QUERY_PATH so they don't get processed again later
 
     metagenomic_deepfri_pipeline(query_file, target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
     finished_path = FINISHED_PATH / work_path.name
@@ -43,3 +46,7 @@ if __name__ == '__main__':
     os.system(f"cp {work_path}/metadata* {finished_path}")
 
     shutil.rmtree(work_path)
+
+
+if __name__ == '__main__':
+    main()

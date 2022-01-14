@@ -3,7 +3,6 @@ import gzip
 import logging
 import multiprocessing
 import pathlib
-import shutil
 import traceback
 
 from itertools import repeat
