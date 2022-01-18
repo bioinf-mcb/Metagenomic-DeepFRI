@@ -35,7 +35,7 @@ def main():
     merge_files_binary(query_faa_files, query_file)
     # todo remove query_faa_files from QUERY_PATH so they don't get processed again later
 
-    metagenomic_deepfri_pipeline(query_file, target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
+    metagenomic_deepfri_pipeline(target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
     finished_path = FINISHED_PATH / work_path.name
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True, exist_ok=True)

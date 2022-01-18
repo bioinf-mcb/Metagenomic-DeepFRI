@@ -35,6 +35,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     #         score = biopython alignment score
     #         start and end of alignment
 
+    # todo test if loading data from json works
     json_file = work_path / "alignments.json"
     if json_file.exists():
         return json.load(open(json_file, "r"))

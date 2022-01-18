@@ -14,7 +14,8 @@ from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
 
-def metagenomic_deepfri_pipeline(query_file, target_db, work_path, contact_threshold, generated_contact):
+def metagenomic_deepfri_pipeline(target_db, work_path, contact_threshold, generated_contact):
+    query_file = list(work_path.glob("**/*.faa"))[0]
     with open(query_file, "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
     target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
