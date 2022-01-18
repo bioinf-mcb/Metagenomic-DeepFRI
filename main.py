@@ -39,7 +39,7 @@ def main():
     finished_path = FINISHED_PATH / work_path.name
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True, exist_ok=True)
-    os.system(f"cp {query_file} {finished_path}")
+    os.system(f"cp {work_path}/*.faa {finished_path}")
     os.system(f"cp {work_path}/results* {finished_path}")
     os.system(f"cp {work_path}/alignments.json {finished_path}")
     os.system(f"cp {work_path}/mmseqs2_search_results.m8 {finished_path}")
