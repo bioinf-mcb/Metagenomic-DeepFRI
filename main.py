@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import shutil
+import time
 
 from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, MMSEQS_DATABASES_PATH, TARGET_DB_NAME, WORK_PATH, FINISHED_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE
 from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS, CPU_COUNT
@@ -29,6 +30,7 @@ def job(work_path):
 
 
 def main():
+    start = time.time()
     if not DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists():
         print("Please run post_setup.py script to download and unzip model weights")
         exit(1)
@@ -52,6 +54,7 @@ def main():
 
     with multiprocessing.Pool(min(len(query_faa_files), CPU_COUNT)) as p:
         p.map(job, work_paths)
+    print(f"total runtime,{(time.time() - start):.10f}\n")
 
 
 if __name__ == '__main__':
