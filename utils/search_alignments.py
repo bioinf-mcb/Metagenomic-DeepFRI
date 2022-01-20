@@ -54,15 +54,16 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
         alignment = alignments[i]
         query_id = filtered_mmseqs_search["query"].iloc[i]
         target_id = filtered_mmseqs_search["target"].iloc[i]
+        sequence_identity = alignment_sequences_identity(alignment)
+        if sequence_identity > ALIGNMENT_MIN_SEQUENCE_IDENTITY:
+            if query_id not in query_alignments.keys():
+                query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
+                                              "sequence_identity": sequence_identity}
+                continue
 
-        if query_id not in query_alignments.keys():
-            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
-                                          "sequence_identity": alignment_sequences_identity(alignment)}
-            continue
-
-        if alignment.score > query_alignments[query_id]["alignment"].score:
-            query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
-                                          "sequence_identity": alignment_sequences_identity(alignment)}
+            if alignment.score > query_alignments[query_id]["alignment"].score:
+                query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
+                                              "sequence_identity": sequence_identity}
 
     json.dump(query_alignments, open(json_file, "w"), indent=4, sort_keys=True)
     return query_alignments
