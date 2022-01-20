@@ -36,8 +36,8 @@ def parse_structure_file(structure_file, save_path):
 
     try:
         for pattern in STRUCTURE_FILES_PARSERS.keys():
-            if structure_file.endswith(pattern):
-                if structure_file.endswith('.gz'):
+            if protein_id.endswith(pattern):
+                if protein_id.endswith('.gz'):
                     with gzip.open(structure_file, 'rt') as f:
                         atom_amino_group, positions, groups = STRUCTURE_FILES_PARSERS[pattern](f)
                 else:

@@ -1,6 +1,7 @@
 from Bio import SeqUtils
 
-from utils.structure_files_parsers import parse_pdb, parse_mmcif
+from utils.structure_files_parsers.parse_pdb import parse_pdb
+from utils.structure_files_parsers.parse_mmcif import parse_mmcif
 
 PROTEIN_LETTERS = dict()
 for k, v in SeqUtils.IUPACData.protein_letters_3to1_extended.items():
