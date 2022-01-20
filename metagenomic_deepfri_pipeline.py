@@ -3,7 +3,8 @@ import json
 from Bio import SeqIO
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS
+from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS, \
+    MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
 from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
@@ -14,12 +15,14 @@ from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
 
-def metagenomic_deepfri_pipeline(target_db, work_path, contact_threshold, generated_contact):
+def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, generated_contact):
     query_file = list(work_path.glob("**/*.faa"))[0]
     with open(query_file, "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
-    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
-    print(f"\nRunning metagenomic_deepfri_pipeline for {len(query_seqs)} sequences\n")
+    print(f"Running metagenomic_deepfri_pipeline for {len(query_seqs)} sequences")
+
+    target_db = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))[-1] / TARGET_MMSEQS_DB_NAME
+    print("Target database: ", target_db)
 
     elapsed_time_handler = ElapsedTimeHandler(work_path / "metadata_runtime.csv")
 
@@ -27,6 +30,7 @@ def metagenomic_deepfri_pipeline(target_db, work_path, contact_threshold, genera
     elapsed_time_handler.log("mmseqs2")
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
+    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, work_path)
     elapsed_time_handler.log("alignments")
     unaligned_queries = query_seqs.keys() - alignments.keys()
@@ -86,3 +90,5 @@ def metagenomic_deepfri_pipeline(target_db, work_path, contact_threshold, genera
                 cnn.export_csv(output_file, verbose=False)
                 del cnn
                 elapsed_time_handler.log(f"deepfri_cnn_{mode}")
+
+    elapsed_time_handler.log_total_time()

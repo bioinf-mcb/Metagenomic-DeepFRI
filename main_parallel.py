@@ -1,22 +1,29 @@
+import argparse
 import multiprocessing
 import os
 import shutil
-import time
 
-from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, MMSEQS_DATABASES_PATH, TARGET_DB_NAME, WORK_PATH, FINISHED_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE
+from itertools import repeat
+
+from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, WORK_PATH, FINISHED_PATH, \
+    DEEPFRI_MODEL_WEIGHTS_JSON_FILE, DEFAULT_TARGET_DB_NAME
 from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS, CPU_COUNT
 
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
+from utils.elapsed_time_handler import ElapsedTimeHandler
 from utils.utils import create_unix_time_folder
 
 
-def job(work_path):
-    # todo fancier way of selecting target database. target databases named with letters will have priority
-    target_database_path = sorted(list(MMSEQS_DATABASES_PATH.iterdir()))[-1]
-    target_db = target_database_path / TARGET_DB_NAME
-    print("Target database: ", target_database_path)
+def parse_args():
+    # todo add description
+    parser = argparse.ArgumentParser(description="main pipeline")
 
-    metagenomic_deepfri_pipeline(target_db, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
+    parser.add_argument("-t", "--target_db", required=False, default=DEFAULT_TARGET_DB_NAME, help="Target database name")
+    return parser.parse_args()
+
+
+def job(work_path, target_db_name):
+    metagenomic_deepfri_pipeline(target_db_name, work_path, ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS)
     finished_path = FINISHED_PATH / work_path.name
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True, exist_ok=True)
@@ -30,7 +37,8 @@ def job(work_path):
 
 
 def main():
-    start = time.time()
+    args = parse_args()
+    timer = ElapsedTimeHandler()
     if not DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists():
         print("Please run post_setup.py script to download and unzip model weights")
         exit(1)
@@ -53,8 +61,8 @@ def main():
     # todo remove query_faa_files from QUERY_PATH so they don't get processed again later
 
     with multiprocessing.Pool(min(len(query_faa_files), CPU_COUNT)) as p:
-        p.map(job, work_paths)
-    print(f"total runtime,{(time.time() - start):.10f}\n")
+        p.starmap(job, zip(work_paths, repeat(args.target_db)))
+    timer.log_total_time()
 
 
 if __name__ == '__main__':

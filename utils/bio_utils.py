@@ -13,6 +13,6 @@ STRUCTURE_FILES_PARSERS = {
     '.pdb.gz': parse_pdb,
     '.cif': parse_mmcif,
     '.cif.gz': parse_mmcif,
-    'ent': parse_pdb,
-    'ent.gz': parse_pdb
+    '.ent': parse_pdb,
+    '.ent.gz': parse_pdb
 }

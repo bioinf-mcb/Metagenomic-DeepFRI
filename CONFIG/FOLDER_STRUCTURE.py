@@ -10,9 +10,12 @@ FINISHED_PATH = DATA_ROOT / "finished"
 WORK_PATH = DATA_ROOT / "workspace"
 SEQ_ATOMS_DATASET_PATH = DATA_ROOT / "seq_atoms_dataset"
 MMSEQS_DATABASES_PATH = DATA_ROOT / "mmseqs_db"
+
+# names
+DEFAULT_TARGET_DB_NAME = "default"
+TARGET_MMSEQS_DB_NAME = "targetDB"
 SEQUENCES = "seq"
 ATOMS = "atom"
-TARGET_DB_NAME = "targetDB"
 
 # DeepFri model weights. DO NOT CHANGE!
 DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL = "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz"

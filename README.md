@@ -48,18 +48,21 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
 Main feature of this project  is its ability to find similar protein chains 
 using mmseqs2 with known structures to use aligned contact maps as input to GCN from DeepFRI.
 
-1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
-2. Run `update_mmseqs_database.py` script. You can also use `-i YOUR_PATH` argument to use non-default directory.
-   ```
-   python update_mmseqs_database.py
-   ```
-
-This script will parse structure files and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH`.
+`update_mmseqs_database.py` script will parse structure files and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH`.
 It will also create a mmseqs2 database in `MMSEQS_DATABASES_PATH`. This operation will append new structures to existing ones.
-
 
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
+
+1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
+2. Run `update_mmseqs_database.py` script. 
+   ```
+   python update_mmseqs_database.py
+   ```
+You can also use `--input PATH_1 PATH_2` argument to parse structures from multiple directories.
+
+Use argument `--output DB_NAME` to specify database name that you can later use in `main.py --target_db DB_NAME`.
+By default, pipeline will use `default` database name.
 
 ## Running experiments
 
