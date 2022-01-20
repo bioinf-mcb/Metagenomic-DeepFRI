@@ -30,7 +30,7 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
     elapsed_time_handler.log("mmseqs2")
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH)
+    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH/target_db_name)
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, work_path)
     elapsed_time_handler.log("alignments")
     unaligned_queries = query_seqs.keys() - alignments.keys()
@@ -66,7 +66,7 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
                     query_seq = query_seqs[query_id]
                     target_id = alignment["target_id"]
 
-                    query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
+                    query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH/ target_db_name / ATOMS / (target_id + ".bin")),
                                                                  contact_threshold,
                                                                  alignment["alignment"].seqA,
                                                                  alignment["alignment"].seqB,
