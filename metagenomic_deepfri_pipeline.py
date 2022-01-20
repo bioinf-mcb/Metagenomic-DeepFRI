@@ -1,8 +1,10 @@
 import json
 
 from Bio import SeqIO
+
 from DeepFRI.deepfrier import Predictor
 
+from CONFIG.RUNTIME_PARAMETERS import MAX_CHAIN_LENGTH
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS, \
     MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
@@ -19,7 +21,17 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
     query_file = list(work_path.glob("**/*.faa"))[0]
     with open(query_file, "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
+
+    proteins_over_max_length = []
+    for query_id in list(query_seqs.keys()):
+        if len(query_seqs[query_id]) > MAX_CHAIN_LENGTH:
+            query_seqs.pop(query_id)
+            proteins_over_max_length.append(query_id)
+
     print(f"Running metagenomic_deepfri_pipeline for {len(query_seqs)} sequences")
+    if len(proteins_over_max_length) > 0:
+        print(f"Will skip {proteins_over_max_length} due to sequence length over CONFIG.RUNTIME_PARAMETERS.MAX_CHAIN_LENGTH")
+        json.dump(open('metadata_skipped_ids.json', "w"), proteins_over_max_length)
 
     target_db = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))[-1] / TARGET_MMSEQS_DB_NAME
     print("Target database: ", target_db)
@@ -66,7 +78,7 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
                     query_seq = query_seqs[query_id]
                     target_id = alignment["target_id"]
 
-                    query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH/ target_db_name / ATOMS / (target_id + ".bin")),
+                    query_contact_map = load_aligned_contact_map(str(SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
                                                                  contact_threshold,
                                                                  alignment["alignment"].seqA,
                                                                  alignment["alignment"].seqB,
