@@ -48,7 +48,7 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
 Main feature of this project  is its ability to find similar protein chains 
 using mmseqs2 with known structures to use aligned contact maps as input to GCN from DeepFRI.
 
-1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .pdb.gz .cif .cif.gz`
+1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
 2. Run `update_mmseqs_database.py` script. You can also use `-i YOUR_PATH` argument to use non-default directory.
    ```
    python update_mmseqs_database.py
