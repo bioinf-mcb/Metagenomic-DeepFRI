@@ -10,12 +10,10 @@ import numpy as np
 
 from CONFIG.FOLDER_STRUCTURE import TARGET_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_CHAIN_LENGTH
-from utils.bio_utils import PROTEIN_LETTERS, STRUCTURE_FILES_PATTERNS
+from utils.bio_utils import PROTEIN_LETTERS, STRUCTURE_FILES_PARSERS
 
 from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
-from utils.structure_files_parsers.parse_mmcif import parse_mmcif
-from utils.structure_files_parsers.parse_pdb import parse_pdb
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
 from utils.utils import create_unix_time_folder, merge_files_binary
@@ -37,25 +35,16 @@ def parse_structure_file(structure_file, save_path):
     protein_id = structure_file.name
 
     try:
-        if protein_id.endswith('.pdb'):
-            protein_id = protein_id.replace('.pdb', '')
-            with open(structure_file, 'r') as f:
-                atom_amino_group, positions, groups = parse_pdb(f)
-        elif protein_id.endswith('.pdb.gz'):
-            protein_id = protein_id.replace('.pdb.gz', '')
-            with gzip.open(structure_file, 'rt') as f:
-                atom_amino_group, positions, groups = parse_pdb(f)
-        elif protein_id.endswith('.cif'):
-            protein_id = protein_id.replace('.cif', '')
-            with open(structure_file, 'r') as f:
-                atom_amino_group, positions, groups = parse_mmcif(f)
-        elif protein_id.endswith('.cif.gz'):
-            protein_id = protein_id.replace('.cif.gz', '')
-            with gzip.open(structure_file, 'rt') as f:
-                atom_amino_group, positions, groups = parse_mmcif(f)
-        else:
-            print("Unsupported file format of file " + str(structure_file))
-            return
+        for pattern in STRUCTURE_FILES_PARSERS.keys():
+            if protein_id.endswith(pattern):
+                if protein_id.endswith('.gz'):
+                    with gzip.open(structure_file, 'rt') as f:
+                        atom_amino_group, positions, groups = STRUCTURE_FILES_PARSERS[pattern](f)
+                else:
+                    with open(structure_file, 'r') as f:
+                        atom_amino_group, positions, groups = STRUCTURE_FILES_PARSERS[pattern](f)
+                protein_id = structure_file.name.replace(pattern, '')
+                break
 
     except Exception:
         print("EXCEPTION WHILE READING FILE ", str(structure_file))
@@ -103,7 +92,7 @@ def main(input_path, atoms_path, db_path, overwrite):
 
     print("Searching for structure files in: ", input_path)
     structure_files = dict()
-    for pattern in STRUCTURE_FILES_PATTERNS:
+    for pattern in STRUCTURE_FILES_PARSERS.keys():
         pattern_structure_files = list(input_path.glob("**/*" + pattern))
         pattern_structure_ids = [x.name[:-len(pattern)] for x in pattern_structure_files]
         if len(pattern_structure_files) == 0:
