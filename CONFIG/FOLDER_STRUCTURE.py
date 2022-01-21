@@ -12,7 +12,7 @@ SEQ_ATOMS_DATASET_PATH = DATA_ROOT / "seq_atoms_dataset"
 MMSEQS_DATABASES_PATH = DATA_ROOT / "mmseqs_db"
 
 # names
-DEFAULT_TARGET_DB_NAME = "default"
+DEFAULT_NAME = "default"
 TARGET_MMSEQS_DB_NAME = "targetDB"
 SEQUENCES = "seq"
 ATOMS = "atom"

@@ -45,6 +45,12 @@ def create_chunks(lst, n):
     return [lst[i::n] for i in range(n)]
 
 
+def split_dict(d, n):
+    keys = list(d.keys())
+    for i in range(0, len(keys), n):
+        yield {k: d[k] for k in keys[i: i + n]}
+
+
 def create_unix_time_folder(parent_path):
     parent_path = pathlib.Path(parent_path)
     start = str(time.time())

@@ -1,9 +1,6 @@
 import tempfile
 from utils.utils import run_command
 
-MMSEQS_COLUMN_NAMES = ["query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start",
-                       "query_end", "target_start", "target_end", "e_value", "bit_score"]
-
 
 def mmseqs_createdb(sequences_file, db_path):
     run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")

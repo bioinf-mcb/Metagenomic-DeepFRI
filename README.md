@@ -6,6 +6,7 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
 
 * [DeepFRI](https://github.com/flatironinstitute/DeepFRI)
 * [MMseqs2](https://github.com/soedinglab/MMseqs2)
+* [Boost.Python](https://www.boost.org/doc/libs/1_75_0/libs/python/doc/html/index.html)
 
 ## Installation
 ### Local
@@ -43,34 +44,34 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
    python post_setup.py
    ```
 
-## Mmseqs2 database setup 
+## Mmseqs2 target database setup 
 
 Main feature of this project  is its ability to find similar protein chains 
 using mmseqs2 with known structures to use aligned contact maps as input to GCN from DeepFRI.
 
-`update_mmseqs_database.py` script will parse structure files and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH`.
+`update_target_mmseqs_database.py` script will parse structure files and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH`.
 It will also create a mmseqs2 database in `MMSEQS_DATABASES_PATH`. This operation will append new structures to existing ones.
 
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
 1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
-2. Run `update_mmseqs_database.py` script. 
+2. Run `update_target_mmseqs_database.py` script. 
    ```
-   python update_mmseqs_database.py
+   python update_target_mmseqs_database.py
    ```
 You can also use `--input PATH_1 PATH_2` argument to parse structures from multiple directories.
 
 Use argument `--output DB_NAME` to specify database name that you can later use in `main.py --target_db DB_NAME`.
 By default, pipeline will use `default` database name.
 
-To add another structure file format edit `STRUCTURE_FILES_PARSERS` inside `update_mmseqs_database.py @ 26`
+To add another structure file format edit `STRUCTURE_FILES_PARSERS` inside `update_target_mmseqs_database.py :26`
 
-## Running experiments
+## Running DeepFri predictions
 
-1. Upload `.faa` files into `QUERY_PATH`
-2. Run `python3 main.py`
-4. Collect results from `FINISHED_PATH`
+1. Upload `.faa` files into `QUERY_PATH/task_name` (default `task_name` is `default`)
+2. Run `python3 main.py -task_name`
+4. Collect results from `FINISHED_PATH/task_name`
 
 ## Useful docker commands
 ```

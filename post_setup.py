@@ -8,6 +8,7 @@ def main():
     DATA_ROOT.mkdir(exist_ok=True, parents=True)
     STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
     QUERY_PATH.mkdir(exist_ok=True, parents=True)
+    (QUERY_PATH / DEFAULT_NAME).mkdir(exist_ok=True, parents=True)
     FINISHED_PATH.mkdir(exist_ok=True, parents=True)
 
     WORK_PATH.mkdir(exist_ok=True, parents=True)

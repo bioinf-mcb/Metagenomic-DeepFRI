@@ -9,7 +9,7 @@ from itertools import repeat
 import numpy as np
 
 from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
-    DEFAULT_TARGET_DB_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
+    DEFAULT_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_TARGET_CHAIN_LENGTH
 from utils.bio_utils import PROTEIN_LETTERS
 
@@ -38,7 +38,7 @@ def parse_args():
                                                  "Create and index new --output MMSEQS2 database")
 
     parser.add_argument("-i", "--input", nargs='+', required=False, default=[STRUCTURE_FILES_PATH], help="Paths to folders containing structure files")
-    parser.add_argument("-o", "--output", required=False, default=DEFAULT_TARGET_DB_NAME, help="Name of the database")
+    parser.add_argument("-o", "--output", required=False, default=DEFAULT_NAME, help="Name of the database")
     parser.add_argument("--overwrite", action="store_true", help="Flag to override existing sequences and atom positions")
     return parser.parse_args()
 
