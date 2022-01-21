@@ -21,7 +21,7 @@ def parse_args():
     # todo add description
     parser = argparse.ArgumentParser(description="main pipeline")
     parser.add_argument("-n", "--task_name", required=False, default=DEFAULT_NAME, help="Task name")
-    parser.add_argument("-q", "--query_paths", required=False, default=None,
+    parser.add_argument("-q", "--query_paths", nargs='+', required=False, default=None,
                         help=f"Folders paths containing query .faa files and/or paths to .faa files. "
                              f"If not provided pipeline will search in {QUERY_PATH}/task_name. "
                              f"Use '-q all' to process all files under {QUERY_PATH}")
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     if args.query_paths is None:
         query_paths = [pathlib.Path(QUERY_PATH / task_name)]
     else:
-        if args.query_paths == "all":
+        if args.query_paths == ["all"]:
             query_paths = [QUERY_PATH]
         else:
             query_paths = [pathlib.Path(x) for x in args.query_paths]
