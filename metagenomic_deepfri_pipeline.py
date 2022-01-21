@@ -4,7 +4,7 @@ from Bio import SeqIO
 
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG.RUNTIME_PARAMETERS import MAX_QUERY_CHAIN_LENGTH
+from CONFIG.RUNTIME_PARAMETERS import MAX_QUERY_CHAIN_LENGTH, DEEPFRI_PROCESSING_MODES
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS, \
     MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
@@ -31,7 +31,7 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
     print(f"Running metagenomic_deepfri_pipeline for {len(query_seqs)} sequences")
     if len(proteins_over_max_length) > 0:
         print(f"Will skip {proteins_over_max_length} due to sequence length over CONFIG.RUNTIME_PARAMETERS.MAX_CHAIN_LENGTH")
-        json.dump(open('metadata_skipped_ids.json', "w"), proteins_over_max_length)
+        json.dump(proteins_over_max_length, open('metadata_skipped_ids.json', "w"))
 
     target_db = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))[-1] / TARGET_MMSEQS_DB_NAME
     print("Target database: ", target_db)
@@ -61,10 +61,9 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
     # bp = biological_process
     # cc = cellular_component
     # ec = enzyme_commission
-    # ['mf', 'bp', 'cc', 'ec']
-    for mode in ['mf', 'bp', 'cc', 'ec']:
+    # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
+    for mode in DEEPFRI_PROCESSING_MODES:
         elapsed_time_handler.reset()
-
         print("Processing mode: ", mode)
         if len(alignments) > 0:
             output_file = work_path / f"results_gcn_{mode}.csv"

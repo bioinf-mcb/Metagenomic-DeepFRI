@@ -64,6 +64,8 @@ You can also use `--input PATH_1 PATH_2` argument to parse structures from multi
 Use argument `--output DB_NAME` to specify database name that you can later use in `main.py --target_db DB_NAME`.
 By default, pipeline will use `default` database name.
 
+To add another structure file format edit `STRUCTURE_FILES_PARSERS` inside `update_mmseqs_database.py @ 26`
+
 ## Running experiments
 
 1. Upload `.faa` files into `QUERY_PATH`

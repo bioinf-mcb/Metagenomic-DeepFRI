@@ -11,13 +11,26 @@ import numpy as np
 from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
     DEFAULT_TARGET_DB_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_TARGET_CHAIN_LENGTH
-from utils.bio_utils import PROTEIN_LETTERS, STRUCTURE_FILES_PARSERS
+from utils.bio_utils import PROTEIN_LETTERS
+
+from utils.structure_files_parsers.parse_pdb import parse_pdb
+from utils.structure_files_parsers.parse_mmcif import parse_mmcif
 
 from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
 from utils.utils import create_unix_time_folder, merge_files_binary
+
+
+STRUCTURE_FILES_PARSERS = {
+    '.pdb': parse_pdb,
+    '.pdb.gz': parse_pdb,
+    '.cif': parse_mmcif,
+    '.cif.gz': parse_mmcif,
+    '.ent': parse_pdb,
+    '.ent.gz': parse_pdb
+}
 
 
 def parse_args():
@@ -59,11 +72,13 @@ def parse_structure_file(structure_file, save_path):
 
         if len(groups) < 9:
             # print("Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA ", file)
-            return "sequences too short, probably DNA"
+            return "sequences too short, probably DNA or corrupted"
 
+        truncated = False
         if len(groups) > MAX_TARGET_CHAIN_LENGTH:
-            # print(f"Protein chains with more than {MAX_CHAIN_LENGTH} are truncated. {str(structure_file)}\n"
-            #       f"Change CONFIG/RUNTIME_PARAMETERS.py :MAX_CHAIN_LENGTH and rerun this script with --overwrite to apply process this file again")
+            # print(f"Protein chains with more than {MAX_TARGET_CHAIN_LENGTH} are truncated. {str(structure_file)}\n"
+            #       f"Change CONFIG/RUNTIME_PARAMETERS.py :MAX_TARGET_CHAIN_LENGTH and rerun this script with --overwrite to process this file again")
+            truncated = True
             group_indexes = groups[:MAX_TARGET_CHAIN_LENGTH]
             group_indexes = np.append(group_indexes, groups[MAX_TARGET_CHAIN_LENGTH]).astype(np.int32)
         else:
@@ -73,14 +88,18 @@ def parse_structure_file(structure_file, save_path):
         with open(sequence_path, "w") as f:
             f.write(F">{protein_id}\n{sequence}\n")
         save_atoms(positions, group_indexes, str(atoms_path))
-        return "SUCCEED"
+
+        if truncated:
+            return f"SUCCEED, but sequences and contact maps got truncated to {MAX_TARGET_CHAIN_LENGTH}"
+        else:
+            return "SUCCEED"
 
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
         logging.error(traceback.format_exc())
         sequence_path.unlink(missing_ok=True)
         atoms_path.unlink(missing_ok=True)
-        return "file processing exception"
+        return "file processing exceptions"
 
 
 def main(input_paths, output_name, overwrite):

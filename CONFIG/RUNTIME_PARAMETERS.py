@@ -23,3 +23,11 @@ PAIRWISE_ALIGNMENT_GAP_EXTENDING = -0.1
 
 # parameter to filter alignments based on sequence identity
 ALIGNMENT_MIN_SEQUENCE_IDENTITY = 0
+
+# this list determines types of outputs of metagenomic_deepfri_pipeline
+# mf = molecular_function
+# bp = biological_process
+# cc = cellular_component
+# ec = enzyme_commission
+# ['mf', 'bp', 'cc', 'ec']
+DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
