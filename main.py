@@ -23,7 +23,8 @@ def parse_args():
     parser.add_argument("-n", "--task_name", required=False, default=DEFAULT_NAME, help="Task name")
     parser.add_argument("-q", "--query_paths", required=False, default=None,
                         help=f"Folders paths containing query .faa files and/or paths to .faa files. "
-                             f"If not provided pipeline will search in {QUERY_PATH}/task_name")
+                             f"If not provided pipeline will search in {QUERY_PATH}/task_name. "
+                             f"Use '-q all' to process all files under {QUERY_PATH}")
     parser.add_argument("-t", "--target_db_name", required=False, default=DEFAULT_NAME, help="Target database name")
     parser.add_argument("-s", "--store_query", action="store_true",
                         help="Use this flag so that query files are not deleted from --query_paths after copied to task workspace")
@@ -127,7 +128,10 @@ if __name__ == '__main__':
     if args.query_paths is None:
         query_paths = [pathlib.Path(QUERY_PATH / task_name)]
     else:
-        query_paths = [pathlib.Path(x) for x in args.query_paths]
+        if args.query_paths == "all":
+            query_paths = [QUERY_PATH]
+        else:
+            query_paths = [pathlib.Path(x) for x in args.query_paths]
 
     target_db_name = args.target_db_name
     store_query = args.store_query
