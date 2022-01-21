@@ -10,7 +10,7 @@ import numpy as np
 
 from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
     DEFAULT_TARGET_DB_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
-from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_CHAIN_LENGTH
+from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_TARGET_CHAIN_LENGTH
 from utils.bio_utils import PROTEIN_LETTERS, STRUCTURE_FILES_PARSERS
 
 from CPP_lib.libAtomDistanceIO import save_atoms
@@ -48,7 +48,7 @@ def parse_structure_file(structure_file, save_path):
     except Exception:
         print("EXCEPTION WHILE READING FILE ", str(structure_file))
         logging.error(traceback.format_exc())
-        return
+        return "file reading exceptions"
 
     sequence_path = save_path / SEQUENCES / (protein_id + ".faa")
     atoms_path = save_path / ATOMS / (protein_id + ".bin")
@@ -59,13 +59,13 @@ def parse_structure_file(structure_file, save_path):
 
         if len(groups) < 9:
             # print("Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA ", file)
-            return
+            return "sequences too short, probably DNA"
 
-        if len(groups) > MAX_CHAIN_LENGTH:
+        if len(groups) > MAX_TARGET_CHAIN_LENGTH:
             # print(f"Protein chains with more than {MAX_CHAIN_LENGTH} are truncated. {str(structure_file)}\n"
             #       f"Change CONFIG/RUNTIME_PARAMETERS.py :MAX_CHAIN_LENGTH and rerun this script with --overwrite to apply process this file again")
-            group_indexes = groups[:MAX_CHAIN_LENGTH]
-            group_indexes = np.append(group_indexes, groups[MAX_CHAIN_LENGTH]).astype(np.int32)
+            group_indexes = groups[:MAX_TARGET_CHAIN_LENGTH]
+            group_indexes = np.append(group_indexes, groups[MAX_TARGET_CHAIN_LENGTH]).astype(np.int32)
         else:
             group_indexes = np.append(groups, positions.shape[0]).astype(np.int32)
 
@@ -73,13 +73,14 @@ def parse_structure_file(structure_file, save_path):
         with open(sequence_path, "w") as f:
             f.write(F">{protein_id}\n{sequence}\n")
         save_atoms(positions, group_indexes, str(atoms_path))
+        return "SUCCEED"
 
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
         logging.error(traceback.format_exc())
         sequence_path.unlink(missing_ok=True)
         atoms_path.unlink(missing_ok=True)
-        return
+        return "file processing exception"
 
 
 def main(input_paths, output_name, overwrite):
@@ -118,7 +119,11 @@ def main(input_paths, output_name, overwrite):
     initialize_CPP_LIB()
     print("\nProcessing", len(structure_files), "files")
     with multiprocessing.Pool(processes=CPU_COUNT) as p:
-        p.starmap(parse_structure_file, zip(structure_files.values(), repeat(seq_atoms_path.absolute())))
+        logs = p.starmap(parse_structure_file, zip(structure_files.values(), repeat(seq_atoms_path.absolute())))
+
+    unique_logs, logs_counts = np.unique(logs, return_counts=True)
+    for i in range(len(unique_logs)):
+        print(f"\t{logs_counts[i]} {unique_logs[i]}")
 
     sequence_files = list((seq_atoms_path / SEQUENCES).glob("**/*.faa"))
     print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")

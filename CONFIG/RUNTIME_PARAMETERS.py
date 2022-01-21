@@ -1,8 +1,10 @@
 import multiprocessing
 CPU_COUNT = multiprocessing.cpu_count()
 
-# max chain length used in update_mmseqs_database.py and in filtering false positive sequences from queries
-MAX_CHAIN_LENGTH = 2500
+# MAX_TARGET_CHAIN_LENGTH is used in update_mmseqs_database.py:67 to truncate longer sequences
+MAX_TARGET_CHAIN_LENGTH = 2500
+# MAX_QUERY_CHAIN_LENGTH is used to filter out query sequences that are too long
+MAX_QUERY_CHAIN_LENGTH = 2500
 
 # DeepFRI was trained with default value of 10 as seen in DeepFRI/train_DeepFRI.py
 ANGSTROM_CONTACT_THRESHOLD = 6

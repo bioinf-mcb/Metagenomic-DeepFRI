@@ -4,7 +4,7 @@ from Bio import SeqIO
 
 from DeepFRI.deepfrier import Predictor
 
-from CONFIG.RUNTIME_PARAMETERS import MAX_CHAIN_LENGTH
+from CONFIG.RUNTIME_PARAMETERS import MAX_QUERY_CHAIN_LENGTH
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, ATOMS, \
     MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
@@ -24,7 +24,7 @@ def metagenomic_deepfri_pipeline(target_db_name, work_path, contact_threshold, g
 
     proteins_over_max_length = []
     for query_id in list(query_seqs.keys()):
-        if len(query_seqs[query_id]) > MAX_CHAIN_LENGTH:
+        if len(query_seqs[query_id]) > MAX_QUERY_CHAIN_LENGTH:
             query_seqs.pop(query_id)
             proteins_over_max_length.append(query_id)
 
