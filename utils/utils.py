@@ -35,20 +35,35 @@ def run_command(command, timeout=-1):
         return completed_process.stdout.decode('utf-8')
 
 
+def search_files_in_paths(paths: list, pattern: str):
+    files = []
+    for path in paths:
+        if not path.exists():
+            print(f"Unable to locate {path}.")
+            continue
+        if path.is_dir():
+            files.extend(list(path.glob("**/*"+pattern)))
+        else:
+            if not path.name.endswith(pattern):
+                print(f"{path} is not an {pattern} file which is excepted format.")
+            else:
+                files.append(path)
+    return files
+
+
 def download_file(url, path):
     with requests.get(url, stream=True) as r:
         with open(path, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
 
 
-def create_chunks(lst, n):
-    return [lst[i::n] for i in range(n)]
-
-
-def split_dict(d, n):
-    keys = list(d.keys())
-    for i in range(0, len(keys), n):
-        yield {k: d[k] for k in keys[i: i + n]}
+def chunks(lst, n):
+    if n == 1:
+        return [lst]
+    output = []
+    for i in range(n):
+        output.append(lst[i::n])
+    return output
 
 
 def create_unix_time_folder(parent_path):

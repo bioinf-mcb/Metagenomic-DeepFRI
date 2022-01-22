@@ -38,7 +38,7 @@ def parse_args():
                                                  "Create and index new --output MMSEQS2 database")
 
     parser.add_argument("-i", "--input", nargs='+', required=False, default=[STRUCTURE_FILES_PATH], help="Paths to folders containing structure files")
-    parser.add_argument("-o", "--output", required=False, default=DEFAULT_NAME, help="Name of the database")
+    parser.add_argument("-n", "--name", required=False, default=DEFAULT_NAME, help="Name of the database")
     parser.add_argument("--overwrite", action="store_true", help="Flag to override existing sequences and atom positions")
     return parser.parse_args()
 
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     input_paths = [pathlib.Path(x) for x in args.input]
-    output_name = pathlib.Path(args.output)
+    output_name = pathlib.Path(args.name)
     overwrite = args.overwrite
 
     main(input_paths, output_name, overwrite)
