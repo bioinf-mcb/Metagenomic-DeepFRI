@@ -1,7 +1,7 @@
 import time
 
 
-class ElapsedTimeHandler(object):
+class ElapsedTimeLogger(object):
     def __init__(self, path=None):
         self.path = path
         self.current_start = time.time()

@@ -7,14 +7,13 @@ from itertools import repeat
 
 from Bio import SeqIO
 
-from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, WORK_PATH, FINISHED_PATH, \
-    DEEPFRI_MODEL_WEIGHTS_JSON_FILE, DEFAULT_NAME, MMSEQS_DATABASES_PATH
+from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, WORK_PATH, FINISHED_PATH, DEFAULT_NAME
 from CONFIG.RUNTIME_PARAMETERS import ANGSTROM_CONTACT_THRESHOLD, GENERATE_CONTACTS, CPU_COUNT
 
 from metagenomic_deepfri_pipeline import metagenomic_deepfri_pipeline
-from utils.elapsed_time_handler import ElapsedTimeHandler
-from utils.pipeline_utils import split_query_into_jobs, merge_result_files
-from utils.utils import create_unix_time_folder, merge_files_binary, search_files_in_paths
+from utils.elapsed_time_logger import ElapsedTimeLogger
+from utils.pipeline_utils import split_query_into_jobs, merge_jobs_results, select_target_database, load_deepfri_config
+from utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths
 
 
 def parse_args():
@@ -34,16 +33,14 @@ def parse_args():
 
 def main(task_name: str, query_paths: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
     # check if deepfri model weights exists
-    assert DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists(), \
-        f"No DeepFri model weights json file found at {DEEPFRI_MODEL_WEIGHTS_JSON_FILE}" \
-        f"Please run post_setup.py script to download and unzip model weights and json file"
-    # check if mmseqs database exists
-    assert len(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir())) > 0, \
-        f"No target database found {MMSEQS_DATABASES_PATH / target_db_name}. " \
-        f"Create one using update_mmseqs_database.py {'' if target_db_name == DEFAULT_NAME else '--name ' + target_db_name} script"
+    _ = load_deepfri_config()
+    # check if target mmseqs database and its sequences and atom positions exists
+    _ = select_target_database(target_db_name)
 
     query_faa_files = search_files_in_paths(query_paths, ".faa")
-    assert len(query_faa_files) > 0, f"No protein sequences .faa files found inside {[str(x) for x in query_paths]}"
+    if len(query_faa_files) == 0:
+        print(f"No query protein sequences .faa files found inside {[str(x) for x in query_paths]}")
+        return
 
     print(f"Query files to be processed: {len(query_faa_files)}")
     for file in query_faa_files:
@@ -52,9 +49,9 @@ def main(task_name: str, query_paths: list, target_db_name: str, delete_query: b
     # create a new work_path for this task
     task_work_path = WORK_PATH / task_name
     task_work_path.mkdir(parents=True, exist_ok=True)
-    work_path = create_unix_time_folder(task_work_path)
+    work_path = create_unix_timestamp_folder(task_work_path)
     print("Work path: ", work_path)
-    timer = ElapsedTimeHandler(work_path / "metadata_total_pipeline_time.csv")
+    timer = ElapsedTimeLogger(work_path / "metadata_total_pipeline_time.csv")
 
     # merge sequences from all the query files
     merged_queries_file = work_path / 'merged_query_sequences.faa'
@@ -83,7 +80,7 @@ def main(task_name: str, query_paths: list, target_db_name: str, delete_query: b
     # merge jobs results and store them in finished_path
     finished_path = FINISHED_PATH / task_name / work_path.name
     print("Finished! Saving output files to ", finished_path)
-    merge_result_files(work_path, finished_path)
+    merge_jobs_results(work_path, finished_path)
     timer.log_total_time()
     os.system(f"cp {work_path}/metadata* {finished_path}")
 

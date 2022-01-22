@@ -1,6 +1,14 @@
+import os
+import requests
+import shutil
+
 from CONFIG.FOLDER_STRUCTURE import *
-from utils.utils import run_command
-from utils.utils import download_file
+
+
+def download_file(url, path):
+    with requests.get(url, stream=True) as r:
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 
 def main():
@@ -22,8 +30,8 @@ def main():
             print("Downloading model weights, approx 800MB")
             download_file(DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, 'newest_trained_models.tar.gz')
 
-        print(f"unloading models into {DATA_ROOT/'trained_models'} directory")
-        run_command(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
+        print(f"unloading models into {DATA_ROOT / 'trained_models'} directory")
+        os.system(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
     else:
         print("Found model weights")
     print("All good and ready to go!")

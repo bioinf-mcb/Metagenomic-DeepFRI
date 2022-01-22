@@ -20,8 +20,7 @@ from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
-from utils.utils import create_unix_time_folder, merge_files_binary
-
+from utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths
 
 STRUCTURE_FILES_PARSERS = {
     '.pdb': parse_pdb,
@@ -46,6 +45,7 @@ def parse_args():
 def parse_structure_file(structure_file, save_path):
     protein_id = structure_file.name
 
+    # extract sequence and atom positions from structure file
     try:
         for pattern in STRUCTURE_FILES_PARSERS.keys():
             if protein_id.endswith(pattern):
@@ -63,9 +63,9 @@ def parse_structure_file(structure_file, save_path):
         logging.error(traceback.format_exc())
         return "file reading exceptions"
 
+    # process and store sequence and atom positions in SEQ_ATOMS_DATASET_PATH / output_name
     sequence_path = save_path / SEQUENCES / (protein_id + ".faa")
     atoms_path = save_path / ATOMS / (protein_id + ".bin")
-
     try:
         _, groups = np.unique(groups, return_index=True)
         groups.sort()
@@ -86,11 +86,11 @@ def parse_structure_file(structure_file, save_path):
 
         sequence = ''.join([PROTEIN_LETTERS[atom_amino_group[i]] for i in group_indexes[:-1]])
         with open(sequence_path, "w") as f:
-            f.write(F">{protein_id}\n{sequence}\n")
+            f.write(f">{protein_id}\n{sequence}\n")
         save_atoms(positions, group_indexes, str(atoms_path))
 
         if truncated:
-            return f"SUCCEED, but sequences and contact maps got truncated to {MAX_TARGET_CHAIN_LENGTH}"
+            return f"succeed, but sequences and contact maps got truncated to {MAX_TARGET_CHAIN_LENGTH}"
         else:
             return "SUCCEED"
 
@@ -109,7 +109,7 @@ def main(input_paths, output_name, overwrite):
     (seq_atoms_path / SEQUENCES).mkdir(exist_ok=True)
     (seq_atoms_path / ATOMS).mkdir(exist_ok=True)
 
-    print("Searching for structure files in: \n \t", [str(x) for x in input_paths])
+    print("Searching for structure files in: \n\t", [str(x) for x in input_paths])
     structure_files = dict()
     for input_path in input_paths:
         print(input_path)
@@ -125,6 +125,7 @@ def main(input_paths, output_name, overwrite):
         print("No structure files found")
         return
 
+    # search for already processed protein_ids to skip them
     if not overwrite:
         existing_structures = set([x.name[:-4] for x in (seq_atoms_path / ATOMS).glob("**/*.bin")])
         print("\nFound ", len(existing_structures), " already processed structures")
@@ -135,8 +136,8 @@ def main(input_paths, output_name, overwrite):
                 duplicated_ids_counter += 1
         print("Found ", duplicated_ids_counter, " duplicated IDs")
 
-    initialize_CPP_LIB()
     print("\nProcessing", len(structure_files), "files")
+    initialize_CPP_LIB()
     with multiprocessing.Pool(processes=CPU_COUNT) as p:
         logs = p.starmap(parse_structure_file, zip(structure_files.values(), repeat(seq_atoms_path.absolute())))
 
@@ -148,10 +149,10 @@ def main(input_paths, output_name, overwrite):
     print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")
     merge_files_binary(sequence_files, seq_atoms_path / 'merged_sequences.faa')
 
-    mmseqs2_path = create_unix_time_folder(MMSEQS_DATABASES_PATH / output_name)
-    print("Creating new mmseqs2 database " + str(mmseqs2_path))
+    mmseqs2_path = create_unix_timestamp_folder(MMSEQS_DATABASES_PATH / output_name)
+    print("Creating new target mmseqs2 database " + str(mmseqs2_path))
     mmseqs_createdb(seq_atoms_path / 'merged_sequences.faa', mmseqs2_path / TARGET_MMSEQS_DB_NAME)
-    print("Indexing new mmseqs2 database " + str(mmseqs2_path))
+    print("Indexing new target mmseqs2 database " + str(mmseqs2_path))
     mmseqs_createindex(mmseqs2_path / TARGET_MMSEQS_DB_NAME)
 
 

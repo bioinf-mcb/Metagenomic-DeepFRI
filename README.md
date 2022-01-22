@@ -31,11 +31,11 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
    python post_setup.py
    ```
 ### Docker
-1. Create `DATA_ROOT` directory locally on your local machine
+1. Create `DATA_ROOT` directory on your local machine
    ```
    mkdir /DATA_ROOT
    ```
-2. Docker run! `-u $(id -u):$(id -g)` is used to make sure all files created by container are accessible for users
+2. Docker run! `-u $(id -u):$(id -g)` is used to make sure all files created by pipeline are accessible for users
    ```
    docker run -it -u $(id -u):$(id -g) -v /DATA_ROOT:/data soliareofastora/metagenomic-deepfri
    ```

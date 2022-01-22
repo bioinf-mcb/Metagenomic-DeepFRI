@@ -66,7 +66,7 @@ def chunks(lst, n):
     return output
 
 
-def create_unix_time_folder(parent_path):
+def create_unix_timestamp_folder(parent_path):
     parent_path = pathlib.Path(parent_path)
     start = str(time.time())
     path = (parent_path / start)
