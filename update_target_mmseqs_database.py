@@ -9,7 +9,7 @@ from itertools import repeat
 import numpy as np
 
 from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
-    DEFAULT_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH
+    DEFAULT_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH, MERGED_SEQUENCES
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_TARGET_CHAIN_LENGTH
 from utils.bio_utils import PROTEIN_LETTERS
 
@@ -20,7 +20,7 @@ from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB
 from utils.mmseqs_utils import mmseqs_createdb
 from utils.mmseqs_utils import mmseqs_createindex
-from utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths
+from utils.utils import create_unix_timestamp_folder, merge_files_binary
 
 STRUCTURE_FILES_PARSERS = {
     '.pdb': parse_pdb,
@@ -147,11 +147,11 @@ def main(input_paths, output_name, overwrite):
 
     sequence_files = list((seq_atoms_path / SEQUENCES).glob("**/*.faa"))
     print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")
-    merge_files_binary(sequence_files, seq_atoms_path / 'merged_sequences.faa')
+    merge_files_binary(sequence_files, seq_atoms_path / MERGED_SEQUENCES)
 
     mmseqs2_path = create_unix_timestamp_folder(MMSEQS_DATABASES_PATH / output_name)
     print("Creating new target mmseqs2 database " + str(mmseqs2_path))
-    mmseqs_createdb(seq_atoms_path / 'merged_sequences.faa', mmseqs2_path / TARGET_MMSEQS_DB_NAME)
+    mmseqs_createdb(seq_atoms_path / MERGED_SEQUENCES, mmseqs2_path / TARGET_MMSEQS_DB_NAME)
     print("Indexing new target mmseqs2 database " + str(mmseqs2_path))
     mmseqs_createindex(mmseqs2_path / TARGET_MMSEQS_DB_NAME)
 
