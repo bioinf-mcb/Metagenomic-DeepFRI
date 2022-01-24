@@ -31,7 +31,8 @@ ALIGNMENTS = "alignments.json"
 MERGED_SEQUENCES = 'merged_sequences.faa'
 TASK_CONFIG = "task_config.json"
 JOB_CONFIG = "job_config.json"
-MMSEQS_SEARCH_FILE = 'mmseqs2_search_results.m8'
+RUNTIME_CONFIG = "runtime_config.json"
+MMSEQS_SEARCH_RESULTS = 'mmseqs2_search_results.m8'
 
 # DeepFri model weights.
 DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL = "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz"

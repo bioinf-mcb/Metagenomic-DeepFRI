@@ -8,7 +8,7 @@ import shutil
 from Bio import SeqIO
 
 from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, WORK_PATH, FINISHED_PATH, DEFAULT_NAME, MERGED_SEQUENCES, TASK_CONFIG, \
-    JOB_CONFIG, ALIGNMENTS, MMSEQS_SEARCH_FILE
+    JOB_CONFIG, ALIGNMENTS, MMSEQS_SEARCH_RESULTS, RUNTIME_CONFIG
 
 from CONFIG.RUNTIME_PARAMETERS import ALIGNMENT_MIN_SEQUENCE_IDENTITY, MMSEQS_MAX_EVAL, MMSEQS_MIN_BIT_SCORE, \
     PAIRWISE_ALIGNMENT_GAP_CONTINUATION, PAIRWISE_ALIGNMENT_GAP_OPEN, PAIRWISE_ALIGNMENT_MISSMATCH, \
@@ -38,15 +38,9 @@ def parse_args():
     return parser.parse_args()
 
 
-# task config is saved inside task_work_path. It contains all parameters used in the pipeline.
-# this file is also used to find tasks inside WORK_PATH to resume them in case of interruption like power outage
-def save_task_config(task_work_path, task_name, target_db, target_db_name):
+# RUNTIME_CONFIG is saved inside WORK_PATH/task_name so every new task_name can have its own parameters.
+def runtime_config():
     config = {
-        "task_name": task_name,
-        "target_db": str(target_db),
-        "target_db_name": target_db_name,
-        "timestamp": task_work_path.name,
-
         "DEEPFRI_PROCESSING_MODES": DEEPFRI_PROCESSING_MODES,
 
         "MAX_QUERY_CHAIN_LENGTH": MAX_QUERY_CHAIN_LENGTH,
@@ -63,13 +57,13 @@ def save_task_config(task_work_path, task_name, target_db, target_db_name):
 
         "ALIGNMENT_MIN_SEQUENCE_IDENTITY": ALIGNMENT_MIN_SEQUENCE_IDENTITY,
     }
-    json.dump(config, open(task_work_path / TASK_CONFIG, "w"), indent=4)
+    return config
 
 
 # prepare_task validates input data and runtime data used by pipeline
 # it creates a new task in WORK_PATH / task_name / timestamp
 # task_work_path contains 2 important files MERGED_SEQUENCES and TASK_CONFIG
-def prepare_task(task_name, query_paths, target_db_name, delete_query):
+def prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_jobs):
     # verify if deepfri model weights exists
     _ = load_deepfri_config()
     # find and verify target mmseqs database
@@ -108,26 +102,51 @@ def prepare_task(task_name, query_paths, target_db_name, delete_query):
         for query_path in query_faa_files:
             query_path.unlink()
 
-    # save pipeline config in task_work_path
-    save_task_config(task_work_path, task_name, target_db, target_db_name)
+    # check if RUNTIME_CONFIG exists in  WORK_PATH / task_name
+    if (task_directory / RUNTIME_CONFIG).exists():
+        print(f"Using existing RUNTIME_CONFIG {task_directory/ RUNTIME_CONFIG}")
+        config = json.load(open(task_directory / RUNTIME_CONFIG))
+    else:
+        print(f"Creating a new RUNTIME_CONFIG {task_directory/ RUNTIME_CONFIG}")
+        config = runtime_config()
+        json.dump(config, open(task_directory / RUNTIME_CONFIG, "w"), indent=4)
+    for k, v in config.items():
+        print(f"\t{v} - {k}")
 
+    # add task specific keys to the task config.
+    config.update({
+        "task_name": task_name,
+        "target_db": str(target_db),
+        "target_db_name": target_db_name,
+        "timestamp": task_work_path.name,
+        "parallel_jobs": parallel_jobs,
+        "query_files": [str(x) for x in query_faa_files]
+    })
+    # TASK_CONFIG is later copied into job subdirectories as JOB_CONFIG.
+    # this file is also used to find tasks inside WORK_PATH to resume them in case of interruption like power outage
+    json.dump(config, open(task_work_path / TASK_CONFIG, "w"), indent=4)
+    print("Task preparation finished")
     return task_work_path
 
 
 # jobs are the subdirectories of the task_work_path and metagenomic_deepfri_pipeline.py runs inside those
 # it clones task config as a job config which is used to find jobs inside the task
-def split_task_into_jobs(task_work_path, parallel_jobs):
+def split_task_into_jobs(task_work_path):
     assert task_work_path / MERGED_SEQUENCES, f"Missing {task_work_path / MERGED_SEQUENCES}"
     assert task_work_path / TASK_CONFIG, f"Missing {task_work_path / TASK_CONFIG}"
+    parallel_jobs = json.load(open(task_work_path / TASK_CONFIG))["parallel_jobs"]
 
     with open(task_work_path / MERGED_SEQUENCES, "r") as f:
         query_records = [record for record in SeqIO.parse(f, "fasta")]
-
     jobs_records = chunks(query_records, parallel_jobs)
+
+    print(f"Dividing {len(query_records)} records across {parallel_jobs}. {len(jobs_records[0])} per job")
     for i in range(len(jobs_records)):
         if len(jobs_records[i]) == 0:
             continue
         job_path = (task_work_path / str(i))
+        if job_path.exists():
+            shutil.rmtree(job_path)
         job_path.mkdir()
         os.system(f"cp {task_work_path / TASK_CONFIG} {job_path / JOB_CONFIG}")
         with open(job_path / "job_sequences.faa", "w") as f:
@@ -139,6 +158,7 @@ def split_task_into_jobs(task_work_path, parallel_jobs):
 def parallel_pipelines(task_work_path):
     timer = ElapsedTimeLogger(task_work_path / "metadata_total_task_time.csv")
     job_paths = [job.parent for job in task_work_path.glob(f"**/{JOB_CONFIG}")]
+    print(f"Running {len(job_paths)} jobs on {min(len(job_paths), CPU_COUNT)} parallel threads\n")
     with multiprocessing.Pool(min(len(job_paths), CPU_COUNT)) as p:
         p.map(metagenomic_deepfri_pipeline, job_paths)
     timer.log("metagenomic_deepfri_pipeline")
@@ -158,7 +178,7 @@ def merge_finalized_task_results(task_work_path):
     os.system(f"cp -r {task_work_path}/query_files {finished_path}")
     os.system(f"cp {task_work_path}/metadata* {finished_path}")
 
-    merge_files_binary(list(task_work_path.glob(f"*/{MMSEQS_SEARCH_FILE}")), finished_path / MMSEQS_SEARCH_FILE)
+    merge_files_binary(list(task_work_path.glob(f"*/{MMSEQS_SEARCH_RESULTS}")), finished_path / MMSEQS_SEARCH_RESULTS)
 
     alignments = {}
     for alignment_file in list(task_work_path.glob(f"*/{ALIGNMENTS}")):
@@ -183,9 +203,9 @@ def merge_finalized_task_results(task_work_path):
 
 # main() simply executes functions implemented above step by step
 def main(task_name: str, query_paths: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
-    task_work_path = prepare_task(task_name, query_paths, target_db_name, delete_query)
+    task_work_path = prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_jobs)
 
-    split_task_into_jobs(task_work_path, parallel_jobs)
+    split_task_into_jobs(task_work_path)
 
     parallel_pipelines(task_work_path)
 
