@@ -11,19 +11,19 @@ from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
 
 from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.pipeline_utils import select_target_database, load_deepfri_config
+from utils.pipeline_utils import find_target_database, load_deepfri_config
 from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
 
-def load_and_verify_data(work_path, pipeline_config):
-    # selects only one .faa file from work_path directory
-    query_files = list(work_path.glob("**/*.faa"))
-    assert len(query_files) > 0, f"No query .faa files found in {work_path}"
+def load_and_verify_job_data(job_path, pipeline_config):
+    # selects only one .faa file from job_path directory
+    query_files = list(job_path.glob("**/*.faa"))
+    assert len(query_files) > 0, f"No query .faa files found in {job_path}"
     query_file = query_files[0]
     if len(query_files) > 1:
-        print(f"{work_path} contains more than one .faa file. Only {query_file} will be processed. {query_files[1:]} will be discarded")
+        print(f"{job_path} contains more than one .faa file. Only {query_file} will be processed. {query_files[1:]} will be discarded")
     with open(query_file, "r") as f:
         query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
     assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
@@ -40,7 +40,7 @@ def load_and_verify_data(work_path, pipeline_config):
         print(f"Skipping {len(proteins_over_max_length)} proteins due to sequence length over "
               f"CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH. "
               f"\nSkipped protein ids will be saved in metadata_skipped_ids_due_to_max_length.json")
-        json.dump(proteins_over_max_length, open(work_path / 'metadata_skipped_ids_due_to_max_length.json', "w"), indent=4,
+        json.dump(proteins_over_max_length, open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"), indent=4,
                   sort_keys=True)
         if len(query_seqs) == 0:
             print(f"All sequences in {query_file} were too long. No sequences will be processed.")
@@ -49,19 +49,28 @@ def load_and_verify_data(work_path, pipeline_config):
     if os.path.isfile(pipeline_config["target_db"]):
         target_db = pipeline_config["target_db"]
     else:
-        target_db = select_target_database(pipeline_config["target_db_name"])
-        print(f"Unable to locate target database {pipeline_config['target_db']}. Using {target_db}")
+        # if original database got deleted, try to use the newest database. Its path will be stored in metadata_final_target_db.txt
+        print(f"Unable to locate target database {pipeline_config['target_db']}. Looking for the newest one.")
+        target_db = find_target_database(pipeline_config["target_db_name"])
+        print(f"Found the newest {pipeline_config['target_db_name']} target database. Will be using {target_db}")
+        open(job_path / "metadata_final_target_db.txt").write(target_db)
     target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH / pipeline_config["target_db_name"])
 
     return query_file, query_seqs, target_db, target_seqs
 
 
+# metagenomic_deepfri_pipeline In a nutshell:
+# perform mmseqs2 search on query and target
+# find the best alignment for pairs found by mmseqs2 search.
+# If alignment for query exists:
+#       Process aligned target contact map with query sequence with DeepFRI GCN
+# else:
+#       Process query sequences with CNN
 def metagenomic_deepfri_pipeline(job_path):
     assert (job_path / JOB_CONFIG).exists(), f"No pipeline config file found {job_path / JOB_CONFIG}"
     job_config = json.load(open(job_path / JOB_CONFIG))
-    target_db_name = job_config["target_db_name"]
 
-    query_file, query_seqs, target_db, target_seqs = load_and_verify_data(job_path, job_config)
+    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(job_path, job_config)
 
     if len(query_seqs) == 0:
         print(f"No sequences found. Terminating pipeline.")
@@ -73,12 +82,6 @@ def metagenomic_deepfri_pipeline(job_path):
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)
     timer.log("mmseqs2")
 
-    # search the best alignment for each sequence pair from mmseqs2 search.
-    # If alignment for query_id exists:
-    #       aligned target contact map with query sequence will be processed by DeepFRI GCN
-    # else:
-    #       unaligned query sequences will be processed by CNN
-    #
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, job_path, job_config)
     unaligned_queries = query_seqs.keys() - alignments.keys()
@@ -88,9 +91,10 @@ def metagenomic_deepfri_pipeline(job_path):
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
         print(f"Using CNN for {len(unaligned_queries)} proteins")
+
     initialize_cpp_lib()
     deepfri_models_config = load_deepfri_config()
-
+    target_db_name = job_config["target_db_name"]
     # mf = molecular_function
     # bp = biological_process
     # cc = cellular_component

@@ -4,7 +4,8 @@ from CONFIG.FOLDER_STRUCTURE import MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
     DEEPFRI_MODEL_WEIGHTS_JSON_FILE
 
 
-def select_target_database(target_db_name):
+def find_target_database(target_db_name):
+    # excepted folder structure is MMSEQS_DATABASES_PATH / target_db_name / timestamp / TARGET_MMSEQS_DB_NAME
     target_databases = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))
 
     assert len(target_databases) > 0,\

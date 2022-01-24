@@ -13,8 +13,8 @@ from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STR
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT, MAX_TARGET_CHAIN_LENGTH
 from utils.bio_utils import PROTEIN_LETTERS
 
-from utils.structure_files_parsers.parse_pdb import parse_pdb
-from utils.structure_files_parsers.parse_mmcif import parse_mmcif
+from structure_files_parsers.parse_pdb import parse_pdb
+from structure_files_parsers.parse_mmcif import parse_mmcif
 
 from CPP_lib.libAtomDistanceIO import save_atoms
 from CPP_lib.libAtomDistanceIO import initialize as initialize_CPP_LIB

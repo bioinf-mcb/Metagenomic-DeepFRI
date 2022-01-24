@@ -37,8 +37,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     if json_file.exists():
         return json.load(open(json_file, "r"))
 
-    filtered_mmseqs_search = mmseqs_search_output[
-        mmseqs_search_output['bit_score'] > job_config["MMSEQS_MIN_BIT_SCORE"]]
+    filtered_mmseqs_search = mmseqs_search_output[mmseqs_search_output['bit_score'] > job_config["MMSEQS_MIN_BIT_SCORE"]]
     filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['e_value'] < job_config["MMSEQS_MAX_EVAL"]]
     filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['query'].isin(query_seqs.keys())]
 
