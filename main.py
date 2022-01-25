@@ -70,6 +70,7 @@ def prepare_task(project_name, query_paths, target_db_name, delete_query, parall
     _ = load_deepfri_config()
     # find and verify target mmseqs database
     target_db = find_target_database(target_db_name)
+    print(f"Using target database {target_db}")
 
     # search for query .faa files and remove empty ones
     query_faa_files = search_files_in_paths(query_paths, ".faa")

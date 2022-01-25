@@ -6,10 +6,14 @@ from CONFIG.FOLDER_STRUCTURE import MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
 def find_target_database(target_db_name):
     # excepted folder structure is MMSEQS_DATABASES_PATH / target_db_name / timestamp / TARGET_MMSEQS_DB_NAME
+    assert (MMSEQS_DATABASES_PATH / target_db_name).exists(),         \
+        f"No target databases folder found {MMSEQS_DATABASES_PATH / target_db_name}. " \
+        f"Create one using update_mmseqs_database.py {'' if target_db_name == DEFAULT_NAME else '--name ' + target_db_name}"
+
     target_databases = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))
 
     assert len(target_databases) > 0,\
-        f"No target databases found {MMSEQS_DATABASES_PATH / target_db_name}. " \
+        f"No target databases found {MMSEQS_DATABASES_PATH / target_db_name}/timestamp. " \
         f"Create one using update_mmseqs_database.py {'' if target_db_name == DEFAULT_NAME else '--name ' + target_db_name}"
 
     assert (SEQ_ATOMS_DATASET_PATH / target_db_name).exists(),\
