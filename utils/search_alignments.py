@@ -9,6 +9,7 @@ from CONFIG.FOLDER_STRUCTURE import ALIGNMENTS
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
 from utils.seq_file_loader import SeqFileLoader
 
+
 # alignment sequence_identity takes values between 0 and 1
 def alignment_sequences_identity(alignment):
     matches = [alignment.seqA[i] == alignment.seqB[i] for i in range(len(alignment.seqA))]
