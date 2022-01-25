@@ -23,7 +23,7 @@ PAIRWISE_ALIGNMENT_GAP_CONTINUATION = -0.1
 
 # parameter to filter alignments based on sequence identity
 # alignment sequence_identity takes values between 0 and 1
-ALIGNMENT_MIN_SEQUENCE_IDENTITY = 0
+ALIGNMENT_MIN_SEQUENCE_IDENTITY = 0.3
 
 # this list determines types of outputs of metagenomic_deepfri_pipeline
 # mf = molecular_function
