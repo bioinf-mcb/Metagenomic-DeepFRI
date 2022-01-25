@@ -16,6 +16,23 @@ from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
+###########################################################################
+# in a nutshell:
+#
+#   load_and_verify_job_data
+#   1.  select first .faa file inside job_path
+#   2.  filter out proteins that are too long
+#   3.  find target database
+#
+#   metagenomic_deepfri_pipeline
+#   4.  run mmseqs2 search on query and target database
+#   5.  find the best alignment for pairs found by mmseqs2 search.
+#   6.  If alignment for query exists:
+#           DeepFRI GCN for query sequence with aligned target contact map
+#       else:
+#           DeepFRI CNN for query sequence alone
+###########################################################################
+
 
 def load_and_verify_job_data(job_path, pipeline_config):
     # selects only one .faa file from job_path directory
@@ -59,13 +76,6 @@ def load_and_verify_job_data(job_path, pipeline_config):
     return query_file, query_seqs, target_db, target_seqs
 
 
-# metagenomic_deepfri_pipeline In a nutshell:
-# perform mmseqs2 search on query and target
-# find the best alignment for pairs found by mmseqs2 search.
-# If alignment for query exists:
-#       Process aligned target contact map with query sequence with DeepFRI GCN
-# else:
-#       Process query sequences with CNN
 def metagenomic_deepfri_pipeline(job_path):
     assert (job_path / JOB_CONFIG).exists(), f"No pipeline config file found {job_path / JOB_CONFIG}"
     job_config = json.load(open(job_path / JOB_CONFIG))
@@ -86,7 +96,6 @@ def metagenomic_deepfri_pipeline(job_path):
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, job_path, job_config)
     unaligned_queries = query_seqs.keys() - alignments.keys()
     timer.log("alignments")
-
     if len(alignments) > 0:
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
@@ -95,11 +104,12 @@ def metagenomic_deepfri_pipeline(job_path):
     initialize_cpp_lib()
     deepfri_models_config = load_deepfri_config()
     target_db_name = job_config["target_db_name"]
+
+    # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
     # bp = biological_process
     # cc = cellular_component
     # ec = enzyme_commission
-    # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
     for mode in job_config["DEEPFRI_PROCESSING_MODES"]:
         timer.reset()
         print("Processing mode: ", mode)

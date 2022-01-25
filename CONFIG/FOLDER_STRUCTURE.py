@@ -5,8 +5,8 @@ import pathlib
 #####################################
 # DATA_ROOT - as name suggests, root directory for all the pipeline files. You probably want to edit only this
 # STRUCTURE_FILES_PATH - path in which one should put their protein structure files. In any structure.
-# QUERY_PATH - root for all query .faa files. They should be placed in subdirectories named after task_name
-# FINISHED_PATH - root for all finished pipeline results. Will contain folders named after task_name
+# QUERY_PATH - root for all query .faa files. They should be placed in subdirectories named after project_name
+# FINISHED_PATH - root for all finished pipeline results. Will contain folders named after project_name
 
 DATA_ROOT = pathlib.Path("/data")
 STRUCTURE_FILES_PATH = DATA_ROOT / "structure_files"

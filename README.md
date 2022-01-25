@@ -8,8 +8,8 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
 * [MMseqs2](https://github.com/soedinglab/MMseqs2)
 * [Boost.Python](https://www.boost.org/doc/libs/1_75_0/libs/python/doc/html/index.html)
 
-## Installation
-### Local
+# Installation
+## Local
 1. Setup python environment
     ```
     pip install .  
@@ -30,7 +30,7 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
    ```
    python post_setup.py
    ```
-### Docker
+## Docker
 1. Create `DATA_ROOT` directory on your local machine
    ```
    mkdir /DATA_ROOT
@@ -44,6 +44,9 @@ Pipeline for searching and aligning contact maps for proteins, then running Deep
    python post_setup.py
    ```
 
+# How this pipeline works
+
+
 ## Mmseqs2 target database setup 
 
 Main feature of this project  is its ability to find similar protein chains 
@@ -55,23 +58,23 @@ It will also create a mmseqs2 database in `MMSEQS_DATABASES_PATH`. This operatio
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
-1. Upload structure files to `STRUCTURE_FILES_PATH`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
+1. Upload structure files to `STRUCTURE_FILES_PATH / default`. Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
 2. Run `update_target_mmseqs_database.py` script. 
    ```
    python update_target_mmseqs_database.py
    ```
 You can also use `--input PATH_1 PATH_2` argument to parse structures from multiple directories.
 
-Use argument `--output DB_NAME` to specify database name that you can later use in `main.py --target_db DB_NAME`.
+Use argument `--target_db_name DB_NAME` to specify database name that you can later use in `main.py --target_db DB_NAME`.
 By default, pipeline will use `default` database name.
 
 To add another structure file format edit `STRUCTURE_FILES_PARSERS` inside `update_target_mmseqs_database.py :26`
 
 ## Running DeepFri predictions
 
-1. Upload `.faa` files into `QUERY_PATH/task_name` (default `task_name` is `default`)
-2. Run `python3 main.py -task_name`
-4. Collect results from `FINISHED_PATH/task_name`
+1. Upload `.faa` files into `QUERY_PATH/your_project_name` (default `project_name` is `default`)
+2. Run `python3 main.py --project_name your_project_name`
+4. Collect results from `FINISHED_PATH/project_name`
 
 ## Useful docker commands
 ```

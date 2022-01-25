@@ -24,21 +24,21 @@ from utils.utils import create_unix_timestamp_folder, merge_files_binary, search
 def parse_args():
     parser = argparse.ArgumentParser(description="This script contains all the logic to run DeepFri's GCN or CNN experiments.")
 
-    parser.add_argument("-n", "--task_name", required=False, default=DEFAULT_NAME, help="Task name")
+    parser.add_argument("-n", "--project_name", required=False, default=DEFAULT_NAME, help="Task name")
 
     parser.add_argument("-q", "--query_paths", nargs='+', required=False, default=None,
-                        help=f"List of folder or file paths containing query .faa files. "
-                             f"If not provided pipeline will search in {QUERY_PATH}/--task_name. "
-                             f"Use '-q all' to process all files within {QUERY_PATH}")  # logic described here is implemented at the bottom of this file
+                        help=f"List of folder or file paths containing query .faa files. Both absolute and relative to {QUERY_PATH} are accepted."
+                             f"If not provided pipeline will search in {QUERY_PATH}/--project_name. "
+                             f"Use '--query_paths all' to process all files within {QUERY_PATH}")  # logic described here is implemented at the bottom of this file
 
-    parser.add_argument("-t", "--target_db_name", required=False, default=DEFAULT_NAME, help="Target database name")
+    parser.add_argument("-t", "--target_db_name", required=False, default=None, help="Target database name. Will use --project_name if not provided.")
 
-    parser.add_argument("-d", "--delete_query", action="store_true", help="Use this flag so that query files are deleted from --query_paths after being copied to task workspace")
+    parser.add_argument("-d", "--delete_query", action="store_true", help="Use this flag so that query files are deleted from --query_paths after being copied to project workspace")
     parser.add_argument("-p", "--parallel_jobs", required=False, default=1, type=int, help="Number of parallel jobs")
     return parser.parse_args()
 
 
-# RUNTIME_CONFIG is saved inside WORK_PATH/task_name so every new task_name can have its own parameters.
+# RUNTIME_CONFIG is saved inside WORK_PATH/project_name so every new task_name can have its own parameters.
 def runtime_config():
     config = {
         "DEEPFRI_PROCESSING_MODES": DEEPFRI_PROCESSING_MODES,
@@ -61,9 +61,10 @@ def runtime_config():
 
 
 # prepare_task validates input data and runtime data used by pipeline
-# it creates a new task in WORK_PATH / task_name / timestamp
+# it creates a new task WORK_PATH / project_name / timestamp. Timestamp is the task
 # task_work_path contains 2 important files MERGED_SEQUENCES and TASK_CONFIG
-def prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_jobs):
+# It also contains folder with copies of all the query files used in the processing
+def prepare_task(project_name, query_paths, target_db_name, delete_query, parallel_jobs):
     # verify if deepfri model weights exists
     _ = load_deepfri_config()
     # find and verify target mmseqs database
@@ -85,9 +86,9 @@ def prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_
         print(f"\t{file}")
 
     # At this point the input data is verified. Create a new task_work_path
-    task_directory = WORK_PATH / task_name
-    task_directory.mkdir(parents=True, exist_ok=True)
-    task_work_path = create_unix_timestamp_folder(task_directory)
+    project_work_directory = WORK_PATH / project_name
+    project_work_directory.mkdir(parents=True, exist_ok=True)
+    task_work_path = create_unix_timestamp_folder(project_work_directory)
     print("Task work path: ", task_work_path)
 
     # merge sequences from all the query files
@@ -102,20 +103,20 @@ def prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_
         for query_path in query_faa_files:
             query_path.unlink()
 
-    # check if RUNTIME_CONFIG exists in  WORK_PATH / task_name
-    if (task_directory / RUNTIME_CONFIG).exists():
-        print(f"Using existing RUNTIME_CONFIG {task_directory/ RUNTIME_CONFIG}")
-        config = json.load(open(task_directory / RUNTIME_CONFIG))
+    # check if RUNTIME_CONFIG exists in  WORK_PATH / project_name
+    if (project_work_directory / RUNTIME_CONFIG).exists():
+        print(f"Using existing RUNTIME_CONFIG {project_work_directory/ RUNTIME_CONFIG}")
+        config = json.load(open(project_work_directory / RUNTIME_CONFIG))
     else:
-        print(f"Creating a new RUNTIME_CONFIG {task_directory/ RUNTIME_CONFIG}")
+        print(f"Creating a new RUNTIME_CONFIG {project_work_directory/ RUNTIME_CONFIG}")
         config = runtime_config()
-        json.dump(config, open(task_directory / RUNTIME_CONFIG, "w"), indent=4)
+        json.dump(config, open(project_work_directory / RUNTIME_CONFIG, "w"), indent=4)
     for k, v in config.items():
         print(f"\t{v} - {k}")
 
     # add task specific keys to the task config.
     config.update({
-        "task_name": task_name,
+        "project_name": project_name,
         "target_db": str(target_db),
         "target_db_name": target_db_name,
         "timestamp": task_work_path.name,
@@ -169,7 +170,7 @@ def merge_finalized_task_results(task_work_path):
     assert task_work_path / TASK_CONFIG, f"Missing {task_work_path / TASK_CONFIG}"
     task_config = json.load(open(task_work_path / TASK_CONFIG))
 
-    finished_path = FINISHED_PATH / task_config['task_name'] / task_config["timestamp"]
+    finished_path = FINISHED_PATH / task_config['project_name'] / task_config["timestamp"]
     print("Finished! Saving output files to ", finished_path)
     finished_path.mkdir(parents=True)
 
@@ -202,8 +203,8 @@ def merge_finalized_task_results(task_work_path):
 
 
 # main() simply executes functions implemented above step by step
-def main(task_name: str, query_paths: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
-    task_work_path = prepare_task(task_name, query_paths, target_db_name, delete_query, parallel_jobs)
+def main(project_name: str, query_paths: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
+    task_work_path = prepare_task(project_name, query_paths, target_db_name, delete_query, parallel_jobs)
 
     split_task_into_jobs(task_work_path)
 
@@ -217,18 +218,27 @@ def main(task_name: str, query_paths: list, target_db_name: str, delete_query: b
 if __name__ == '__main__':
     args = parse_args()
 
-    task_name = args.task_name
-    target_db_name = args.target_db_name
+    project_name = args.project_name
     delete_query = args.delete_query
     parallel_jobs = args.parallel_jobs
 
+    if args.target_db_name is None:
+        target_db_name = project_name
+    else:
+        target_db_name = args.target_db_name
+
     # here is the logic responsible for selecting correct query paths and files based on args
     if args.query_paths is None:
-        query_paths = [pathlib.Path(QUERY_PATH / task_name)]
+        query_paths = [pathlib.Path(QUERY_PATH / project_name)]
     else:
         if args.query_paths == ["all"]:
             query_paths = [QUERY_PATH]
         else:
-            query_paths = [pathlib.Path(x) for x in args.query_paths]
+            query_paths = []
+            for query_path in [pathlib.Path(x) for x in args.query_paths]:
+                if query_path.is_absolute():
+                    query_paths.append(query_path)
+                else:
+                    query_paths.append(QUERY_PATH / query_path)
 
-    main(task_name, query_paths, target_db_name, delete_query, parallel_jobs)
+    main(project_name, query_paths, target_db_name, delete_query, parallel_jobs)
