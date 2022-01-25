@@ -1,8 +1,7 @@
 import pandas as pd
 
 from CONFIG.FOLDER_STRUCTURE import MMSEQS_SEARCH_RESULTS
-from utils.mmseqs_utils import *
-
+from utils.mmseqs_utils import mmseqs_createdb, mmseqs_search, mmseqs_convertalis
 
 MMSEQS_COLUMN_NAMES = ["query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start",
                        "query_end", "target_start", "target_end", "e_value", "bit_score"]

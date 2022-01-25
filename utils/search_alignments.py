@@ -10,7 +10,7 @@ from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
 from utils.seq_file_loader import SeqFileLoader
 
 
-# alignment sequence_identity takes values between 0 and 1
+# alignment sequence identity return value between 0 and 1
 def alignment_sequences_identity(alignment):
     matches = [alignment.seqA[i] == alignment.seqB[i] for i in range(len(alignment.seqA))]
     seq_id = sum(matches) / len(alignment.seqA)
@@ -23,7 +23,7 @@ def align(query_seq, target_seq, match, missmatch, gap_open, gap_continuation):
 
 
 def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
-                      work_path: pathlib.Path, job_config):
+                      job_path: pathlib.Path, job_config):
     # format of output JSON file:
     # alignments = dict[query_id]
     #     "target_id": target_id,
@@ -34,9 +34,9 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     #         2. score = biopython alignment score
     #         3. start and end of alignment
 
-    json_file = work_path / ALIGNMENTS
-    if json_file.exists():
-        return json.load(open(json_file, "r"))
+    alignments_json_file = job_path / ALIGNMENTS
+    if alignments_json_file.exists():
+        return json.load(open(alignments_json_file, "r"))
 
     filtered_mmseqs_search = mmseqs_search_output[mmseqs_search_output['bit_score'] > job_config["MMSEQS_MIN_BIT_SCORE"]]
     filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['e_value'] < job_config["MMSEQS_MAX_EVAL"]]
@@ -69,5 +69,5 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
                 alignments[query_id] = {"target_id": target_id, "alignment": alignment,
                                               "sequence_identity": sequence_identity}
 
-    json.dump(alignments, open(json_file, "w"), indent=4, sort_keys=True)
+    json.dump(alignments, open(alignments_json_file, "w"), indent=4, sort_keys=True)
     return alignments

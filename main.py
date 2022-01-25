@@ -173,13 +173,12 @@ def merge_finalized_task_results(task_work_path):
     task_config = json.load(open(task_work_path / TASK_CONFIG))
 
     finished_path = FINISHED_PATH / task_config['project_name'] / task_config["timestamp"]
-    print("Finished! Saving output files to ", finished_path)
+    print("Saving output files to ", finished_path)
     finished_path.mkdir(parents=True)
 
     os.system(f"cp {task_work_path / TASK_CONFIG} {finished_path}")
     os.system(f"cp {task_work_path / MERGED_SEQUENCES} {finished_path}")
     os.system(f"cp -r {task_work_path}/query_files {finished_path}")
-    os.system(f"cp {task_work_path}/metadata* {finished_path}")
 
     merge_files_binary(list(task_work_path.glob(f"*/{MMSEQS_SEARCH_RESULTS}")), finished_path / MMSEQS_SEARCH_RESULTS)
 
@@ -202,6 +201,15 @@ def merge_finalized_task_results(task_work_path):
         metadata_store_path = finished_path / "jobs_metadata" / jobs_metadata_file.parent.name
         metadata_store_path.mkdir(parents=True, exist_ok=True)
         os.system(f"cp {jobs_metadata_file} {metadata_store_path}")
+
+    gcn_and_cnn_count = {"GCN": 0, "CNN": 0}
+    for jobs_metadata_file in list(task_work_path.glob("*/metadata_cnn_gcn_counts.json")):
+        job_metadata = json.load(open(jobs_metadata_file))
+        for model in ["GCN", "CNN"]:
+            gcn_and_cnn_count[model] += job_metadata[model]
+    json.dump(gcn_and_cnn_count, open(finished_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
+    os.system(f"cp {task_work_path}/metadata* {finished_path}")
+    print("FINISHED")
 
 
 # main() simply executes functions implemented above step by step

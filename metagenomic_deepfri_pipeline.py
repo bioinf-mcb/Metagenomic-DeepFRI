@@ -101,7 +101,7 @@ def metagenomic_deepfri_pipeline(job_path):
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
         print(f"Using CNN for {len(unaligned_queries)} proteins")
-    json.dump({"GCN": len(alignments), "CNN": len(unaligned_queries)}, open(job_path / "metadata_cnn_gcn.json", "w"))
+    json.dump({"GCN": len(alignments), "CNN": len(unaligned_queries)}, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
     initialize_cpp_lib()
     deepfri_models_config = load_deepfri_config()
