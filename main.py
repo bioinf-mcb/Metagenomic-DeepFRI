@@ -228,6 +228,7 @@ if __name__ == '__main__':
             _ = find_target_database(project_name)
             target_db_name = project_name
         except AssertionError:
+            print(f"No {project_name} target database found. Using {DEFAULT_NAME} instead.")
             target_db_name = DEFAULT_NAME
     else:
         target_db_name = args.target_db_name
