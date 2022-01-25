@@ -8,7 +8,7 @@ import shutil
 from Bio import SeqIO
 
 from CONFIG.FOLDER_STRUCTURE import QUERY_PATH, WORK_PATH, FINISHED_PATH, DEFAULT_NAME, MERGED_SEQUENCES, TASK_CONFIG, \
-    JOB_CONFIG, ALIGNMENTS, MMSEQS_SEARCH_RESULTS, RUNTIME_CONFIG
+    JOB_CONFIG, ALIGNMENTS, MMSEQS_SEARCH_RESULTS, PROJECT_CONFIG
 
 from CONFIG.RUNTIME_PARAMETERS import ALIGNMENT_MIN_SEQUENCE_IDENTITY, MMSEQS_MAX_EVAL, MMSEQS_MIN_BIT_SCORE, \
     PAIRWISE_ALIGNMENT_GAP_CONTINUATION, PAIRWISE_ALIGNMENT_GAP_OPEN, PAIRWISE_ALIGNMENT_MISSMATCH, \
@@ -38,7 +38,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# RUNTIME_CONFIG is saved inside WORK_PATH/project_name so every new task_name can have its own parameters.
+# runtime_config is saved inside WORK_PATH / project_name / PROJECT_CONFIG so every new task_name can have its own parameters.
 def runtime_config():
     config = {
         "DEEPFRI_PROCESSING_MODES": DEEPFRI_PROCESSING_MODES,
@@ -103,14 +103,14 @@ def prepare_task(project_name, query_paths, target_db_name, delete_query, parall
         for query_path in query_faa_files:
             query_path.unlink()
 
-    # check if RUNTIME_CONFIG exists in  WORK_PATH / project_name
-    if (project_work_directory / RUNTIME_CONFIG).exists():
-        print(f"Using existing RUNTIME_CONFIG {project_work_directory/ RUNTIME_CONFIG}")
-        config = json.load(open(project_work_directory / RUNTIME_CONFIG))
+    # check if PROJECT_CONFIG exists in  WORK_PATH / project_name
+    if (project_work_directory / PROJECT_CONFIG).exists():
+        print(f"Using existing PROJECT_CONFIG {project_work_directory / PROJECT_CONFIG}")
+        config = json.load(open(project_work_directory / PROJECT_CONFIG))
     else:
-        print(f"Creating a new RUNTIME_CONFIG {project_work_directory/ RUNTIME_CONFIG}")
+        print(f"Creating a new PROJECT_CONFIG {project_work_directory / PROJECT_CONFIG}")
         config = runtime_config()
-        json.dump(config, open(project_work_directory / RUNTIME_CONFIG, "w"), indent=4)
+        json.dump(config, open(project_work_directory / PROJECT_CONFIG, "w"), indent=4)
     for k, v in config.items():
         print(f"\t{v} - {k}")
 
