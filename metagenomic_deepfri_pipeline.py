@@ -16,6 +16,7 @@ from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
+
 ###########################################################################
 # in a nutshell:
 #
@@ -100,6 +101,7 @@ def metagenomic_deepfri_pipeline(job_path):
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
         print(f"Using CNN for {len(unaligned_queries)} proteins")
+    json.dump({"GCN": len(alignments), "CNN": len(unaligned_queries)}, open(job_path / "metadata_cnn_gcn.json", "w"))
 
     initialize_cpp_lib()
     deepfri_models_config = load_deepfri_config()

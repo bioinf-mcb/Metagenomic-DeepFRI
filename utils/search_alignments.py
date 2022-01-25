@@ -9,10 +9,10 @@ from CONFIG.FOLDER_STRUCTURE import ALIGNMENTS
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
 from utils.seq_file_loader import SeqFileLoader
 
-
+# alignment sequence_identity takes values between 0 and 1
 def alignment_sequences_identity(alignment):
     matches = [alignment.seqA[i] == alignment.seqB[i] for i in range(len(alignment.seqA))]
-    seq_id = (100 * sum(matches)) / len(alignment.seqA)
+    seq_id = sum(matches) / len(alignment.seqA)
     return seq_id
 
 
@@ -50,23 +50,23 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     gap_continuation = [job_config["PAIRWISE_ALIGNMENT_GAP_CONTINUATION"]] * len(queries)
 
     with pathos.multiprocessing.ProcessingPool(processes=CPU_COUNT) as p:
-        alignments = p.map(align, queries, targets, match, missmatch, gap_open, gap_continuation)
+        all_alignments = p.map(align, queries, targets, match, missmatch, gap_open, gap_continuation)
 
-    query_alignments = dict()
+    alignments = dict()
     for i in range(len(queries)):
-        alignment = alignments[i]
+        alignment = all_alignments[i]
         query_id = filtered_mmseqs_search["query"].iloc[i]
         target_id = filtered_mmseqs_search["target"].iloc[i]
         sequence_identity = alignment_sequences_identity(alignment)
         if sequence_identity > job_config["ALIGNMENT_MIN_SEQUENCE_IDENTITY"]:
-            if query_id not in query_alignments.keys():
-                query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
+            if query_id not in alignments.keys():
+                alignments[query_id] = {"target_id": target_id, "alignment": alignment,
                                               "sequence_identity": sequence_identity}
                 continue
 
-            if alignment.score > query_alignments[query_id]["alignment"].score:
-                query_alignments[query_id] = {"target_id": target_id, "alignment": alignment,
+            if alignment.score > alignments[query_id]["alignment"].score:
+                alignments[query_id] = {"target_id": target_id, "alignment": alignment,
                                               "sequence_identity": sequence_identity}
 
-    json.dump(query_alignments, open(json_file, "w"), indent=4, sort_keys=True)
-    return query_alignments
+    json.dump(alignments, open(json_file, "w"), indent=4, sort_keys=True)
+    return alignments
