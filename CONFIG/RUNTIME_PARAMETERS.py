@@ -14,6 +14,7 @@ GENERATE_CONTACTS = 2
 # parameters used to filter mmseqs2 search results before aligning
 MMSEQS_MIN_BIT_SCORE = -99999
 MMSEQS_MAX_EVAL = 99999
+MMSEQS_MIN_IDENTITY = 0.5
 
 # parameters used to calculate alignment score
 PAIRWISE_ALIGNMENT_MATCH = 2
