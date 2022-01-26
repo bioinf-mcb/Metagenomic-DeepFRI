@@ -4,7 +4,7 @@
 Do you have **thousands of protein sequences** with **unknown structures**, but still want to know their 
 molecular function, biological process, cellular component and enzyme commission **predicted by DeepFRI Graph Convolutional Network?**
 
-This is the right project for this task! Pipeline implemented here in a nutshell:
+This is the right project for this task! Pipeline in a nutshell:
 1. Search for similar target protein sequences using MMseqs2
 2. Align target protein contact map to fit your query protein with unknown structure 
 3. Run predictions on query sequence combined with aligned target contact map or sequence alone if no alignment was found
@@ -52,8 +52,7 @@ This is the right project for this task! Pipeline implemented here in a nutshell
    ```
 
 ### TL:DR! QUICK START
-1. Upload structure files, for example from [PDB](https://www.rcsb.org/), 
-2. to `STRUCTURE_FILES_PATH` (paths are defined in `CONFIG/FOLDER_STRUCTURE.py`)
+1. Upload structure files, for example from [PDB](https://www.rcsb.org/), to `STRUCTURE_FILES_PATH` (paths are defined in `CONFIG/FOLDER_STRUCTURE.py`)
 3. Create target database
    ```
    python update_target_mmseqs_database.py --input all
