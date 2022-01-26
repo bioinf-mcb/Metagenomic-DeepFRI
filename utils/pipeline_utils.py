@@ -5,12 +5,13 @@ from CONFIG.FOLDER_STRUCTURE import MMSEQS_DATABASES_PATH, TARGET_MMSEQS_DB_NAME
 
 
 def find_target_database(target_db_name):
+    # todo add possibility to use specific target_database path and timestamp instead of name only
     # excepted folder structure is MMSEQS_DATABASES_PATH / target_db_name / timestamp / TARGET_MMSEQS_DB_NAME
     assert (MMSEQS_DATABASES_PATH / target_db_name).exists(),         \
         f"No target databases folder found {MMSEQS_DATABASES_PATH / target_db_name}. " \
         f"Create one using update_mmseqs_database.py {'' if target_db_name == DEFAULT_NAME else '--name ' + target_db_name}"
 
-    target_databases = sorted(list((MMSEQS_DATABASES_PATH / target_db_name).iterdir()))
+    target_databases = sorted([x for x in (MMSEQS_DATABASES_PATH / target_db_name).iterdir() if x.is_dir()])
 
     assert len(target_databases) > 0,\
         f"No target databases found {MMSEQS_DATABASES_PATH / target_db_name}/timestamp. " \

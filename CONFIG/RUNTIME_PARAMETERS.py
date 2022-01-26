@@ -25,7 +25,7 @@ PAIRWISE_ALIGNMENT_GAP_CONTINUATION = -0.1
 # ALIGNMENT_MIN_SEQUENCE_IDENTITY value should be between 0 and 1
 ALIGNMENT_MIN_SEQUENCE_IDENTITY = 0.3
 
-# this list determines types of outputs of metagenomic_deepfri_pipeline
+# this list determines types of outputs of metagenomic_deepfri
 # mf = molecular_function
 # bp = biological_process
 # cc = cellular_component

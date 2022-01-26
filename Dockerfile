@@ -13,6 +13,8 @@ RUN pip install .
 
 COPY post_setup.py post_setup.py
 COPY CONFIG/FOLDER_STRUCTURE.py CONFIG/FOLDER_STRUCTURE.py
+COPY CONFIG/RUNTIME_PARAMETERS.py CONFIG/RUNTIME_PARAMETERS.py
+COPY CONFIG/get_config_dict.py CONFIG/get_config_dict.py
 # download weights into docker and remove unpacked files to save on docker image size
 RUN python post_setup.py && rm -rf /data
 

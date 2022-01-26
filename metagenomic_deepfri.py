@@ -25,7 +25,7 @@ from utils.seq_file_loader import SeqFileLoader
 #   2.  filter out proteins that are too long
 #   3.  find target database
 #
-#   metagenomic_deepfri_pipeline
+#   metagenomic_deepfri
 #   4.  run mmseqs2 search on query and target database
 #   5.  find the best alignment for pairs found by mmseqs2 search.
 #   6.  If alignment for query exists:
@@ -77,8 +77,8 @@ def load_and_verify_job_data(job_path, pipeline_config):
     return query_file, query_seqs, target_db, target_seqs
 
 
-def metagenomic_deepfri_pipeline(job_path):
-    assert (job_path / JOB_CONFIG).exists(), f"No pipeline config file found {job_path / JOB_CONFIG}"
+def metagenomic_deepfri(job_path):
+    assert (job_path / JOB_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / JOB_CONFIG}"
     job_config = json.load(open(job_path / JOB_CONFIG))
 
     query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(job_path, job_config)
@@ -87,7 +87,7 @@ def metagenomic_deepfri_pipeline(job_path):
         print(f"No sequences found. Terminating pipeline.")
         return
 
-    print(f"\nRunning metagenomic_deepfri_pipeline for {len(query_seqs)} sequences")
+    print(f"\nRunning metagenomic_deepfri for {len(query_seqs)} sequences")
     timer = ElapsedTimeLogger(job_path / "metadata_runtime.csv")
 
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)

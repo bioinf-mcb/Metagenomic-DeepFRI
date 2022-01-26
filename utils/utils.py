@@ -83,3 +83,16 @@ def merge_files_binary(file_paths: list, output_path: pathlib.Path):
         for input_file in file_paths:
             with open(input_file, 'rb') as reader:
                 shutil.copyfileobj(reader, writer)
+
+
+def parse_input_paths(input_list, project_name, parent_directory):
+    if input_list is None:
+        input_paths = [pathlib.Path(parent_directory / project_name)]
+    else:
+        input_paths = []
+        for input_path in [pathlib.Path(x) for x in input_list]:
+            if input_path.is_absolute():
+                input_paths.append(input_path)
+            else:
+                input_paths.append(parent_directory / input_path)
+    return input_paths

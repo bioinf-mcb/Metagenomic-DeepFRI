@@ -1,8 +1,14 @@
+import json
 import os
+import pathlib
 import requests
 import shutil
 
-from CONFIG.FOLDER_STRUCTURE import *
+from CONFIG.FOLDER_STRUCTURE import DATA_ROOT, STRUCTURE_FILES_PATH, QUERY_PATH, DEFAULT_NAME, FINISHED_PATH, WORK_PATH, \
+    SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, \
+    PROJECT_CONFIG, TARGET_DB_CONFIG
+
+from CONFIG.get_config_dict import target_db_config, runtime_config
 
 
 def download_file(url, path):
@@ -20,8 +26,17 @@ def main():
     FINISHED_PATH.mkdir(exist_ok=True, parents=True)
 
     WORK_PATH.mkdir(exist_ok=True, parents=True)
+    (WORK_PATH / DEFAULT_NAME).mkdir(exist_ok=True, parents=True)
+    if not (WORK_PATH / DEFAULT_NAME / PROJECT_CONFIG).exists():
+        config = runtime_config()
+        json.dump(config, open(WORK_PATH / DEFAULT_NAME / PROJECT_CONFIG, "w"), indent=4)
+
     SEQ_ATOMS_DATASET_PATH.mkdir(exist_ok=True, parents=True)
     MMSEQS_DATABASES_PATH.mkdir(exist_ok=True, parents=True)
+    (MMSEQS_DATABASES_PATH / DEFAULT_NAME).mkdir(exist_ok=True, parents=True)
+    if not (WORK_PATH / DEFAULT_NAME / TARGET_DB_CONFIG).exists():
+        config = target_db_config()
+        json.dump(config, open(WORK_PATH / DEFAULT_NAME / TARGET_DB_CONFIG, "w"), indent=4)
 
     if not DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists():
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
