@@ -1,0 +1,27 @@
+import dataclasses
+
+
+@dataclasses.dataclass
+class SeqRecord:
+    id: str
+    seq: str
+
+
+def load_faa_file(file):
+    seq_records = []
+    with open(file, "r") as f:
+        for line in f:
+            if line.startswith(">"):
+                seq_id = line[1:].replace("\n", "")
+                if "," in seq_id or "\t" in seq_id:
+                    raise ValueError(seq_id + " contains characters that will break something down the line")
+                seq_records.append(SeqRecord(id=seq_id, seq=""))
+            else:
+                seq_records[-1].seq += line.replace("\n", "")
+    return seq_records
+
+
+def write_faa_file(seq_records, path):
+    with open(path, "w") as f:
+        for seq_record in seq_records:
+            f.write(f">{seq_record.id}\n{seq_record.seq}\n")

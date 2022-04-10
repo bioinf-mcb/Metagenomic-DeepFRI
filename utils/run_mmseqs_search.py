@@ -1,6 +1,7 @@
 import pandas as pd
 
 from CONFIG.FOLDER_STRUCTURE import MMSEQS_SEARCH_RESULTS
+from utils.encode_sequence_ids import encode_faa_ids
 from utils.mmseqs_utils import mmseqs_createdb, mmseqs_search, mmseqs_convertalis
 
 MMSEQS_COLUMN_NAMES = ["query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start",
@@ -10,12 +11,22 @@ MMSEQS_COLUMN_NAMES = ["query", "target", "identity", "alignment_length", "misma
 def run_mmseqs_search(query_file, target_db, job_path):
     output_file = job_path / MMSEQS_SEARCH_RESULTS
 
-    if not output_file.exists():
-        query_db = job_path / 'queryDB'
-        mmseqs_createdb(query_file, query_db)
-        
-        result_db = job_path / 'search_resultDB'
-        mmseqs_search(query_db, target_db, result_db)
-        mmseqs_convertalis(query_db, target_db, result_db, output_file)
+    if output_file.exists():
+        return pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
 
-    return pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
+    faa_hashed_ids_path, hash_lookup_dict = encode_faa_ids(query_file)
+
+    query_db = job_path / 'queryDB'
+    mmseqs_createdb(faa_hashed_ids_path, query_db)
+
+    result_db = job_path / 'search_resultDB'
+    mmseqs_search(query_db, target_db, result_db)
+
+    hashed_output_file = str(output_file) + ".hashed_ids"
+    mmseqs_convertalis(query_db, target_db, result_db, hashed_output_file)
+
+    output = pd.read_csv(hashed_output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
+    output["query"] = output["query"].map(hash_lookup_dict)
+
+    output.to_csv(output_file, sep="\t", index=False, header=False)
+    return output

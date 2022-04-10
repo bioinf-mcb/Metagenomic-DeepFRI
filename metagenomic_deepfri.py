@@ -1,8 +1,6 @@
 import json
 import os.path
 
-from Bio import SeqIO
-
 from DeepFRI.deepfrier import Predictor
 
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, ATOMS, JOB_CONFIG
@@ -11,6 +9,7 @@ from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
 from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
 
 from utils.elapsed_time_logger import ElapsedTimeLogger
+from utils.faa_file_io import load_faa_file
 from utils.pipeline_utils import find_target_database, load_deepfri_config
 from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
@@ -42,8 +41,8 @@ def load_and_verify_job_data(job_path, pipeline_config):
     query_file = query_files[0]
     if len(query_files) > 1:
         print(f"{job_path} contains more than one .faa file. Only {query_file} will be processed. {query_files[1:]} will be discarded")
-    with open(query_file, "r") as f:
-        query_seqs = {record.id: record.seq for record in SeqIO.parse(f, "fasta")}
+
+    query_seqs = {record.id: record.seq for record in load_faa_file(query_file)}
     assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
     print(f"Found total of {len(query_seqs)} protein sequences in {query_file}")
 
