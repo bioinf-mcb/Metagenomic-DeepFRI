@@ -16,7 +16,7 @@ setup(
         "pandas==1.3.5",
         "pathos==0.2.8",
         "scikit-learn==1.0.2",
-        "tensorflow==2.7.0",
+        "tensorflow==2.7.1",
     ],
     packages=find_packages(),
 )
