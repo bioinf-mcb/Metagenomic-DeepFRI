@@ -13,8 +13,6 @@ def load_faa_file(file):
         for line in f:
             if line.startswith(">"):
                 seq_id = line[1:].replace("\n", "")
-                if "," in seq_id or "\t" in seq_id:
-                    raise ValueError(seq_id + " contains characters that will break something down the line")
                 seq_records.append(SeqRecord(id=seq_id, seq=""))
             else:
                 seq_records[-1].seq += line.replace("\n", "")
