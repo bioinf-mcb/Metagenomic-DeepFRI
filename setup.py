@@ -1,6 +1,9 @@
 from setuptools import find_packages
 from setuptools import setup
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setup(
     name="metagenomic-deepFRI",
     version="0.1",
@@ -10,14 +13,7 @@ setup(
     url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     license="GNU GPLv3",
-    install_requires=[
-        "biopython==1.79",
-        "numpy==1.21.5",
-        "pandas==1.3.5",
-        "pathos==0.2.8",
-        "scikit-learn==1.0.2",
-        "tensorflow==2.7.0",
-    ],
+    install_requires=required,
     packages=find_packages(),
 )
 

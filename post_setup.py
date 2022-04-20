@@ -1,8 +1,9 @@
 import json
 import os
 import pathlib
+
 import requests
-import shutil
+from tqdm.auto import tqdm
 
 from CONFIG.FOLDER_STRUCTURE import DATA_ROOT, STRUCTURE_FILES_PATH, QUERY_PATH, DEFAULT_NAME, FINISHED_PATH, WORK_PATH, \
     SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH, DEEPFRI_MODEL_WEIGHTS_JSON_FILE, DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, \
@@ -11,13 +12,17 @@ from CONFIG.FOLDER_STRUCTURE import DATA_ROOT, STRUCTURE_FILES_PATH, QUERY_PATH,
 from CONFIG.get_config_dict import target_db_config, runtime_config
 
 
-def download_file(url, path):
+def download_file(url, destination, chunk_size=1024):
     with requests.get(url, stream=True) as r:
-        with open(path, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
+        total_length = int(r.headers.get("Content-Length"))
+        with open(destination, "wb") as f:
+            with tqdm(unit="B", unit_scale=True, unit_divisor=1024, total=total_length) as progress_bar:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    datasize = f.write(chunk)
+                    progress_bar.update(datasize)
 
 
-def main():
+def create_folder_structure():
     print("Creating folders structure based on CONFIG/FOLDER_STRUCTURE.py")
     DATA_ROOT.mkdir(exist_ok=True, parents=True)
     STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
@@ -27,29 +32,40 @@ def main():
 
     WORK_PATH.mkdir(exist_ok=True, parents=True)
     (WORK_PATH / DEFAULT_NAME).mkdir(exist_ok=True, parents=True)
+    # todo check if creation of default config files are actually necessary
     if not (WORK_PATH / DEFAULT_NAME / PROJECT_CONFIG).exists():
         config = runtime_config()
         json.dump(config, open(WORK_PATH / DEFAULT_NAME / PROJECT_CONFIG, "w"), indent=4)
 
     SEQ_ATOMS_DATASET_PATH.mkdir(exist_ok=True, parents=True)
     MMSEQS_DATABASES_PATH.mkdir(exist_ok=True, parents=True)
+
     (MMSEQS_DATABASES_PATH / DEFAULT_NAME).mkdir(exist_ok=True, parents=True)
+    # todo check if creation of default config files are actually necessary
     if not (WORK_PATH / DEFAULT_NAME / TARGET_DB_CONFIG).exists():
         config = target_db_config()
         json.dump(config, open(WORK_PATH / DEFAULT_NAME / TARGET_DB_CONFIG, "w"), indent=4)
 
+
+def download_and_extract_deepfri_weights():
     if not DEEPFRI_MODEL_WEIGHTS_JSON_FILE.exists():
         print(f"No model config.json file found in {DATA_ROOT / 'trained_models'}.")
 
-        if not pathlib.Path("newest_trained_models.tar.gz").exists():
-            print("Downloading model weights, approx 800MB")
-            download_file(DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, 'newest_trained_models.tar.gz')
-
+        compressed_model_weights_path = pathlib.Path("newest_trained_models.tar.gz")
+        if not compressed_model_weights_path.exists():
+            print("Downloading model weights")
+            download_file(DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL, compressed_model_weights_path)
         print(f"unloading models into {DATA_ROOT / 'trained_models'} directory")
-        os.system(f"tar xvzf newest_trained_models.tar.gz -C {DATA_ROOT}")
+        os.system(f"tar xvzf {compressed_model_weights_path} -C {DATA_ROOT}")
+        compressed_model_weights_path.unlink()
     else:
         print("Found model weights")
-    print("All good and ready to go!")
+
+
+def main():
+    create_folder_structure()
+    download_and_extract_deepfri_weights()
+    print("Ready to go!")
 
 
 if __name__ == "__main__":

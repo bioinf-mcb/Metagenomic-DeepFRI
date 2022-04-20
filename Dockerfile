@@ -1,21 +1,19 @@
 # syntax=docker/dockerfile:1
-FROM tensorflow/tensorflow:2.7.0
-RUN apt update
-RUN apt upgrade -y
-
-RUN apt install mmseqs2 -y
-RUN apt-get install libboost-numpy1.71 libboost-python1.71 -y
+FROM ubuntu:latest
+RUN apt update &&  \
+    apt upgrade -y &&  \
+    apt-get update &&  \
+    apt-get upgrade -y && \
+    apt install python3-pip -y && \
+    apt install mmseqs2 -y && \
+    apt-get install libboost-numpy1.71 libboost-python1.71 -y && \
+    apt-get clean autoclean && \
+    apt-get autoremove --yes && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 WORKDIR /metagenomic-deepfri
 
-COPY setup.py setup.py
-RUN pip install .
-
-COPY post_setup.py post_setup.py
-COPY CONFIG/FOLDER_STRUCTURE.py CONFIG/FOLDER_STRUCTURE.py
-COPY CONFIG/RUNTIME_PARAMETERS.py CONFIG/RUNTIME_PARAMETERS.py
-COPY CONFIG/get_config_dict.py CONFIG/get_config_dict.py
-# download weights into docker and remove unpacked files to save on docker image size
-RUN python post_setup.py && rm -rf /data
+COPY requirements.txt requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
