@@ -1,0 +1,12 @@
+repos:
+- repo: https://github.com/pre-commit/mirrors-yapf.git
+  rev: v0.30.0
+  hooks:
+  - id: yapf
+    args: ['--style=.style.yapf', '--parallel', '--in-place']
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  -   id: end-of-file-fixer
+  -   id: trailing-whitespace
