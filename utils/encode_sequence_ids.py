@@ -14,7 +14,7 @@ def encode_faa_ids(path):
     for i in range(len(seq_records)):
         seq_id_hash = hash_sequence_id(seq_records[i].id)
         while seq_id_hash in hash_lookup_dict.keys():
-            seq_id_hash = hash_sequence_id(seq_records[i].id+"1")
+            seq_id_hash = hash_sequence_id(seq_records[i].id + "1")
         hash_lookup_dict[seq_id_hash] = seq_records[i].id
         seq_records[i].id = seq_id_hash
 

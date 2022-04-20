@@ -19,20 +19,26 @@ from utils.utils import create_unix_timestamp_folder, merge_files_binary, search
 
 
 def parse_args():
+    # yapf: disable
     parser = argparse.ArgumentParser(description="This script contains all the logic to run DeepFri's GCN or CNN experiments.")
 
-    parser.add_argument("-p", "--project_name", required=False, default=DEFAULT_NAME, help="Task name")
+    parser.add_argument("-p", "--project_name", required=False, default=DEFAULT_NAME,
+                        help="Task name")
 
     parser.add_argument("-i", "--input", nargs='+', required=False, default=None,
                         help=f"List of folder or file paths containing query .faa files. Both absolute and relative to {QUERY_PATH} are accepted."
                              f"If not provided pipeline will search in {QUERY_PATH}/--project_name. "
                              f"Use '--input .' to process all files within {QUERY_PATH}")  # logic described here is implemented in parse_input_paths
+
     # todo add possibility to use specific target_database path and timestamp instead of name only
     parser.add_argument("-t", "--target_db_name", required=False, default=None,
                         help="Target database name or relative path. Will use --project_name if not provided or DEFAULT_NAME if --project_name db is missing.")
 
-    parser.add_argument("-d", "--delete_query", action="store_true", help="Use this flag so that query files are deleted from --input after being copied to project workspace")
-    parser.add_argument("-n", "--n_parallel_jobs", required=False, default=1, type=int, help="Number of parallel jobs")
+    parser.add_argument("-d", "--delete_query", action="store_true",
+                        help="Use this flag so that query files are deleted from --input after being copied to project workspace")
+    parser.add_argument("-n", "--n_parallel_jobs", required=False, default=1, type=int,
+                        help="Number of parallel jobs")
+    # yapf: enable
     return parser.parse_args()
 
 
@@ -107,7 +113,7 @@ def prepare_task(project_name, input_paths, target_db_name, delete_query, n_para
     return task_work_path
 
 
-# jobs are the subdirectories of the task_work_path named 1,2,3...parallel_jobs. 
+# jobs are the subdirectories of the task_work_path named 1,2,3...parallel_jobs.
 # metagenomic_deepfri.py runs inside those directories.
 # it clones task config as a job config which is used to find jobs inside the task
 # query sequences are divided evenly across all jobs

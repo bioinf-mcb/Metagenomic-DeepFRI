@@ -1,5 +1,7 @@
 import pathlib
+
 from Bio import SeqIO
+
 from CONFIG.FOLDER_STRUCTURE import SEQUENCES, ATOMS
 
 

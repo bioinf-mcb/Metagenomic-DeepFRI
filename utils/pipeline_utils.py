@@ -35,4 +35,3 @@ def load_deepfri_config():
     deepfri_config = json.loads(json_string)
 
     return deepfri_config
-

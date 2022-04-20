@@ -18,13 +18,27 @@ def alignment_sequences_identity(alignment):
 
 
 def align(query_seq, target_seq, match, missmatch, gap_open, gap_continuation):
-    return pairwise2.align.globalms(query_seq, target_seq,
-                                    match, missmatch, gap_open, gap_continuation,
+    return pairwise2.align.globalms(query_seq,
+                                    target_seq,
+                                    match,
+                                    missmatch,
+                                    gap_open,
+                                    gap_continuation,
                                     one_alignment_only=True)[0]
 
 
 def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
                       job_path: pathlib.Path, job_config):
+    # todo fill this up
+    """
+
+    :param query_seqs:
+    :param mmseqs_search_output:
+    :param target_seqs:
+    :param job_path:
+    :param job_config:
+    :return:
+    """
     # format of output JSON file:
     # alignments = dict[query_id]
     #     "target_id": target_id,
@@ -35,21 +49,21 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     #         2. score = biopython alignment score
     #         3. start and end of alignment
 
-    alignments_json_file = job_path / ALIGNMENTS
-    if alignments_json_file.exists():
-        return json.load(open(alignments_json_file, "r"))
+    alignment_output_json_path = job_path / ALIGNMENTS
+    if alignment_output_json_path.exists():
+        return json.load(open(alignment_output_json_path, "r"))
 
     print(f"MMseqs search output is {len(mmseqs_search_output)} long.")
     query_seqs_keys = list(query_seqs.keys())
-    filtered_mmseqs_search = mmseqs_search_output[mmseqs_search_output['bit_score'] > job_config["MMSEQS_MIN_BIT_SCORE"]]
-    filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['e_value'] < job_config["MMSEQS_MAX_EVAL"]]
-    filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['identity'] > job_config["MMSEQS_MIN_IDENTITY"]]
-    filtered_mmseqs_search = filtered_mmseqs_search[filtered_mmseqs_search['query'].isin(query_seqs_keys)]
-    print(f"Filtered {len(mmseqs_search_output) - len(filtered_mmseqs_search)} mmseqs matches. "
-          f"Total alignments to check {len(filtered_mmseqs_search)}")
+    filtered = mmseqs_search_output[mmseqs_search_output['bit_score'] > job_config["MMSEQS_MIN_BIT_SCORE"]]
+    filtered = filtered[filtered['e_value'] < job_config["MMSEQS_MAX_EVAL"]]
+    filtered = filtered[filtered['identity'] > job_config["MMSEQS_MIN_IDENTITY"]]
+    filtered = filtered[filtered['query'].isin(query_seqs_keys)]
+    print(f"Filtered {len(mmseqs_search_output) - len(filtered)} mmseqs matches. "
+          f"Total alignments to check {len(filtered)}")
 
-    queries = list(map(lambda x: query_seqs[x], filtered_mmseqs_search["query"]))
-    targets = list(map(lambda x: target_seqs[x], filtered_mmseqs_search["target"]))
+    queries = list(map(lambda x: query_seqs[x], filtered["query"]))
+    targets = list(map(lambda x: target_seqs[x], filtered["target"]))
 
     # Couldn't find more elegant solution on how to use repeating values for pathos.multiprocessing
     # Standard multiprocessing.Pool is out of reach due to problematic pairwise2.align.globalms behaviour.
@@ -62,19 +76,27 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     with pathos.multiprocessing.ProcessingPool(processes=CPU_COUNT) as p:
         all_alignments = p.map(align, queries, targets, match, missmatch, gap_open, gap_continuation)
 
-    alignments = dict()
+    alignments_output = dict()
     for i in range(len(all_alignments)):
         alignment = all_alignments[i]
         # filter out bad alignments based on alignment sequences identity
         sequence_identity = alignment_sequences_identity(alignment)
         if sequence_identity > job_config["ALIGNMENT_MIN_SEQUENCE_IDENTITY"]:
-            query_id = filtered_mmseqs_search["query"].iloc[i]
-            target_id = filtered_mmseqs_search["target"].iloc[i]
-            if query_id not in alignments.keys():
-                alignments[query_id] = {"target_id": target_id, "alignment": alignment, "sequence_identity": sequence_identity}
+            query_id = filtered["query"].iloc[i]
+            target_id = filtered["target"].iloc[i]
+            if query_id not in alignments_output.keys():
+                alignments_output[query_id] = {
+                    "target_id": target_id,
+                    "alignment": alignment,
+                    "sequence_identity": sequence_identity
+                }
             # select best alignment based on pairwise2.align.globalms.score
-            elif alignment.score > alignments[query_id]["alignment"].score:
-                alignments[query_id] = {"target_id": target_id, "alignment": alignment, "sequence_identity": sequence_identity}
+            elif alignment.score > alignments_output[query_id]["alignment"].score:
+                alignments_output[query_id] = {
+                    "target_id": target_id,
+                    "alignment": alignment,
+                    "sequence_identity": sequence_identity
+                }
 
-    json.dump(alignments, open(alignments_json_file, "w"), indent=4, sort_keys=True)
-    return alignments
+    json.dump(alignments_output, open(alignment_output_json_path, "w"), indent=4, sort_keys=True)
+    return alignments_output

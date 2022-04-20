@@ -15,7 +15,6 @@ from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
 from utils.seq_file_loader import SeqFileLoader
 
-
 ###########################################################################
 # in a nutshell:
 #
@@ -40,7 +39,8 @@ def load_and_verify_job_data(job_path, pipeline_config):
     assert len(query_files) > 0, f"No query .faa files found in {job_path}"
     query_file = query_files[0]
     if len(query_files) > 1:
-        print(f"{job_path} contains more than one .faa file. Only {query_file} will be processed. {query_files[1:]} will be discarded")
+        print(f"{job_path} contains more than one .faa file. "
+              f"Only {query_file} will be processed. {query_files[1:]} will be discarded")
 
     query_seqs = {record.id: record.seq for record in load_faa_file(query_file)}
     assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
@@ -57,7 +57,9 @@ def load_and_verify_job_data(job_path, pipeline_config):
         print(f"Skipping {len(proteins_over_max_length)} proteins due to sequence length over "
               f"CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH. "
               f"\nSkipped protein ids will be saved in metadata_skipped_ids_due_to_max_length.json")
-        json.dump(proteins_over_max_length, open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"), indent=4,
+        json.dump(proteins_over_max_length,
+                  open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
+                  indent=4,
                   sort_keys=True)
         if len(query_seqs) == 0:
             print(f"All sequences in {query_file} were too long. No sequences will be processed.")
@@ -100,7 +102,8 @@ def metagenomic_deepfri(job_path):
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
         print(f"Using CNN for {len(unaligned_queries)} proteins")
-    json.dump({"GCN": len(alignments), "CNN": len(unaligned_queries)}, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
+    gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
+    json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
     initialize_cpp_lib()
     deepfri_models_config = load_deepfri_config()
@@ -130,8 +133,8 @@ def metagenomic_deepfri(job_path):
                     generated_query_contact_map = load_aligned_contact_map(
                         str(SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
                         job_config["ANGSTROM_CONTACT_THRESHOLD"],
-                        alignment["alignment"][0],      # query alignment
-                        alignment["alignment"][1],      # target alignment
+                        alignment["alignment"][0],    # query alignment
+                        alignment["alignment"][1],    # target alignment
                         job_config["GENERATE_CONTACTS"])
 
                     gcn.predict_with_cmap(query_seq, generated_query_contact_map, query_id)

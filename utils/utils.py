@@ -17,11 +17,15 @@ def run_command(command, timeout=-1):
         command = str.split(command, ' ')
 
     my_env = os.environ.copy()
-    my_env["PATH"] += ":"+str.join(":", ENV_PATHS)
+    my_env["PATH"] += ":" + str.join(":", ENV_PATHS)
 
     try:
         if timeout > 0:
-            completed_process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env, timeout=timeout)
+            completed_process = subprocess.run(command,
+                                               stdout=subprocess.PIPE,
+                                               stderr=subprocess.PIPE,
+                                               env=my_env,
+                                               timeout=timeout)
         else:
             completed_process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
@@ -42,7 +46,7 @@ def search_files_in_paths(paths: list, pattern: str):
             print(f"Unable to locate {path}.")
             continue
         if path.is_dir():
-            files.extend(list(path.glob("**/*"+pattern)))
+            files.extend(list(path.glob("**/*" + pattern)))
         else:
             if not path.name.endswith(pattern):
                 print(f"{path} is not an {pattern} file which is excepted format.")

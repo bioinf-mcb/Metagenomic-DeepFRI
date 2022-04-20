@@ -35,7 +35,6 @@ STRUCTURE_FILES_PARSERS = {
     '.ent.gz': parse_pdb
 }
 
-
 ###################################################################################################################
 # main:
 #   1.  iterates over --input searching for file extensions that match the STRUCTURE_FILES_PARSERS keys.
@@ -58,17 +57,24 @@ STRUCTURE_FILES_PARSERS = {
 
 
 def parse_args():
+    # yapf: disable
     parser = argparse.ArgumentParser(description="Read structure files from folders --input to extract sequence and atom positions. "
                                                  "Create and index new --output MMSEQS2 database")
 
-    parser.add_argument("-p", "--project_name", required=False, default=DEFAULT_NAME, help="Name for the target database")
+    parser.add_argument("-p", "--project_name", required=False, default=DEFAULT_NAME,
+                        help="Name for the target database")
+
     parser.add_argument("-i", "--input", nargs='+', required=False, default=None,
                         help=f"List of folder or file paths containing structure files. Both absolute and relative to {STRUCTURE_FILES_PATH} are accepted."
                              f"If not provided pipeline will search in {STRUCTURE_FILES_PATH}/--name. "
                              f"Use '--input .' to process all files within {STRUCTURE_FILES_PATH}")  # logic described here is implemented in parse_input_paths
+
     # todo add max_target_chain_length argument and inform user if there is difference between this arg and existing target_db_config.json
-    # parser.add_argument("-m", "--max_target_chain_length", required=False, default=None, help="If protein chain is longer than this value, it will be truncated")
-    parser.add_argument("--overwrite", action="store_true", help="Flag to override existing sequences and atom positions")
+    # parser.add_argument("-m", "--max_target_chain_length", required=False, default=None,
+    #                     help="If protein chain is longer than this value, it will be truncated")
+    parser.add_argument("--overwrite", action="store_true",
+                        help="Flag to override existing sequences and atom positions")
+    # yapf: enable
     return parser.parse_args()
 
 
@@ -198,7 +204,9 @@ def main(input_paths, project_name, overwrite):
     print("\nProcessing", len(structure_files), "files")
     initialize_CPP_LIB()
     with multiprocessing.Pool(processes=CPU_COUNT) as p:
-        results = p.starmap(process_structure_file, zip(structure_files.values(), repeat(seq_atoms_path.absolute()), repeat(max_target_chain_length)))
+        results = p.starmap(
+            process_structure_file,
+            zip(structure_files.values(), repeat(seq_atoms_path.absolute()), repeat(max_target_chain_length)))
 
     result_types, types_counts = np.unique(results, return_counts=True)
     for i in range(len(result_types)):

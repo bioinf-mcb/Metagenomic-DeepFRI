@@ -9,12 +9,11 @@ import pathlib
 # WORK_PATH - contains all currently running or interrupted tasks. Each project folder also contain runtime parameters in project_config.json
 # FINISHED_PATH - root for all finished pipeline results. Will contain folders named after project_name
 
-DATA_ROOT = pathlib.Path("/data")   # You probably want to edit only this
+DATA_ROOT = pathlib.Path("/data")    # You probably want to edit only this
 STRUCTURE_FILES_PATH = DATA_ROOT / "structure_files"
 QUERY_PATH = DATA_ROOT / "query"
 WORK_PATH = DATA_ROOT / "workspace"
 FINISHED_PATH = DATA_ROOT / "finished"
-
 
 ##########################################
 # Shouldn't edit anything below this point
