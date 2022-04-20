@@ -17,6 +17,7 @@ This is the right project for this task! Pipeline in a nutshell:
 
 # Installation
 ## Local
+### Linux
 1. Setup python environment
     ```
     pip install .  
@@ -37,7 +38,36 @@ This is the right project for this task! Pipeline in a nutshell:
    ```
    python post_setup.py
    ```
-## Docker
+### MacOS
+1. Setup conda environment 
+    ```
+    conda upgrade  
+    ``` 
+   and check what packages you need, for example:
+    ```
+    conda install pip  
+    ```
+2. Setup python environment
+    ```
+    pip install .  
+    ```
+3. Using Homebrew ($(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"), install mmseqs2:
+   ```
+    brew install mmseqs2  
+    ```
+4. Using Homebrew install boost-python3:
+   ```
+    brew install boost-python3  
+    ```
+5.  (optional) Edit `CONFIG/FOLDER_STRUCTURE.py` to customize your folder structure 
+   ```
+   nano CONFIG/FOLDER_STRUCTURE.py
+   ```
+6. Run `post_setup.py` script to create folder structure according to `FOLDER_STRUCTURE.py` and to download and unzip DeepFRI model weights
+   ```
+   python post_setup.py
+   ```
+## Docker (covers steps 1-3 from Linux and 1-4 from MacOS Local installation)
 1. Create `YOUR_DATA_ROOT` directory on your local machine
    ```
    mkdir /YOUR_DATA_ROOT
@@ -50,7 +80,6 @@ This is the right project for this task! Pipeline in a nutshell:
    ```
    python post_setup.py
    ```
-
 ### TL:DR! QUICK START
 1. Upload structure files, for example from [PDB](https://www.rcsb.org/), to `STRUCTURE_FILES_PATH` (paths are defined in `CONFIG/FOLDER_STRUCTURE.py`)
 3. Create target database
