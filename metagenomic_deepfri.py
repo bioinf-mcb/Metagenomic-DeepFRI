@@ -119,9 +119,9 @@ def metagenomic_deepfri(job_path):
         print("Processing mode: ", mode)
         # GCN for queries with aligned contact map
         if len(alignments) > 0:
-            output_file = job_path / f"results_gcn_{mode}.csv"
-            if output_file.exists():
-                print(f"{output_file.name} already exists.")
+            output_file_name = job_path / f"results_gcn_{mode}"
+            if output_file_name.with_suffix('.csv').exists():
+                print(f"{output_file_name} results already exists.")
             else:
                 gcn_params = deepfri_models_config["gcn"]["models"][mode]
                 gcn = Predictor.Predictor(gcn_params, gcn=True)
@@ -139,22 +139,26 @@ def metagenomic_deepfri(job_path):
 
                     gcn.predict_with_cmap(query_seq, generated_query_contact_map, query_id)
 
-                gcn.export_csv(output_file, verbose=False)
+                gcn.export_csv(output_file_name.with_suffix('.csv'))
+                gcn.export_tsv(output_file_name.with_suffix('.tsv'))
+                gcn.export_json(output_file_name.with_suffix('.json'))
                 del gcn
                 timer.log(f"deepfri_gcn_{mode}")
 
         # CNN for queries without satisfying alignments
         if len(unaligned_queries) > 0:
-            output_file = job_path / f"results_cnn_{mode}.csv"
-            if output_file.exists():
-                print(f"{output_file.name} already exists.")
+            output_file_name = job_path / f"results_cnn_{mode}"
+            if output_file_name.with_suffix('.csv').exists():
+                print(f"{output_file_name.name} already exists.")
             else:
                 cnn_params = deepfri_models_config["cnn"]["models"][mode]
                 cnn = Predictor.Predictor(cnn_params, gcn=False)
                 for query_id in unaligned_queries:
                     cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-                cnn.export_csv(output_file, verbose=False)
+                cnn.export_csv(output_file_name.with_suffix('.csv'))
+                cnn.export_tsv(output_file_name.with_suffix('.tsv'))
+                cnn.export_json(output_file_name.with_suffix('.json'))
                 del cnn
                 timer.log(f"deepfri_cnn_{mode}")
 
