@@ -1,24 +1,20 @@
 cff-version: 1.2.0
-title: >-
-  Structure-based protein function prediction using
-  graph convolutional networks
+title: 'Structure-based protein function prediction using
+  graph convolutional networks'
 message: 'If you use this software, please cite it as below.'
 type: article
 authors:
   - given-names: Vladimir
     family-names: Gligorijević
-    affiliation: >-
-      Center for Computational Biology, Flatiron
+    affiliation: Center for Computational Biology, Flatiron
       Institute, New York, NY, USA
-    orcid: 'https://orcid.org/0000-0002-5165-0973'
+    orcid: https://orcid.org/0000-0002-5165-0973
   - given-names: P. Douglas
     family-names: Renfrew
-    affiliation: >-
-      Center for Computational Biology, Flatiron
-      Institute, New York, NY, USA
+    affiliation: Center for Computational Biology, Flatiron Institute, 
+      New York, NY, USA
   - given-names: Tomasz
     family-names: Kosciolek
-    affiliation: >-
-      Malopolska Centre of Biotechnology,
-      Jagiellonian University, Krakow, Poland
+    affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
+      Krakow, Poland
     orcid: 'https://orcid.org/0000-0002-5693-3593'
