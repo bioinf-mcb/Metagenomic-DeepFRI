@@ -1,15 +1,24 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-type: "article"
+title: >-
+  Structure-based protein function prediction using
+  graph convolutional networks
+message: 'If you use this software, please cite it as below.'
+type: article
 authors:
-- family-names: "Gligorijević"
-  given-names: "Vladimir"
-  orcid: "https://orcid.org/0000-0002-5165-0973"
-- family-names: "Bot"
-  given-names: "Hew"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-title: "My Research Software"
-version: 2.0.4
-doi: 10.5281/zenodo.1234
-date-released: 2017-12-18
-url: "https://github.com/flatironinstitute/DeepFRI"
+  - given-names: Vladimir
+    family-names: Gligorijević
+    affiliation: >-
+      Center for Computational Biology, Flatiron
+      Institute, New York, NY, USA
+    orcid: 'https://orcid.org/0000-0002-5165-0973'
+  - given-names: P. Douglas
+    family-names: Renfrew
+    affiliation: >-
+      Center for Computational Biology, Flatiron
+      Institute, New York, NY, USA
+  - given-names: Tomasz
+    family-names: Kosciolek
+    affiliation: >-
+      Malopolska Centre of Biotechnology,
+      Jagiellonian University, Krakow, Poland
+    orcid: 'https://orcid.org/0000-0002-5693-3593'
