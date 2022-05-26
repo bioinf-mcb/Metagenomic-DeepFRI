@@ -1,29 +1,48 @@
 # YAML 1.2
 # Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
 cff-version: 1.2.0
-message: This research made use of Gammapy, a community-developed core Python package
-  for gamma-ray astronomy. https://ui.adsabs.harvard.edu/abs/2017ICRC...35..766D/abstract
-title: 'Gammapy: Python toolbox for gamma-ray astronomy'
-abstract: 'Gammapy analyzes gamma-ray data and creates sky images, spectra and lightcurves,
-  from event lists and instrument response information; it can also determine the
-  position, morphology and spectra of gamma-ray sources. It is used to analyze data
-  from H.E.S.S., Fermi-LAT, and the Cherenkov Telescope Array (CTA).'
-doi: 10.5281/zenodo.4701500
+cff-version: 1.2.0
+title: ''
+message: ''
+type: article
 authors:
-- given-names: Axel
-  family-names: Donath
-  affiliation: Center for Astrophysics | Harvard & Smithsonian, CfA, 60 Garden St.,
-    02138 Cambridge MA, US
-  orcid: https://orcid.org/0000-0003-4568-7005
-  email: "axel.donath@cfa.havard.edu"
-- given-names: Christoph
-  family-names: Deil
-  affiliation: HeidelbergCement AG, Berliner Straße 6, 69120 Heidelberg, Germany
-- given-names: Régis
-  family-names: Terrier
-  affiliation: Astroparticule and Cosmologie, Université Paris Cité, CNRS/IN2P3, F-75013
-    Paris, France
-  orcid: https://orcid.org/0000-0002-8219-4667
+
+
+message: If you use this software, please cite it as below.
+title: 'Structure-based protein function prediction using
+  graph convolutional networks'
+abstract: 'The rapid increase in the number of proteins in sequence databases 
+  and the diversity of their functions challenge computational approaches for 
+  automated function prediction. Here, we introduce DeepFRI, 
+  a Graph Convolutional Network for predicting protein functions by leveraging 
+  sequence features extracted from a protein language model and protein structures. 
+  It outperforms current leading methods and sequence-based Convolutional Neural Networks 
+  and scales to the size of current sequence repositories. Augmenting the training set 
+  of experimental structures with homology models allows us to significantly 
+  expand the number of predictable functions. DeepFRI has significant de-noising capability, 
+  with only a minor drop in performance when experimental structures are replaced 
+  by protein models. Class activation mapping allows function predictions 
+  at an unprecedented resolution, allowing site-specific annotations at the 
+  residue-level in an automated manner. We show the utility and high performance 
+  of our method by annotating structures from the PDB and SWISS-MODEL, 
+  making several new confident function predictions. 
+  DeepFRI is available as a webserver at https://beta.deepfri.flatironinstitute.org/.'
+doi: 10.1038/s41467-021-23303-9
+authors:
+- given-names: Vladimir
+  family-names: Gligorijević
+  affiliation: Center for Computational Biology, Flatiron
+    Institute, New York, NY, USA
+  orcid: https://orcid.org/0000-0002-5165-0973
+- given-names: P. Douglas
+  family-names: Renfrew
+  affiliation: Center for Computational Biology, Flatiron Institute, 
+    New York, NY, USA
+- given-names: Tomasz
+  family-names: Kosciolek
+  affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
+    Krakow, Poland
+  orcid: https://orcid.org/0000-0002-5693-3593
 - given-names: José Enrique
   family-names: Ruiz
   affiliation: Instituto de Astrofísica de Andalucía - CSIC, Gta. de la Astronomía,
