@@ -1,0 +1,29 @@
+@Article{Gligorijević2021,
+author={Gligorijevi{\'{c}}, Vladimir
+and Renfrew, P. Douglas
+and Kosciolek, Tomasz
+and Leman, Julia Koehler
+and Berenberg, Daniel
+and Vatanen, Tommi
+and Chandler, Chris
+and Taylor, Bryn C.
+and Fisk, Ian M.
+and Vlamakis, Hera
+and Xavier, Ramnik J.
+and Knight, Rob
+and Cho, Kyunghyun
+and Bonneau, Richard},
+title={Structure-based protein function prediction using graph convolutional networks},
+journal={Nature Communications},
+year={2021},
+month={May},
+day={26},
+volume={12},
+number={1},
+pages={3168},
+abstract={The rapid increase in the number of proteins in sequence databases and the diversity of their functions challenge computational approaches for automated function prediction. Here, we introduce DeepFRI, a Graph Convolutional Network for predicting protein functions by leveraging sequence features extracted from a protein language model and protein structures. It outperforms current leading methods and sequence-based Convolutional Neural Networks and scales to the size of current sequence repositories. Augmenting the training set of experimental structures with homology models allows us to significantly expand the number of predictable functions. DeepFRI has significant de-noising capability, with only a minor drop in performance when experimental structures are replaced by protein models. Class activation mapping allows function predictions at an unprecedented resolution, allowing site-specific annotations at the residue-level in an automated manner. We show the utility and high performance of our method by annotating structures from the PDB and SWISS-MODEL, making several new confident function predictions. DeepFRI is available as a webserver at https://beta.deepfri.flatironinstitute.org/.},
+issn={2041-1723},
+doi={10.1038/s41467-021-23303-9},
+url={https://doi.org/10.1038/s41467-021-23303-9}
+}
+
