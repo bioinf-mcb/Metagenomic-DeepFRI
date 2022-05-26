@@ -1,13 +1,6 @@
 # YAML 1.2
 # Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
 cff-version: 1.2.0
-cff-version: 1.2.0
-title: ''
-message: ''
-type: article
-authors:
-
-
 message: If you use this software, please cite it as below.
 title: 'Structure-based protein function prediction using
   graph convolutional networks'
