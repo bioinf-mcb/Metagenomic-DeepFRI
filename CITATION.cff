@@ -1,25 +1,10 @@
 # YAML 1.2
 # Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+
 cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: 'Structure-based protein function prediction using
   graph convolutional networks'
-abstract: 'The rapid increase in the number of proteins in sequence databases 
-  and the diversity of their functions challenge computational approaches for 
-  automated function prediction. Here, we introduce DeepFRI, 
-  a Graph Convolutional Network for predicting protein functions by leveraging 
-  sequence features extracted from a protein language model and protein structures. 
-  It outperforms current leading methods and sequence-based Convolutional Neural Networks 
-  and scales to the size of current sequence repositories. Augmenting the training set 
-  of experimental structures with homology models allows us to significantly 
-  expand the number of predictable functions. DeepFRI has significant de-noising capability, 
-  with only a minor drop in performance when experimental structures are replaced 
-  by protein models. Class activation mapping allows function predictions 
-  at an unprecedented resolution, allowing site-specific annotations at the 
-  residue-level in an automated manner. We show the utility and high performance 
-  of our method by annotating structures from the PDB and SWISS-MODEL, 
-  making several new confident function predictions. 
-  DeepFRI is available as a webserver at https://beta.deepfri.flatironinstitute.org/.'
 doi: 10.1038/s41467-021-23303-9
 authors:
 - given-names: Vladimir
@@ -36,264 +21,140 @@ authors:
   affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
     Krakow, Poland
   orcid: https://orcid.org/0000-0002-5693-3593
-- given-names: José Enrique
-  family-names: Ruiz
-  affiliation: Instituto de Astrofísica de Andalucía - CSIC, Gta. de la Astronomía,
-    18008 Granada, Spain
-  orcid: https://orcid.org/0000-0003-3274-4445
-- given-names: Johannes
-  family-names: King
-  affiliation: Pamyra
-- given-names: Quentin
-  family-names: Remy
-  affiliation: Max Planck Institut für Kernphysik, MPIK, Saupfercheckweg 1, 69117
-    Heidelberg, Germany
-  orcid: https://orcid.org/0000-0002-8815-6530
-- given-names: Léa
-  family-names: Jouvin
-- given-names: Atreyee
-  family-names: Sinha
-  affiliation: Universidad Complutense de Madrid EMFTEL, UCM, Plaza de la Ciencias,
-    28040 Madrid, Spain
-  orcid: https://orcid.org/0000-0002-9238-7163
-- given-names: Fabio
-  family-names: Pintore
-  affiliation: INAF/IASF, via Ugo La Malfa 153,  90146 Palermo, Italy
-- given-names: Matthew
-  family-names: Wood
-  affiliation: Facebook, 1 Hacker Way, Menlo Park, CA 94025, US
-- given-names: Laura
-  family-names: Olivera
-  affiliation: Max Planck Institut für Kernphysik, MPIK, Saupfercheckweg 1, 69117
-    Heidelberg, Germany
-- given-names: Manuel
-  family-names: Paz Arribas
-- given-names: Luca
-  family-names: Giunti
-  affiliation: Astroparticule and Cosmologie, Université Paris Cité, CNRS/IN2P3, F-75013
-    Paris, France
-- given-names: Bruno
-  family-names: Khélifi
-  affiliation: Astroparticule and Cosmologie, Université Paris Cité, CNRS/IN2P3, F-75013
-    Paris, France
-  orcid: https://orcid.org/0000-0001-6876-5577
-- given-names: Fabio
-  family-names: Acero
-  affiliation: DAp/AIM, CEA-Saclay/CNRS, France
-  orcid: https://orcid.org/0000-0002-6606-2816
-- given-names: Ellis
-  family-names: Owen
-  affiliation: National Tsing Hua University Institute of Astronomy, Hsinchu, Taiwan
-  orcid: https://orcid.org/0000-0003-1052-6439
-- given-names: Maximilian
-  family-names: Nöthe
-  affiliation: TU Dortmund University, Otto-Hahn-Str. 4a 44227 Dortmund, Germany
-  orcid: https://orcid.org/0000-0001-7993-8189
-- given-names: Olga
-  family-names: Vorokh
-- given-names: Brigitta
-  family-names: Sipőcz
-  affiliation: California Institute of Technology, Pasadena CA, US
-  orcid: https://orcid.org/0000-0002-3713-6337
-- given-names: Julien
-  family-names: Lefaucheur
-- given-names: Cosimo
-  family-names: Nigro
-  affiliation: Institut de Fisica d'altes Energies, IFAE, Edifici Cn, Campus UAB,
-    08193 Bellaterra (Barcelona), Spain
-- given-names: Thomas
-  family-names: Robitaille
-  affiliation: Aperio Software, Insight House, Riverside Business Park, Stoney Common
-    Road, Stansted, Essex, CM24 8PL, UK
-- given-names: Jonathan
-  name-particle: D.
-  family-names: Harris
-- given-names: David
-  family-names: Fidalgo
-- given-names: Lars
-  family-names: Mohrmann
-  affiliation: Max Planck Institut für Kernphysik, MPIK, Saupfercheckweg 1, 69117
-    Heidelberg, Germany
-- given-names: Dirk
-  family-names: Lennarz
-  affiliation: Amazon, Atlanta GA, US
-- given-names: Jalel
-  name-particle: Eddine
-  family-names: Hajlaoui
-  affiliation: Astroparticule and Cosmologie, Université Paris Cité, CNRS/IN2P3, F-75013
-    Paris, France
-- given-names: Alexis
-  family-names: de Almeida Coutinho
-  affiliation: Universidade de São Paulo, Brazil
-- given-names: Matthias
-  family-names: Wegenmat
-- given-names: Dimitri
-  family-names: Papadopoulos
-- given-names: Nachiketa
-  family-names: Chakraborty
-- given-names: Michael
-  family-names: Droettboom
-  affiliation: Mozilla, Mountain View, CA
-- given-names: Jason
-  family-names: Watson
-  affiliation: DESY
-- given-names: Arjun
-  family-names: Voruganti
-- given-names: Helen
-  family-names: Poon
-- given-names: Erik
-  family-names: Tollerud
-  affiliation: Space Telescope Science Institute, STScI, 3700 San Martin Drive, 21218
-    Baltimore MD, US
-- given-names: Thomas
-  family-names: Armstrong
-- given-names: Vikas
-  family-names: Joshi
-  affiliation: Friedrich-Alexander-Universität Erlangen-Nürnberg, Erlangen Centre
-    for Astroparticle Physics, Erwin-Rommel-Str. 1 91058 Erlangen, Germany
-- given-names: Erik
-  name-particle: M.
-  family-names: Bray
-- given-names: Arnau
-  family-names: Aguasca Cabot
-  affiliation: Institute of cosmos sciences, ICCUB, Martí i Franquès 1, 08028 Barcelona
-- given-names: Gabriel
-  family-names: Emery
-- given-names: Domenico
-  family-names: Tiziani
-- given-names: Ignacio
-  family-names: Minaya
-- given-names: Kai
-  family-names: Brügge
-  affiliation: Point 8 GmbH, Rheinlanddamm 201, 44139 Dortmund, Germany
-- given-names: Hubert
-  family-names: Siejkowski
-- given-names: Arpit
-  family-names: Gogia
-- given-names: Luigi
-  family-names: Tibaldo
-  affiliation: Institute de Recherche en Astrophysique et Planetologie, IRAP,
-- given-names: Yves
-  family-names: Gallant
-- given-names: Marion
-  family-names: Spir-Jacob
-- given-names: Andrew
-  name-particle: W.
-  family-names: Chen
-  affiliation: Department of Physics, University of the Free State, PO Box339, Bloemfontein
-    9300, South Africa
-- given-names: Roberta
-  family-names: Zanin
-  affiliation: CTA Observatory gGmbH, Via Piero Gobetti 93/3 40129 Bologna, Italy
-  orcid: https://orcid.org/0000-0001-6320-1801
-- given-names: Larry
-  family-names: Bradley
-  affiliation: Space Telescope Science Institute, STScI, 3700 San Martin Drive, 21218
-    Baltimore MD, US
-- given-names: Jean-Philippe
-  family-names: Lenain
-- given-names: Kaori
-  family-names: Nakashima
-  affiliation: Friedrich-Alexander-Universität Erlangen-Nürnberg, Erlangen Centre
-    for Astroparticle Physics, Erwin-Rommel-Str. 1 91058 Erlangen, Germany
-- given-names: Mathieu
-  family-names: de Bony
-- given-names: Matthew
-  family-names: Craig
-- given-names: Lab
-  family-names: Saha
-  affiliation: Center for Astrophysics | Harvard & Smithsonian, CfA, 60 Garden St.,
-    02138 Cambridge MA, US
-- given-names: Anne
-  family-names: Lemière
-  affiliation: Astroparticule and Cosmologie, Université Paris Cité, CNRS/IN2P3, F-75013
-    Paris, France
-- given-names: Zé
-  family-names: Vinicius
-- given-names: Kyle
-  family-names: Barbary
-- given-names: Thomas
-  family-names: Vuillaume
-  affiliation: Université Savoie Mont Blanc, CNRS, Laboratoire d’Annecyde Physique
-    des Particules - IN2P3, 74000 Annecy, France
-- given-names: Adam
-  family-names: Ginsburg
+- given-names: Julia Koehler
+  family-names: Leman
+  affiliation: Center for Computational Biology, Flatiron Institute, 
+    New York, NY, USA
+  orcid: https://orcid.org/0000-0002-5693-3593
 - given-names: Daniel
-  family-names: Morcuende
-- given-names: José Luis
-  family-names: Contreras
-- given-names: Laura
-  family-names: Vega Garcia
-- given-names: Oscar
-  family-names: Blanch Bigas
-- given-names: Tyler
-  family-names: Cahill
-  affiliation: Iowa State University, Ames IA, US
-- given-names: Víctor
-  family-names: Zabalza
-- given-names: Wolfgang
-  family-names: Kerzendorf
-  affiliation: Michigan State University, Department of Physics and Astronomy, 428
-    S Shaw Ln East Lansing, MI 48824, US
-- given-names: Peter
-  family-names: Deiml
-- given-names: Sebastian
-  family-names: Panny
-- given-names: Silvia
-  family-names: Manconi
-- given-names: Stefan
-  family-names: Klepser
-  affiliation: Deutsches Elektronen-Synchrotron, DESY, Platanenallee 6 15738 Zeuthen,
-    Germany
-- given-names: Johannes
-  family-names: Buchner
-- given-names: Hugo
-  family-names: van Kemenade
-- given-names: Eric
-  name-particle: O.
-  family-names: Lebigot
-- given-names: Benjamin Alan
-  family-names: Weaver
-- given-names: Debanjan
-  family-names: Bose
-- given-names: Alisha
-  family-names: Chromey
-  affiliation: Iowa State University, Ames IA, US
-- given-names: Rolf
-  family-names: Buehler
-  affiliation: Deutsches Elektronen-Synchrotron, DESY, Platanenallee 6 15738 Zeuthen,
-    Germany
-- given-names: Rubén
-  family-names: López-Coto
-- given-names: Sam
-  family-names: Carter
-version: 0.19
-date-released: 2020-11-19
-repository-code: https://github.com/gammapy/gammapy
+  family-names: Berenberg
+  affiliation: Center for Computational Biology, Flatiron Institute, 
+    New York, NY, USA
+- given-names: Tommi
+  family-names: Vatanen
+  affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+  orcid: https://orcid.org/0000-0003-0949-1291
+- given-names: Chris
+  family-names: Chandler
+  affiliation: Center for Computational Biology, Flatiron Institute, 
+    New York, NY, USA
+- given-names: Bryn C.
+  family-names: Taylor
+  affiliation: Biomedical Sciences Graduate Program, 
+    University of California San Diego, La Jolla, CA, USA
+- given-names: Ian M.
+  family-names: Fisk
+  affiliation: Scientific Computing Core, Flatiron Institute, 
+    Simons Foundation, New York, NY, USA
+- given-names: Hera
+  family-names: Vlamakis
+  affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+  orcid: https://orcid.org/0000-0003-1086-9191
+- given-names: Ramnik J.
+  family-names: Xavier
+  affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+  orcid: https://orcid.org/0000-0002-5630-5167
+- given-names: Rob
+  family-names: Knight
+  affiliation:Department of Pediatrics, University of California San Diego, 
+    La Jolla, CA, USA
+  orcid: https://orcid.org/0000-0002-0975-9019
+- given-names: Kyunghyun
+  family-names: Cho
+  affiliation: Center for Data Science, New York University, New York, NY, USA
+- given-names: Richard
+  family-names: Bonneau
+  affiliation: Center for Computational Biology, Flatiron Institute, New York, NY, USA
+  orcid: https://orcid.org/0000-0003-4354-7906
+version: 1.0.0
+date-released: 2021-03-31
+repository-code: https://github.com/flatironinstitute/DeepFRI
 license: BSD-3-Clause
 keywords:
-- Astronomy
-- "Gamma-rays"
-- "Data analysis"
-identifiers:
-- type: "doi"
-  value: 10.5281/zenodo.5721467
-  description: Zenodo DOI v0.19
-- type: "doi"
-  value: 10.5281/zenodo.4701500
-  description: Zenodo DOI v0.18.2
-- type: "doi"
-  value: 10.5281/zenodo.4701492
-  description: Zenodo DOI v0.17
-- type: "doi"
-  value: 10.5281/zenodo.4701489
-  description: Zenodo DOI v0.16
-- type: "other"
-  value: "2017ascl.soft11014D"
-  description: ASCL Bibcode
-- type: "other"
-  value: "1711.014"
-  description: ASCL identifier
-- type: "other"
-  value: "hal-03663345"
-  description: HAL v0.19
+- "Graph Neural Networks"
+- "Protein function"
+- "Function prediction"
+preferred-citation:
+  type: article
+      authors:
+        - given-names: Vladimir
+          family-names: Gligorijević
+          affiliation: Center for Computational Biology, Flatiron
+            Institute, New York, NY, USA
+          orcid: https://orcid.org/0000-0002-5165-0973
+        - given-names: P. Douglas
+          family-names: Renfrew
+          affiliation: Center for Computational Biology, Flatiron Institute, 
+            New York, NY, USA
+        - given-names: Tomasz
+          family-names: Kosciolek
+          affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
+            Krakow, Poland
+          orcid: https://orcid.org/0000-0002-5693-3593
+        - given-names: Julia Koehler
+          family-names: Leman
+          affiliation: Center for Computational Biology, Flatiron Institute, 
+            New York, NY, USA
+          orcid: https://orcid.org/0000-0002-5693-3593
+        - given-names: Daniel
+          family-names: Berenberg
+          affiliation: Center for Computational Biology, Flatiron Institute, 
+            New York, NY, USA
+        - given-names: Tommi
+          family-names: Vatanen
+          affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+          orcid: https://orcid.org/0000-0003-0949-1291
+        - given-names: Chris
+          family-names: Chandler
+          affiliation: Center for Computational Biology, Flatiron Institute, 
+            New York, NY, USA
+        - given-names: Bryn C.
+          family-names: Taylor
+          affiliation: Biomedical Sciences Graduate Program, 
+            University of California San Diego, La Jolla, CA, USA
+        - given-names: Ian M.
+          family-names: Fisk
+          affiliation: Scientific Computing Core, Flatiron Institute, 
+            Simons Foundation, New York, NY, USA
+        - given-names: Hera
+          family-names: Vlamakis
+          affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+          orcid: https://orcid.org/0000-0003-1086-9191
+        - given-names: Ramnik J.
+          family-names: Xavier
+          affiliation: Broad Institute of MIT and Harvard, Cambridge, MA, USA
+          orcid: https://orcid.org/0000-0002-5630-5167
+        - given-names: Rob
+          family-names: Knight
+          affiliation:Department of Pediatrics, University of California San Diego, 
+            La Jolla, CA, USA
+          orcid: https://orcid.org/0000-0002-0975-9019
+        - given-names: Kyunghyun
+          family-names: Cho
+          affiliation: Center for Data Science, New York University, New York, NY, USA
+        - given-names: Richard
+          family-names: Bonneau
+          affiliation: Center for Computational Biology, Flatiron Institute, New York, NY, USA
+          orcid: https://orcid.org/0000-0003-4354-7906
+  doi: "10.1038/s41467-021-23303-9"
+  journal: "Nature Communications"
+  month: 5
+  title: "Structure-based protein function prediction using
+    graph convolutional networks"
+  abstract: 'The rapid increase in the number of proteins in sequence databases 
+    and the diversity of their functions challenge computational approaches for 
+    automated function prediction. Here, we introduce DeepFRI, 
+    a Graph Convolutional Network for predicting protein functions by leveraging 
+    sequence features extracted from a protein language model and protein structures. 
+    It outperforms current leading methods and sequence-based Convolutional Neural Networks 
+    and scales to the size of current sequence repositories. Augmenting the training set 
+    of experimental structures with homology models allows us to significantly 
+    expand the number of predictable functions. DeepFRI has significant de-noising capability, 
+    with only a minor drop in performance when experimental structures are replaced 
+    by protein models. Class activation mapping allows function predictions 
+    at an unprecedented resolution, allowing site-specific annotations at the 
+    residue-level in an automated manner. We show the utility and high performance 
+    of our method by annotating structures from the PDB and SWISS-MODEL, 
+    making several new confident function predictions. 
+    DeepFRI is available as a webserver at https://beta.deepfri.flatironinstitute.org/.'
+  year: 2021
