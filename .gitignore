@@ -5,3 +5,4 @@ cmake-build-release/
 .idea/
 local/
 .clang-format
+.ipynb_checkpoints/
