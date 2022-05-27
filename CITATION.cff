@@ -76,7 +76,7 @@ keywords:
 - "Function prediction"
 preferred-citation:
   type: article
-    authors:
+  authors:
         - given-names: Vladimir
           family-names: Gligorijević
           affiliation: Center for Computational Biology, Flatiron
