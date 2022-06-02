@@ -138,7 +138,7 @@ def process_structure_file(structure_file, save_path, max_target_chain_length):
         return "file processing exceptions"
 
 
-def main(input_paths, project_name, overwrite):
+def update_target_mmseqs_database(input_paths, project_name, overwrite):
     seq_atoms_path = SEQ_ATOMS_DATASET_PATH / project_name
     seq_atoms_path.mkdir(exist_ok=True, parents=True)
     print("Sequences and Atoms positions will be stored in: ", seq_atoms_path)
@@ -235,11 +235,15 @@ def main(input_paths, project_name, overwrite):
     json.dump(sorted(freshly_added_ids), open(mmseqs2_db_path / "new_structure_ids.json", "w"), indent=4)
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
 
     project_name = pathlib.Path(args.project_name)
     overwrite = args.overwrite
     input_paths = parse_input_paths(args.input, project_name, STRUCTURE_FILES_PATH)
 
-    main(input_paths, project_name, overwrite)
+    update_target_mmseqs_database(input_paths, project_name, overwrite)
+
+
+if __name__ == '__main__':
+    main()

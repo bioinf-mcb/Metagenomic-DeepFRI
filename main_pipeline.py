@@ -193,8 +193,8 @@ def merge_completed_task_results(task_work_path):
     print(f"FINISHED {task_config['project_name']}/{task_config['timestamp']}")
 
 
-# main() simply executes functions implemented above step by step
-def main(project_name: str, input: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
+# main_pipeline() simply executes functions implemented above step by step
+def main_pipeline(project_name: str, input: list, target_db_name: str, delete_query: bool, parallel_jobs: int):
     task_work_path = prepare_task(project_name, input, target_db_name, delete_query, parallel_jobs)
 
     split_task_into_jobs(task_work_path)
@@ -206,7 +206,7 @@ def main(project_name: str, input: list, target_db_name: str, delete_query: bool
     shutil.rmtree(task_work_path)
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
 
     project_name = args.project_name
@@ -226,4 +226,8 @@ if __name__ == '__main__':
 
     input_paths = parse_input_paths(args.input, project_name, QUERY_PATH)
 
-    main(project_name, input_paths, target_db_name, delete_query, n_parallel_jobs)
+    main_pipeline(project_name, input_paths, target_db_name, delete_query, n_parallel_jobs)
+
+
+if __name__ == '__main__':
+    main()
