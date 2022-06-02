@@ -5,11 +5,10 @@ from DeepFRI.deepfrier import Predictor
 
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, ATOMS, JOB_CONFIG
 
-from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
-from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
+import CPP_lib
 
 from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.faa_file_io import load_faa_file
+from utils.fasta_file_io import load_fasta_file
 from utils.pipeline_utils import find_target_database, load_deepfri_config
 from utils.run_mmseqs_search import run_mmseqs_search
 from utils.search_alignments import search_alignments
@@ -40,9 +39,9 @@ def load_and_verify_job_data(job_path, pipeline_config):
     query_file = query_files[0]
     if len(query_files) > 1:
         print(f"{job_path} contains more than one .faa file. "
-              f"Only {query_file} will be processed. {query_files[1:]} will be discarded")
+              f"Only {query_file} will be processed. {query_files[1:]} will not be processed")
 
-    query_seqs = {record.id: record.seq for record in load_faa_file(query_file)}
+    query_seqs = {record.id: record.seq for record in load_fasta_file(query_file)}
     assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
     print(f"Found total of {len(query_seqs)} protein sequences in {query_file}")
 
@@ -105,7 +104,7 @@ def metagenomic_deepfri(job_path):
     gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
     json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
-    initialize_cpp_lib()
+    CPP_lib.initialize()
     deepfri_models_config = load_deepfri_config()
     target_db_name = job_config["target_db_name"]
 
@@ -130,7 +129,7 @@ def metagenomic_deepfri(job_path):
                     query_seq = query_seqs[query_id]
                     target_id = alignment["target_id"]
 
-                    generated_query_contact_map = load_aligned_contact_map(
+                    generated_query_contact_map = CPP_lib.load_aligned_contact_map(
                         str(SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
                         job_config["ANGSTROM_CONTACT_THRESHOLD"],
                         alignment["alignment"][0],    # query alignment

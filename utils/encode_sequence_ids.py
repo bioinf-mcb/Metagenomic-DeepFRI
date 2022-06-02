@@ -1,6 +1,6 @@
 import hashlib
 
-from utils.faa_file_io import load_faa_file, write_faa_file
+from utils.fasta_file_io import load_fasta_file, write_fasta_file
 
 
 def hash_sequence_id(seq_id: str):
@@ -8,7 +8,7 @@ def hash_sequence_id(seq_id: str):
 
 
 def encode_faa_ids(path):
-    seq_records = load_faa_file(path)
+    seq_records = load_fasta_file(path)
     hash_lookup_dict = {}
 
     for i in range(len(seq_records)):
@@ -19,5 +19,5 @@ def encode_faa_ids(path):
         seq_records[i].id = seq_id_hash
 
     faa_hashed_ids_path = str(path) + ".hashed_ids"
-    write_faa_file(seq_records, faa_hashed_ids_path)
+    write_fasta_file(seq_records, faa_hashed_ids_path)
     return faa_hashed_ids_path, hash_lookup_dict

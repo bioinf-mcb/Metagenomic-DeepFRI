@@ -18,4 +18,5 @@ def parse_pdb(file):
         line = file.readline()
 
     positions = np.array(positions, dtype=np.float32)
+    groups = np.array(groups)
     return sequence, positions, groups

@@ -13,7 +13,7 @@ from CONFIG.get_config_dict import runtime_config
 
 from metagenomic_deepfri import metagenomic_deepfri
 from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.faa_file_io import load_faa_file, write_faa_file
+from utils.fasta_file_io import load_fasta_file, write_fasta_file
 from utils.pipeline_utils import find_target_database, load_deepfri_config
 from utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths, chunks, parse_input_paths
 
@@ -122,7 +122,7 @@ def split_task_into_jobs(task_work_path):
     assert task_work_path / TASK_CONFIG, f"Missing {task_work_path / TASK_CONFIG}"
     parallel_jobs = json.load(open(task_work_path / TASK_CONFIG))["n_parallel_jobs"]
 
-    query_records = load_faa_file(task_work_path / MERGED_SEQUENCES)
+    query_records = load_fasta_file(task_work_path / MERGED_SEQUENCES)
     jobs_records = chunks(query_records, parallel_jobs)
 
     print(f"Dividing {len(query_records)} records across {parallel_jobs} parallel jobs. {len(jobs_records[0])} per job")
@@ -134,7 +134,7 @@ def split_task_into_jobs(task_work_path):
             shutil.rmtree(job_path)
         job_path.mkdir()
         os.system(f"cp {task_work_path / TASK_CONFIG} {job_path / JOB_CONFIG}")
-        write_faa_file(jobs_records[i], job_path / "job_sequences.faa")
+        write_fasta_file(jobs_records[i], job_path / "job_sequences.faa")
 
 
 # search for job config files and start metagenomic_deepfri in parallel

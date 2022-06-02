@@ -39,22 +39,6 @@ def run_command(command, timeout=-1):
         return completed_process.stdout.decode('utf-8')
 
 
-def search_files_in_paths(paths: list, pattern: str):
-    files = []
-    for path in paths:
-        if not path.exists():
-            print(f"Unable to locate {path}.")
-            continue
-        if path.is_dir():
-            files.extend(list(path.glob("**/*" + pattern)))
-        else:
-            if not path.name.endswith(pattern):
-                print(f"{path} is not an {pattern} file which is excepted format.")
-            else:
-                files.append(path)
-    return files
-
-
 def download_file(url, path):
     with requests.get(url, stream=True) as r:
         with open(path, 'wb') as f:
@@ -100,3 +84,19 @@ def parse_input_paths(input_list, project_name, parent_directory):
             else:
                 input_paths.append(parent_directory / input_path)
     return input_paths
+
+
+def search_files_in_paths(paths: list, pattern: str):
+    files = []
+    for path in paths:
+        if not path.exists():
+            print(f"Unable to locate {path}.")
+            continue
+        if path.is_dir():
+            files.extend(list(path.glob("**/*" + pattern)))
+        else:
+            if not path.name.endswith(pattern):
+                print(f"{path} is not an {pattern} file which is excepted format.")
+            else:
+                files.append(path)
+    return files

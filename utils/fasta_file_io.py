@@ -7,7 +7,7 @@ class SeqRecord:
     seq: str
 
 
-def load_faa_file(file):
+def load_fasta_file(file):
     seq_records = []
     with open(file, "r") as f:
         for line in f:
@@ -19,7 +19,7 @@ def load_faa_file(file):
     return seq_records
 
 
-def write_faa_file(seq_records, path):
+def write_fasta_file(seq_records, path):
     with open(path, "w") as f:
         for seq_record in seq_records:
             f.write(f">{seq_record.id}\n{seq_record.seq}\n")
