@@ -1,6 +1,6 @@
 import hashlib
 
-from utils.fasta_file_io import load_fasta_file, write_fasta_file
+from meta_deepFRI.utils.fasta_file_io import load_fasta_file, write_fasta_file
 
 
 def hash_sequence_id(seq_id: str):

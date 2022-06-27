@@ -11,11 +11,11 @@ from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
 
 from CONFIG.get_config_dict import runtime_config
 
-from metagenomic_deepfri import metagenomic_deepfri
-from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.fasta_file_io import load_fasta_file, write_fasta_file
-from utils.pipeline_utils import find_target_database, load_deepfri_config
-from utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths, chunks, parse_input_paths
+from meta_deepFRI.utils.elapsed_time_logger import ElapsedTimeLogger
+from meta_deepFRI.utils.fasta_file_io import load_fasta_file, write_fasta_file
+from meta_deepFRI.utils.pipeline_utils import find_target_database, load_deepfri_config
+from meta_deepFRI.utils.utils import create_unix_timestamp_folder, merge_files_binary, search_files_in_paths, chunks, parse_input_paths
+from meta_deepFRI import metagenomic_deepfri
 
 
 def parse_args():
@@ -143,7 +143,7 @@ def run_parallel_pipelines(task_work_path):
     job_paths = [job.parent for job in task_work_path.glob(f"**/{JOB_CONFIG}")]
     print(f"Running {len(job_paths)} jobs on {min(len(job_paths), CPU_COUNT)} parallel threads\n")
     with multiprocessing.Pool(min(len(job_paths), CPU_COUNT)) as p:
-        p.map(metagenomic_deepfri, job_paths)
+        p.map(metagenomic_deepfri.metagenomic_deepfri, job_paths)
     timer.log("metagenomic_deepfri")
 
 

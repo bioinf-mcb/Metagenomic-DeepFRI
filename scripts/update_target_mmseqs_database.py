@@ -1,30 +1,28 @@
 import argparse
 import json
-import logging
 import multiprocessing
 import pathlib
-import traceback
 
 from itertools import repeat
 import numpy as np
 
-from CONFIG.FOLDER_STRUCTURE import TARGET_MMSEQS_DB_NAME, ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
-    DEFAULT_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH, MERGED_SEQUENCES, TARGET_DB_CONFIG
+from CONFIG.FOLDER_STRUCTURE import ATOMS, SEQUENCES, STRUCTURE_FILES_PATH, \
+    DEFAULT_NAME, SEQ_ATOMS_DATASET_PATH, MMSEQS_DATABASES_PATH, TARGET_DB_CONFIG
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
 from CONFIG.get_config_dict import target_db_config
 
-import CPP_lib
+from meta_deepFRI import CPP_lib
 
-import structure_files
-import utils
+from meta_deepFRI.structure_files.parse_structure_file import process_structure_file
+from meta_deepFRI.utils.mmseqs import create_target_database
 
 ###################################################################################################################
-# update_target_mmseqs_database:
+# utils.mmseqs.update_target_mmseqs_database:
 #   1.  iterates over --input searching for file extensions that match the PARSERS keys.
 #   2.  filter out protein_ids that already exists in SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS
 #   3.  process_structure_file in parallel
 #
-# process_structure_file:
+# structure_files.parse_structure_file.process_structure_file:
 #   1. reads the structure file extracting sequence and atom positions
 #   2. skip short sequences and truncate ones that size is over MAX_TARGET_CHAIN_LENGTH inside target_db_config.json
 #   3. save extracted data:
@@ -59,59 +57,8 @@ def parse_args():
     #                     help="If protein chain is longer than this value, it will be truncated")
     parser.add_argument("--overwrite", action="store_true",
                         help="Flag to override existing sequences and atom positions")
-    # yapf: enable
     return parser.parse_args()
-
-
-def create_target_database(seq_atoms_path: pathlib.Path, project_name: str, freshly_added_ids: list) -> None:
-    """
-
-    :param seq_atoms_path:
-    :param project_name:
-    :param freshly_added_ids:
-    :return:
-    """
-    sequence_files = list((seq_atoms_path / SEQUENCES).glob("**/*.faa"))
-    print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")
-    utils.merge_files_binary(sequence_files, seq_atoms_path / MERGED_SEQUENCES)
-
-    mmseqs2_db_path = utils.create_unix_timestamp_folder(MMSEQS_DATABASES_PATH / project_name)
-    print("Creating new target mmseqs2 database " + str(mmseqs2_db_path))
-    utils.mmseqs.createdb(seq_atoms_path / MERGED_SEQUENCES, mmseqs2_db_path / TARGET_MMSEQS_DB_NAME)
-    print("Indexing new target mmseqs2 database " + str(mmseqs2_db_path))
-    utils.mmseqs.createindex(mmseqs2_db_path / TARGET_MMSEQS_DB_NAME)
-
-    print("Saving freshly added sequence ids to " + str(mmseqs2_db_path / "structure_ids_added.json"))
-    json.dump(sorted(freshly_added_ids), open(mmseqs2_db_path / "structure_ids_added.json", "w"), indent=4)
-
-
-def process_structure_file(structure_file, save_path, max_target_chain_length):
-    """
-
-    :param structure_file:
-    :param save_path:
-    :param max_target_chain_length:
-    :return:
-    """
-    try:
-        seq_atoms = structure_files.read_structure_file(structure_file)
-    except Exception:
-        print("EXCEPTION WHILE READING FILE ", str(structure_file))
-        logging.error(traceback.format_exc())
-        return "file reading exceptions"
-
-    # process and store sequence and atom positions in SEQ_ATOMS_DATASET_PATH / output_name
-    sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id + ".faa")
-    atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
-
-    try:
-        return structure_files.save_sequence_and_atoms(seq_atoms, sequence_path, atoms_path, max_target_chain_length)
-    except Exception:
-        print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
-        logging.error(traceback.format_exc())
-        sequence_path.unlink(missing_ok=True)
-        atoms_path.unlink(missing_ok=True)
-        return "file processing exceptions"
+    # yapf: enable
 
 
 def update_target_mmseqs_database(input_paths, project_name, overwrite) -> None:
@@ -128,7 +75,7 @@ def update_target_mmseqs_database(input_paths, project_name, overwrite) -> None:
     (seq_atoms_path / SEQUENCES).mkdir(exist_ok=True)
     (seq_atoms_path / ATOMS).mkdir(exist_ok=True)
 
-    # get MAX_TARGET_CHAIN_LENGTH from existing config or create one
+    # get MAX_TARGET_CHAIN_LENGTH from existing config or create new config
     target_db_path = MMSEQS_DATABASES_PATH / project_name
     target_db_path.mkdir(exist_ok=True, parents=True)
     if (target_db_path / TARGET_DB_CONFIG).exists():

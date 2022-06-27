@@ -1,18 +1,18 @@
 import json
 import os.path
 
-from DeepFRI.deepfrier import Predictor
+from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
 from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, ATOMS, JOB_CONFIG
 
-import CPP_lib
+from meta_deepFRI import CPP_lib
 
-from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.fasta_file_io import load_fasta_file
-from utils.pipeline_utils import find_target_database, load_deepfri_config
-from utils.run_mmseqs_search import run_mmseqs_search
-from utils.search_alignments import search_alignments
-from utils.seq_file_loader import SeqFileLoader
+from meta_deepFRI.utils.elapsed_time_logger import ElapsedTimeLogger
+from meta_deepFRI.utils.fasta_file_io import load_fasta_file
+from meta_deepFRI.utils.pipeline_utils import find_target_database, load_deepfri_config
+from meta_deepFRI.utils.run_mmseqs_search import run_mmseqs_search
+from meta_deepFRI.utils.search_alignments import search_alignments
+from meta_deepFRI.utils.seq_file_loader import SeqFileLoader
 
 ###########################################################################
 # in a nutshell:

@@ -1,13 +1,16 @@
 import dataclasses
 import gzip
+import logging
 import pathlib
+import traceback
 
 import numpy as np
 
-import CPP_lib
-import structure_files
+from meta_deepFRI import CPP_lib
+from meta_deepFRI import structure_files
+from CONFIG.FOLDER_STRUCTURE import SEQUENCES, ATOMS
 
-from utils import bio_utils
+from meta_deepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a pattern with a parser in this dict.
 # read structure_files_parsers/README.md for more information about how to create new parser.
@@ -116,3 +119,32 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
         return f"SUCCEED, but sequences and contact maps got truncated to {max_target_chain_length}"
     else:
         return "SUCCEED"
+
+
+def process_structure_file(structure_file, save_path, max_target_chain_length):
+    """
+
+    :param structure_file:
+    :param save_path:
+    :param max_target_chain_length:
+    :return:
+    """
+    try:
+        seq_atoms = structure_files.read_structure_file(structure_file)
+    except Exception:
+        print("EXCEPTION WHILE READING FILE ", str(structure_file))
+        logging.error(traceback.format_exc())
+        return "file reading exceptions"
+
+    # process and store sequence and atom positions in SEQ_ATOMS_DATASET_PATH / output_name
+    sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id + ".faa")
+    atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
+
+    try:
+        return structure_files.save_sequence_and_atoms(seq_atoms, sequence_path, atoms_path, max_target_chain_length)
+    except Exception:
+        print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
+        logging.error(traceback.format_exc())
+        sequence_path.unlink(missing_ok=True)
+        atoms_path.unlink(missing_ok=True)
+        return "file processing exceptions"

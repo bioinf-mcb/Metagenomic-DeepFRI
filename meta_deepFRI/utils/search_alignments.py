@@ -7,7 +7,7 @@ from Bio import pairwise2
 
 from CONFIG.FOLDER_STRUCTURE import ALIGNMENTS
 from CONFIG.RUNTIME_PARAMETERS import CPU_COUNT
-from utils.seq_file_loader import SeqFileLoader
+from meta_deepFRI.utils.seq_file_loader import SeqFileLoader
 
 
 # alignment sequence identity return value between 0 and 1

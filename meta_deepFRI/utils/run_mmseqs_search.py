@@ -1,8 +1,8 @@
 import pandas as pd
 
 from CONFIG.FOLDER_STRUCTURE import MMSEQS_SEARCH_RESULTS
-from utils.encode_sequence_ids import encode_faa_ids
-from utils import mmseqs
+from meta_deepFRI.utils.encode_sequence_ids import encode_faa_ids
+from meta_deepFRI.utils import mmseqs
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start", "query_end",
