@@ -1,0 +1,23 @@
+{
+    "DATA_ROOT": "/data",
+    "DEEPFRI_TRAINED_MODELS_DOWNLOAD_URL": "https://users.flatironinstitute.org/vgligorijevic/public_www/DeepFRI_data/newest_trained_models.tar.gz",
+    "STRUCTURE_FILES": "structure_files",
+    "QUERY": "query",
+    "WORK": "workspace",
+    "FINISHED": "finished",
+    "SEQ_ATOMS_DATASET": "seq_atoms_dataset",
+    "MMSEQS_DATABASES": "mmseqs_db",
+    "DEFAULT_NAME": "default",
+    "TARGET_MMSEQS_DB_NAME": "targetDB",
+    "PROJECT_CONFIG": "project_config.json",
+    "TASK_CONFIG": "task_config.json",
+    "JOB_CONFIG": "job_config.json",
+    "TARGET_DB_CONFIG": "target_db_config.json",
+    "ALIGNMENTS": "alignments.json",
+    "MERGED_SEQUENCES": "merged_sequences.faa",
+    "MMSEQS_SEARCH_RESULTS": "mmseqs2_search_results.m8",
+    "DEEPFRI_MODEL_WEIGHTS_JSON_FILE": "trained_models/model_config.json",
+
+    "ATOMS": "atom",
+    "SEQUENCES": "seq"
+}
