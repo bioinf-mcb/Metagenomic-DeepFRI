@@ -1,25 +1,24 @@
 import json
 import os.path
+import pathlib
 
-from DeepFRI.deepfrier import Predictor
+from meta_deepFRI.config.folder_structure import FolderStructureConfig
+from meta_deepFRI.config.names import TASK_CONFIG, ATOMS
+from meta_deepFRI.config.job_config import load_job_config, JobConfig
+from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
-from CONFIG.FOLDER_STRUCTURE import SEQ_ATOMS_DATASET_PATH, ATOMS, JOB_CONFIG
+from meta_deepFRI import CPP_lib
 
-from CPP_lib.libAtomDistanceIO import initialize as initialize_cpp_lib
-from CPP_lib.libAtomDistanceIO import load_aligned_contact_map
-
-from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.faa_file_io import load_faa_file
-from utils.pipeline_utils import find_target_database, load_deepfri_config
-from utils.run_mmseqs_search import run_mmseqs_search
-from utils.search_alignments import search_alignments
-from utils.seq_file_loader import SeqFileLoader
+from meta_deepFRI.utils.elapsed_time_logger import ElapsedTimeLogger
+from meta_deepFRI.utils.fasta_file_io import load_fasta_file, SeqFileLoader
+from meta_deepFRI.utils.pipeline_utils import find_target_database, load_deepfri_config
+from meta_deepFRI.utils.search_alignments import search_alignments
 
 ###########################################################################
 # in a nutshell:
 #
 #   load_and_verify_job_data
-#   1.  select first .faa file inside job_path
+#   1.  select first .faa file inside task_path
 #   2.  filter out proteins that are too long
 #   3.  find target database
 #
@@ -31,25 +30,26 @@ from utils.seq_file_loader import SeqFileLoader
 #       else:
 #           DeepFRI CNN for query sequence alone
 ###########################################################################
+from utils.mmseqs import run_mmseqs_search
 
 
-def load_and_verify_job_data(job_path, pipeline_config):
-    # selects only one .faa file from job_path directory
+def load_and_verify_job_data(fsc: FolderStructureConfig, runtime_config: JobConfig, job_path: pathlib.Path):
+    # selects only one .faa file from task_path directory
     query_files = list(job_path.glob("**/*.faa"))
     assert len(query_files) > 0, f"No query .faa files found in {job_path}"
     query_file = query_files[0]
     if len(query_files) > 1:
         print(f"{job_path} contains more than one .faa file. "
-              f"Only {query_file} will be processed. {query_files[1:]} will be discarded")
+              f"Only {query_file} will be processed. {query_files[1:]} will not be processed")
 
-    query_seqs = {record.id: record.seq for record in load_faa_file(query_file)}
+    query_seqs = {record.id: record.seq for record in load_fasta_file(query_file)}
     assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
     print(f"Found total of {len(query_seqs)} protein sequences in {query_file}")
 
     # filter out proteins that length is over the CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH
     proteins_over_max_length = []
     for query_id in list(query_seqs.keys()):
-        if len(query_seqs[query_id]) > pipeline_config["MAX_QUERY_CHAIN_LENGTH"]:
+        if len(query_seqs[query_id]) > runtime_config.MAX_QUERY_CHAIN_LENGTH:
             query_seqs.pop(query_id)
             proteins_over_max_length.append(query_id)
 
@@ -65,24 +65,24 @@ def load_and_verify_job_data(job_path, pipeline_config):
             print(f"All sequences in {query_file} were too long. No sequences will be processed.")
 
     # select target database
-    if os.path.isfile(pipeline_config["target_db"]):
-        target_db = pipeline_config["target_db"]
+    if os.path.isfile(runtime_config.target_db):
+        target_db = runtime_config.target_db
     else:
         # if original database got deleted, try to use the newest database. Its path will be stored in metadata_final_target_db.txt
-        print(f"Unable to locate target database {pipeline_config['target_db']}. Looking for the newest one.")
-        target_db = find_target_database(pipeline_config["target_db_name"])
-        print(f"Found the newest {pipeline_config['target_db_name']} target database. Will be using {target_db}")
-        open(job_path / "metadata_final_target_db.txt").write(target_db)
-    target_seqs = SeqFileLoader(SEQ_ATOMS_DATASET_PATH / pipeline_config["target_db_name"])
+        print(f"Unable to locate target database {runtime_config.target_db}. Looking for the newest one.")
+        target_db = find_target_database(fsc, runtime_config.target_db_name)
+        print(f"Found the newest {runtime_config.target_db_name} target database. Will be using {target_db}")
+        open(job_path / "metadata_final_target_db.txt").write(str(target_db))
+    target_seqs = SeqFileLoader(fsc.SEQ_ATOMS_DATASET_PATH / runtime_config.target_db_name)
 
     return query_file, query_seqs, target_db, target_seqs
 
 
-def metagenomic_deepfri(job_path):
-    assert (job_path / JOB_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / JOB_CONFIG}"
-    job_config = json.load(open(job_path / JOB_CONFIG))
+def metagenomic_deepfri(fsc: FolderStructureConfig, job_path: pathlib.Path):
+    assert (job_path / TASK_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / TASK_CONFIG}"
+    job_config = load_job_config(job_path / TASK_CONFIG)
 
-    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(job_path, job_config)
+    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(fsc, job_config, job_path)
 
     if len(query_seqs) == 0:
         print(f"No sequences found. Terminating pipeline.")
@@ -105,16 +105,16 @@ def metagenomic_deepfri(job_path):
     gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
     json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
-    initialize_cpp_lib()
-    deepfri_models_config = load_deepfri_config()
-    target_db_name = job_config["target_db_name"]
+    CPP_lib.initialize()
+    deepfri_models_config = load_deepfri_config(fsc)
+    target_db_name = job_config.target_db_name
 
     # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
     # bp = biological_process
     # cc = cellular_component
     # ec = enzyme_commission
-    for mode in job_config["DEEPFRI_PROCESSING_MODES"]:
+    for mode in job_config.DEEPFRI_PROCESSING_MODES:
         timer.reset()
         print("Processing mode: ", mode)
         # GCN for queries with aligned contact map
@@ -130,12 +130,12 @@ def metagenomic_deepfri(job_path):
                     query_seq = query_seqs[query_id]
                     target_id = alignment["target_id"]
 
-                    generated_query_contact_map = load_aligned_contact_map(
-                        str(SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
-                        job_config["ANGSTROM_CONTACT_THRESHOLD"],
+                    generated_query_contact_map = CPP_lib.load_aligned_contact_map(
+                        str(fsc.SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
+                        job_config.ANGSTROM_CONTACT_THRESHOLD,
                         alignment["alignment"][0],    # query alignment
                         alignment["alignment"][1],    # target alignment
-                        job_config["GENERATE_CONTACTS"])
+                        job_config.GENERATE_CONTACTS)
 
                     gcn.predict_with_cmap(query_seq, generated_query_contact_map, query_id)
 
