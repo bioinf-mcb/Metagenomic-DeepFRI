@@ -14,7 +14,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'Metagenomic-DeepFRI'
@@ -24,16 +23,12 @@ author = 'Piotr Kucharski, Paweł Szczerbiak, Valentyn Bezshapkin & Tomasz Kosci
 # The full version, including alpha/beta/rc tags
 release = '1.0'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'myst_parser',
-    'sphinxawesome_theme'
-]
+extensions = ['myst_parser', 'sphinxawesome_theme']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -42,7 +37,6 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['build']
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -73,7 +67,7 @@ todo_include_todos = False
 
 html_sidebars = {
     '**': [
-        'relations.html',  # needs 'show_related': True theme option to display
+        'relations.html',    # needs 'show_related': True theme option to display
         'searchbox.html',
     ]
 }
@@ -82,7 +76,6 @@ html_sidebars = {
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Metagenomic-DeepFridoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -108,20 +101,15 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Metagenomic-DeepFri.tex', 'Metagenomic-DeepFri Documentation',
-     'P. Kucharski & V. Bezshapkin', 'manual'),
+    (master_doc, 'Metagenomic-DeepFri.tex', 'Metagenomic-DeepFri Documentation', 'P. Kucharski & V. Bezshapkin',
+     'manual'),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'metagenomicdeepfri', 'Metagenomic-DeepFri Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'metagenomicdeepfri', 'Metagenomic-DeepFri Documentation', [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -129,7 +117,6 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Metagenomic-DeepFri.', 'Metagenomic-DeepFri Documentation',
-     author, 'Metagenomic-DeepFri', 'Deep learnsping based functional profiling of metagenomic data.',
-     'Microbiome'),
+    (master_doc, 'Metagenomic-DeepFri.', 'Metagenomic-DeepFri Documentation', author, 'Metagenomic-DeepFri',
+     'Deep learnsping based functional profiling of metagenomic data.', 'Microbiome'),
 ]

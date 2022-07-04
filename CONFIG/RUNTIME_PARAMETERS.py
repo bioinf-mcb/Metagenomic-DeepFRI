@@ -1,4 +1,5 @@
 import multiprocessing
+
 CPU_COUNT = multiprocessing.cpu_count()
 
 # MAX_TARGET_CHAIN_LENGTH is used in update_target_mmseqs_database.py:67 to truncate longer sequences
