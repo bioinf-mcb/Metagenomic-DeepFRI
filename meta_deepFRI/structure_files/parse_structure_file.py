@@ -8,8 +8,7 @@ import numpy as np
 
 from meta_deepFRI import CPP_lib
 from meta_deepFRI import structure_files
-from CONFIG.FOLDER_STRUCTURE import SEQUENCES, ATOMS
-
+from meta_deepFRI.config.names import SEQUENCES, ATOMS
 from meta_deepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a pattern with a parser in this dict.
@@ -43,7 +42,7 @@ def search_structure_files(input_paths: list):
     for input_path in input_paths:
         print(f"{str(input_path)}")
         if input_path.is_file():
-            for pattern in structure_files.PARSERS.keys():
+            for pattern in PARSERS.keys():
                 if str(input_path).endswith(pattern):
                     print(f"\tFile {input_path} is {pattern}")
                     structure_file_id = input_path.name[:-len(pattern)]
@@ -51,7 +50,7 @@ def search_structure_files(input_paths: list):
                     continue
         elif input_path.is_dir():
             files_inside_input_path = list(input_path.glob("**/*"))
-            for pattern in structure_files.PARSERS.keys():
+            for pattern in PARSERS.keys():
                 structure_file_paths = list(filter(lambda x: str(x).endswith(pattern), files_inside_input_path))
                 if len(structure_file_paths) == 0:
                     continue
@@ -85,6 +84,14 @@ def read_structure_file(file_path: pathlib.Path) -> SeqAtoms:
 def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, atoms_path: pathlib.Path,
                             max_target_chain_length: int) -> str:
     """
+  1. reads the structure file extracting sequence and atom positions
+  2. skip short sequences and truncate ones that size is over MAX_TARGET_CHAIN_LENGTH inside target_db_config.json
+  3. save extracted data:
+          sequence - protein_id.faa file containing single sequence f.write(f">{protein_id}\n{sequence}\n")
+              SEQ_ATOMS_DATASET_PATH / project_name / SEQUENCES / (protein_id + ".faa")
+          atom positions - binary file containing positions of all atoms and correlated amino acid chain index
+              SEQ_ATOMS_DATASET_PATH / project_name / ATOMS / (protein_id + ".bin")
+              For more information on how those binary are saved check out source code at CPP_lib/atoms_file_io.h
 
     :param seq_atoms:
     :param sequence_path:
@@ -141,7 +148,7 @@ def process_structure_file(structure_file, save_path, max_target_chain_length):
     atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
 
     try:
-        return structure_files.save_sequence_and_atoms(seq_atoms, sequence_path, atoms_path, max_target_chain_length)
+        return save_sequence_and_atoms(seq_atoms, sequence_path, atoms_path, max_target_chain_length)
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
         logging.error(traceback.format_exc())

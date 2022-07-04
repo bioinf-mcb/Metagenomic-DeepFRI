@@ -1,26 +1,48 @@
+import argparse
 import json
+import pathlib
 import shutil
 
-from CONFIG.FOLDER_STRUCTURE import WORK_PATH, TASK_CONFIG, JOB_CONFIG
+from config.job_config import load_job_config
+from meta_deepFRI.config.folder_structure import FolderStructureConfig, load_folder_structure_config
+from meta_deepFRI.config.names import TASK_CONFIG, JOB_CONFIG
+from main_pipeline import run_parallel_pipelines, merge_completed_task_results, split_job_into_tasks
 
-from main_pipeline import run_parallel_pipelines, merge_completed_task_results, split_task_into_jobs
+
+def parse_args():
+    # yapf: disable
+    parser = argparse.ArgumentParser(description="Read structure files from folders --input to extract sequence and atom positions. "
+                                                 "Create and index new --output MMSEQS2 database")
+
+    parser.add_argument("-r", "--data_root", required=False, default="default_config/data_root_path.json",
+                        help="Path to json file containing DATA_ROOT or path to folder that will be used as DATA_ROOT")
+
+    return parser.parse_args()
+    # yapf: enable
 
 
 def main():
-    task_configs = list(WORK_PATH.glob(f"**/{TASK_CONFIG}"))
-    for task_config in task_configs:
-        task_work_path = task_config.parent
-        config = json.load(open(task_config))
+    args = parse_args()
+
+    data_root = pathlib.Path(args.data_root)
+    if data_root.is_dir():
+        fsc = FolderStructureConfig(data_root)
+    else:
+        fsc = load_folder_structure_config(data_root)
+
+    job_config_paths = list(fsc.WORK_PATH.glob(f"**/{JOB_CONFIG}"))
+    for job_config_path in job_config_paths:
+        job_work_path = job_config_path.parent
+        job_config = load_job_config(job_config_path)
 
         # check if all job directories were created.
-        jobs_config = list(task_work_path.glob(f"**/{JOB_CONFIG}"))
-        if len(jobs_config) != config["n_parallel_jobs"]:
+        tasks_configs = list(job_work_path.glob(f"**/{TASK_CONFIG}"))
+        if len(tasks_configs) != job_config.n_parallel_tasks:
+            split_job_into_tasks(job_work_path)
 
-            split_task_into_jobs(task_work_path)
-
-        run_parallel_pipelines(task_work_path)
-        merge_completed_task_results(task_work_path)
-        shutil.rmtree(task_work_path)
+        run_parallel_pipelines(fsc, job_work_path)
+        merge_completed_task_results(fsc, job_work_path)
+        shutil.rmtree(job_work_path)
 
 
 if __name__ == '__main__':
