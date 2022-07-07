@@ -15,6 +15,7 @@ python main_pipeline.py --input all
 5. Collect results from `FINISHED_PATH`
 
 ### Linux
+
 1. Setup python environment
 ```{code-block} bash
 pip install .
@@ -33,6 +34,7 @@ python post_setup.py
 ```
 
 ### MacOS
+
 1. Setup conda environment
 ```{code-block} bash
 conda upgrade
@@ -59,6 +61,7 @@ python post_setup.py
 ```
 
 ### Docker 
+
 1. Create `YOUR_DATA_ROOT` directory on your local machine
 ```{code-block} bash
 mkdir /YOUR_DATA_ROOT
