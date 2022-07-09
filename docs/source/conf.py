@@ -34,8 +34,14 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinxcontrib.bibtex'
     ]
+
+bibtex_bibfiles = ['_static/references.bib']
+
+bibtex_bibliography_header = ".. rubric:: References"
+bibtex_footbibliography_header = bibtex_bibliography_header
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

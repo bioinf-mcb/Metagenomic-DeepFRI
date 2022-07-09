@@ -30,12 +30,13 @@ Hey, want to contribute to the project and become a co-author?
    usage.md
    output.md
    functions
-   
+
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Examples
+   :caption: Use cases
    
+   examples/index.rst
    contributing
 
 .. toctree::
