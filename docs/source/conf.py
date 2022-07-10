@@ -40,8 +40,7 @@ extensions = [
 
 bibtex_bibfiles = ['_static/references.bib']
 
-bibtex_bibliography_header = ".. rubric:: References"
-bibtex_footbibliography_header = bibtex_bibliography_header
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
