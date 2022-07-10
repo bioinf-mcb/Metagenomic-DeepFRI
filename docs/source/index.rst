@@ -21,28 +21,30 @@ Hey, want to contribute to the project and become a co-author?
    :caption: Getting started
 
    installation.md
+   deepfri
+
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Using Metagenomic-DeepFRI
-   
+
    usage.md
    output.md
-   functions
-   
+
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Examples
+   :caption: Use cases
    
-   contributing
+   examples/index.rst
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: About
    
+   contributing
    references
 
 

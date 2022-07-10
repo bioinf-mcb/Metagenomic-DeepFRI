@@ -1,0 +1,6 @@
+sphinx ~= 4.4.0
+sphinx-argparse ~= 0.2.0
+sphinxawesome-theme ~= 3.3.1
+sphinxcontrib-bibtex ~= 2.4.2
+myst-parser ~= 0.18.0
+sphinx-argparse ~= 0.2.5

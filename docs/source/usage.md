@@ -1,4 +1,4 @@
-# How it works
+# How the pipeline works
 
 The main feature of this project is the ability to generate a query contact map on the run
 using results from `mmseqs2` target database search for similar protein sequences within known structures. In `metagenomic_deepfri.py` contact map alignment (implemented in CPP_lib/load_contact_maps.h) is performed to be later used as an input to DeepFRI GCN. 

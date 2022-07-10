@@ -31,8 +31,10 @@ release = '1.0'
 # ones.
 extensions = [
     'myst_parser', 'sphinxawesome_theme', 'sphinx.ext.intersphinx', 'sphinx.ext.duration', 'sphinx.ext.doctest',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc', 'sphinxcontrib.bibtex'
 ]
+
+bibtex_bibfiles = ['_static/references.bib']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
