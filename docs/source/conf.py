@@ -36,8 +36,6 @@ extensions = [
 
 bibtex_bibfiles = ['_static/references.bib']
 
-
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
