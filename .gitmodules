@@ -1,3 +1,3 @@
-[submodule "DeepFRI"]
-	path = DeepFRI
-	url = https://github.com/SoliareofAstora/DeepFRI.git
+[submodule "meta_deepFRI/DeepFRI"]
+	path = meta_deepFRI/DeepFRI
+	url = https://github.com/bioinf-mcb/DeepFRI
