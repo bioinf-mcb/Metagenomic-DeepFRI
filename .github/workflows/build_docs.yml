@@ -38,9 +38,9 @@ jobs:
       - name: Move documentation
         run: |
           touch main/docs/build/html/.nojekyll
-          cp -a main/docs/build/html/. gh_pages/
+          cp -a main/docs/build/html/. gh-pages/
       - name: Upload documentation
-        working-directory: ${{ github.workspace }}/gh_pages
+        working-directory: ${{ github.workspace }}/gh-pages
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
