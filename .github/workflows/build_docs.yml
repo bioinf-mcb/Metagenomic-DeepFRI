@@ -21,8 +21,8 @@ jobs:
       # Checkout the documentation branch (docs will be pushed to this)
       - uses: actions/checkout@v2
         with:
-          ref: gh_pages
-          path: gh_pages
+          ref: gh-pages
+          path: gh-pages
 
       - name: Install Sphinx requirements
         working-directory: ${{ github.workspace }}/main/docs
