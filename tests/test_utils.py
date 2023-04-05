@@ -1,9 +1,8 @@
 import time
-import pytest
+
 import tempfile
-import os.path
-import hashlib
-from pathlib import Path
+import os
+import pytest
 
 from meta_deepFRI.utils import (bio_utils, elapsed_time_logger, fasta_file_io)
 # hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file

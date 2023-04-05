@@ -6,7 +6,7 @@ import pandas as pd
 
 from meta_deepFRI.config.names import SEQUENCES, MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME, MMSEQS_SEARCH_RESULTS
 from meta_deepFRI.utils.utils import run_command, merge_files_binary
-from .encode_sequence_ids import encode_faa_ids
+from .fasta_file_io import encode_faa_ids
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start", "query_end",
