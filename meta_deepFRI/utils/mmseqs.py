@@ -15,6 +15,18 @@ MMSEQS_COLUMN_NAMES = [
 
 
 def createdb(sequences_file, db_path):
+    """
+    Converts FASTA file to a DB format needed for MMseqs2.
+    This should generate five files,
+    e.g. queryDB, queryDB_h and its corresponding index file queryDB.index,
+    queryDB_h.index and queryDB.lookup from the FASTA QUERY.fasta input sequences.
+
+    sequence_file (str): path to FASTA file.
+    db_path (str): path to output db file.
+
+    Returns:
+        None
+    """
     run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")
 
 

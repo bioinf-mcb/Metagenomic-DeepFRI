@@ -4,17 +4,21 @@ import tempfile
 import os
 import pytest
 
-from meta_deepFRI.utils import (bio_utils, elapsed_time_logger, fasta_file_io)
+from functools import partial
+from Bio import pairwise2
+
+default_pair_align = partial(pairwise2.align.globalms,
+                             match=2,
+                             mismatch=-1,
+                             open=-0.5,
+                             extend=-0.1,
+                             one_alignment_only=True)
+
+from meta_deepFRI.utils import (bio_utils, elapsed_time_logger, fasta_file_io, search_alignments)
 # hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file
 
 
 def test_protein_letters():
-    """
-    Test protein letter encoding dictionaries
-
-    Returns:
-        None
-    """
 
     expected = {
         'ALA': 'A',
@@ -49,12 +53,6 @@ def test_protein_letters():
 
 
 def test_elapsed_time_logger():
-    """
-    Test ElapsedTimeLogger
-
-    Returns:
-        None
-    """
 
     # Create a temporary file for logging
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
@@ -190,3 +188,17 @@ def test_encode_faa_ids(fasta_path):
 def test_encode_faa_ids_raises_error_for_nonexistent_file():
     with pytest.raises(FileNotFoundError):
         fasta_file_io.encode_faa_ids("nonexistent.fasta")
+
+
+@pytest.mark.parametrize("alignment, expected_output", [
+    (default_pair_align('ATCG', 'ATCG')[0], 1.0),
+    (default_pair_align('ATCG', 'AGCG')[0], 0.6),
+    (default_pair_align('ATCG', 'CGTA')[0], 0.3),
+    (default_pair_align('ATCG', 'ATCGG')[0], 0.8),
+])
+def test_alignment_sequences_identity(alignment, expected_output):
+    # Call the function with the test input
+    result = round(search_alignments.alignment_sequences_identity(alignment), 1)
+
+    # Check whether the result matches the expected output
+    assert result == expected_output

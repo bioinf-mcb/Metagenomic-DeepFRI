@@ -1,6 +1,7 @@
 import os
 import pathlib
 from typing import List, Union, Any
+import shlex
 
 import requests
 import shutil
@@ -15,30 +16,35 @@ def add_path_to_env(path):
 
 
 def run_command(command, timeout=-1):
-    if type(command) == str:
-        command = str.split(command, ' ')
+    if isinstance(command, str):
+        command = shlex.split(command, ' ')
 
     my_env = os.environ.copy()
-    my_env["PATH"] += ":" + str.join(":", ENV_PATHS)
+    my_env["PATH"] += os.pathsep + os.pathsep.join(ENV_PATHS)
 
     try:
         if timeout > 0:
             completed_process = subprocess.run(command,
-                                               stdout=subprocess.PIPE,
-                                               stderr=subprocess.PIPE,
+                                               capture_output=True,
                                                env=my_env,
-                                               timeout=timeout)
+                                               timeout=timeout,
+                                               check=True,
+                                               universal_newlines=True)
         else:
-            completed_process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
+            completed_process = subprocess.run(command,
+                                               capture_output=True,
+                                               env=my_env,
+                                               check=True,
+                                               universal_newlines=True)
 
-    except subprocess.TimeoutExpired:
-        raise TimeoutError(f"command {' '.join(command)} timeout")
+    except subprocess.TimeoutExpired as timeout:
+        raise TimeoutError(f"command {' '.join(command)} timed out") from timeout
 
-    if completed_process.stderr != b'':
-        error_info = completed_process.stderr.decode()
-        raise RuntimeError(f"during execution: {' '.join(command)} exception occurred\n{error_info}")
-    else:
-        return completed_process.stdout.decode('utf-8')
+    except subprocess.CalledProcessError as err:
+        raise RuntimeError(
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}: {err.stderr.decode()}") from err
+
+    return completed_process.stdout
 
 
 def download_file(url, path):
