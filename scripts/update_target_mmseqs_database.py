@@ -122,7 +122,7 @@ def update_target_mmseqs_database(fsc: FolderStructureConfig, input_paths, proje
             freshly_added_ids.append(structure_file_ids[i])
 
     if len(freshly_added_ids) == 0:
-        print(f"\n No new protein structures added.\n No new target database will be created.")
+        print("\n No new protein structures added.\n No new target database will be created.")
         return
 
     new_mmseqs2_db_path = create_unix_timestamp_folder(fsc.MMSEQS_DATABASES_PATH / project_name)

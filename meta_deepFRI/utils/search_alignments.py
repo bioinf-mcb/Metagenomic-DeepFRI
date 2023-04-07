@@ -18,6 +18,7 @@ def alignment_sequences_identity(alignment):
     return seq_id
 
 
+# skipped in testing as wrapper
 def align(query_seq, target_seq, match, missmatch, gap_open, gap_continuation):
     return pairwise2.align.globalms(query_seq,
                                     target_seq,
@@ -77,8 +78,7 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
         all_alignments = p.map(align, queries, targets, match, missmatch, gap_open, gap_continuation)
 
     alignments_output = dict()
-    for i in range(len(all_alignments)):
-        alignment = all_alignments[i]
+    for i, alignment in enumerate(all_alignments):
         # filter out bad alignments based on alignment sequences identity
         sequence_identity = alignment_sequences_identity(alignment)
         if sequence_identity > job_config.ALIGNMENT_MIN_SEQUENCE_IDENTITY:
