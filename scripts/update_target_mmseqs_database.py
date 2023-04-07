@@ -1,20 +1,27 @@
 import argparse
-import json
 import multiprocessing
 import pathlib
 
 from itertools import repeat
+
+from typing import List
+# Create logger
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from meta_deepFRI.CPP_lib import libAtomDistanceIO
 from meta_deepFRI.config.names import ATOMS
-from meta_deepFRI.config import CPU_COUNT
 
 from meta_deepFRI.structure_files.parse_structure_file import process_structure_file, search_structure_files
 from meta_deepFRI.utils.mmseqs import create_target_database
 from meta_deepFRI.utils.utils import shutdown
-
-from typing import List
 
 ###################################################################################################################
 # utils.mmseqs.update_target_mmseqs_database:
@@ -22,7 +29,7 @@ from typing import List
 #
 # structure_files.parse_structure_file.process_structure_file:
 #   1. reads the structure file extracting sequence and atom positions
-#   2. skip short sequences and truncate ones that size is over MAX_TARGET_CHAIN_LENGTH inside target_db_config.json
+#   2. skip short sequences and truncate ones that size is over max_protein_length inside target_db_config.json
 #   3. save extracted data:
 #           sequence - protein_id.faa file containing single sequence f.write(f">{protein_id}\n{sequence}\n")
 #               SEQ_ATOMS_DATASET_PATH / project_name / SEQUENCES / (protein_id + ".faa")
@@ -36,9 +43,10 @@ from typing import List
 #   3.  creates a structure_ids_added.json, so it is easier to remove unwanted ATOM and SEQUENCE after mistake
 ###################################################################################################################
 
-## TODO move print statements to logging module
 ## TODO update documentation
 ## TODO write tests
+## TODO speed up globbing
+## TODO replace merging of aminoacid sequence files with pysam.libcfaidx
 
 
 def parse_args():
@@ -48,28 +56,33 @@ def parse_args():
 
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i", "--input", nargs='+', required=True, default=None,
-                        help=f"List of folder or file paths containing structure files. Both absolute and relative to FolderStructureConfig.STRUCTURE_FILES_PATH are accepted."
-                             f"If not provided pipeline will search in FolderStructureConfig.STRUCTURE_FILES_PATH/--name. "
-                             f"Use '--input .' to process all files within FolderStructureConfig.STRUCTURE_FILES_PATH")
+                        help="List of folder or file paths containing structure files. Both absolute and relative to FolderStructureConfig.STRUCTURE_FILES_PATH are accepted."
+                             "If not provided pipeline will search in FolderStructureConfig.STRUCTURE_FILES_PATH/--name. "
+                             "Use '--input .' to process all files within FolderStructureConfig.STRUCTURE_FILES_PATH")
     parser.add_argument("-db", "--database", required=False, default=None,
                         help="Path to a previous MMSEQS2 database to be updated.")
 
     parser.add_argument("-o", "--output", required=True, default=None,
                         help="Path to folder where new MMSEQS2 database will be created.")
 
-    # todo add max_target_chain_length argument and inform user if there is difference between this arg and existing target_db_config.json
-    # parser.add_argument("-m", "--max_target_chain_length", required=False, default=None,
-    #                     help="If protein chain is longer than this value, it will be truncated")
+    parser.add_argument("-t", "--threads", required=False, default=1, type=int,
+                        help="Number of threads to use. If not provided, the program will use single core.")
+    parser.add_argument("-max_len", "--max_protein_length", required=False, default=1_000, type=int,
+                        help="If protein chain is longer than this value, it will be truncated")
+
     parser.add_argument("--overwrite", action="store_true",
                         help="Flag to override existing sequences and atom positions")
     return parser.parse_args()
     # yapf: enable
 
 
-def update_target_mmseqs_database(input_paths: List[str],
-                                  output_path: str,
-                                  overwrite: bool,
-                                  max_target_chain_length: int = 1_000) -> None:
+def update_target_mmseqs_database(
+    input_paths: List[str],
+    output_path: str,
+    overwrite: bool,
+    threads: int,
+    max_protein_length: int = 1_000,
+) -> None:
     """
     Searches for structure files in input (both files & folders are accepted, folders are globbed),
     parses them, creates a database of available structures & sequences.
@@ -80,7 +93,8 @@ def update_target_mmseqs_database(input_paths: List[str],
         input_paths (list): list of paths to structure files or folders containing structure files.
         output_path (str): path to folder where the database will be created.
         overwrite (bool): flag to override existing sequences and atom positions.
-        max_target_chain_length (int): if protein is longer than this value, it will be truncated. Default is 1_000.
+        threads (int): number of threads to use.
+        max_protein_length (int): if protein is longer than this value, it will be truncated. Default is 1_000.
 
     Returns:
         None
@@ -89,42 +103,44 @@ def update_target_mmseqs_database(input_paths: List[str],
     seq_atoms_path = output_path / "seq_atom_db"
     if not seq_atoms_path.exists():
         seq_atoms_path.mkdir(parents=True)
-
-    # get MAX_TARGET_CHAIN_LENGTH from existing config or load from project config
     target_db_path = output_path / "mmseqs_db"
-    print(f"MAX_TARGET_CHAIN_LENGTH - {max_target_chain_length} aa")
 
-    print("Searching for structure files in paths:")
+    # report max_protein_length
+    logger.info("MAX_PROTEIN_LENGTH: %s" % max_protein_length)
+
+    logger.info("Searching for structure files in following paths:")
     for input_path in input_paths:
-        print(f"\t{str(input_path)}")
+        logger.info("%s" % str(input_path))
     # dict [ structure_file_id ] = pathlib.Path( structure_file_path )
     structure_files_paths = search_structure_files(input_paths)
 
-    if len(structure_files_paths) == 0:
+    n_structures = len(structure_files_paths)
+    if n_structures == 0:
         shutdown("No structure files found")
     else:
-        print(f"Found {len(structure_files_paths)} structure files to extract")
+        logger.info(f"Found %s structure files to extract", n_structures)
 
     # search for already processed protein_ids to skip them
     if not overwrite:
         duplicated_ids_counter = 0
-        for structure_id in list(structure_files_paths.keys()):
-            if (seq_atoms_path / ATOMS / (structure_id + ".bin")).exists():
-                structure_files_paths.pop(structure_id)
+        # remove duplicates from structure_files_paths
+        for structure_id in structure_files_paths.keys():
+            if (seq_atoms_path / structure_id).exists():
+                logger.info(f"Skipping {structure_id} - already in database")
+                del structure_files_paths[structure_id]
                 duplicated_ids_counter += 1
-        print(f"Found {duplicated_ids_counter} duplicated IDs")
+        logger.info("Found %s duplicated IDs" % duplicated_ids_counter)
 
     # actual processing of structure files takes place here
-    print("\nProcessing", len(structure_files_paths), "files")
+    logger.info("Processing %s files" % len(structure_files_paths))
     libAtomDistanceIO.initialize()
-    with multiprocessing.Pool(processes=CPU_COUNT) as p:
+    with multiprocessing.Pool(processes=threads) as p:
         processing_status = p.starmap(
             process_structure_file,
-            zip(structure_files_paths.values(), repeat(seq_atoms_path.absolute()), repeat(max_target_chain_length)))
+            zip(structure_files_paths.values(), repeat(seq_atoms_path.absolute()), repeat(max_protein_length)))
 
-    status, status_count = np.unique(processing_status, return_counts=True)
-    for n, n_status in zip(status_count, status):
-        print(f"\t{n} - {n_status}")
+    for struct, status in zip(structure_files_paths.values(), processing_status):
+        logging.info(f"{struct} - {status}")
 
     freshly_added_ids = []
     structure_file_ids = list(structure_files_paths.keys())
@@ -133,7 +149,7 @@ def update_target_mmseqs_database(input_paths: List[str],
             freshly_added_ids.append(structure_id)
 
     if len(freshly_added_ids) == 0:
-        message = "\n No new protein structures added.\n No new target database will be created."
+        message = "\nNo new protein structures added.\n No new target database will be created."
         shutdown(message)
 
     # create a folder for target db
@@ -146,15 +162,19 @@ def update_target_mmseqs_database(input_paths: List[str],
 def main() -> None:
     args = parse_args()
     input_seqs = [pathlib.Path(seqs) for seqs in args.input]
-    overwrite = args.overwrite
     output_path = pathlib.Path(args.output)
+    print(args.overwrite)
 
     ## TODO merge with previous database
 
     # if args.database:
     #     input_seqs.append(pathlib.Path(args.database))
 
-    update_target_mmseqs_database(input_paths=input_seqs, output_path=output_path, overwrite=overwrite)
+    update_target_mmseqs_database(input_paths=input_seqs,
+                                  output_path=output_path,
+                                  overwrite=args.overwrite,
+                                  threads=args.threads,
+                                  max_protein_length=args.max_protein_length)
 
 
 if __name__ == '__main__':

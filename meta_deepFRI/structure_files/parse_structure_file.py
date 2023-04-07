@@ -104,7 +104,7 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
 
     if len(groups) < 9:
         # Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA
-        return "sequences too short, probably DNA or corrupted"
+        return "Sequence is too short, probably DNA or corrupted"
 
     truncated = False
     if len(groups) > max_target_chain_length:
