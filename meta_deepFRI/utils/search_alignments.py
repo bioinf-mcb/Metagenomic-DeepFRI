@@ -74,6 +74,8 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
     gap_open = [job_config.PAIRWISE_ALIGNMENT_GAP_OPEN] * len(queries)
     gap_continuation = [job_config.PAIRWISE_ALIGNMENT_GAP_CONTINUATION] * len(queries)
 
+    ## TODO: get rid of dependency if possible
+    ## TODO: replace CPU_COUNT with thread parameter from higher level function
     with pathos.multiprocessing.ProcessingPool(processes=CPU_COUNT) as p:
         all_alignments = p.map(align, queries, targets, match, missmatch, gap_open, gap_continuation)
 
