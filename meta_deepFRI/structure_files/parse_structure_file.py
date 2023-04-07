@@ -7,19 +7,19 @@ import traceback
 import numpy as np
 
 from meta_deepFRI.CPP_lib import libAtomDistanceIO
-from meta_deepFRI import structure_files
+from meta_deepFRI.structure_files.parsers import parse_pdb, parse_mmcif
 from meta_deepFRI.config.names import SEQUENCES, ATOMS
 from meta_deepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a pattern with a parser in this dict.
 # read structure_files_parsers/README.md for more information about how to create new parser.
 PARSERS = {
-    '.pdb': structure_files.parse_pdb,
-    '.pdb.gz': structure_files.parse_pdb,
-    '.cif': structure_files.parse_mmcif,
-    '.cif.gz': structure_files.parse_mmcif,
-    '.ent': structure_files.parse_pdb,
-    '.ent.gz': structure_files.parse_pdb
+    '.pdb': parse_pdb,
+    '.pdb.gz': parse_pdb,
+    '.cif': parse_mmcif,
+    '.cif.gz': parse_mmcif,
+    '.ent': parse_pdb,
+    '.ent.gz': parse_pdb
 }
 
 
@@ -138,7 +138,7 @@ def process_structure_file(structure_file, save_path, max_target_chain_length):
     :return:
     """
     try:
-        seq_atoms = structure_files.read_structure_file(structure_file)
+        seq_atoms = read_structure_file(structure_file)
     except Exception:
         print("EXCEPTION WHILE READING FILE ", str(structure_file))
         logging.error(traceback.format_exc())
