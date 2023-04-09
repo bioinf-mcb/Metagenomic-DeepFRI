@@ -58,7 +58,7 @@ nano CONFIG/FOLDER_STRUCTURE.py
 python post_setup.py
 ```
 
-### Docker 
+### Docker
 1. Create `YOUR_DATA_ROOT` directory on your local machine
 ```{code-block} bash
 mkdir /YOUR_DATA_ROOT
