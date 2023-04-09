@@ -56,6 +56,7 @@ def write_fasta_file(seq_records: List[SeqRecord], path: str) -> None:
 
 
 class SeqFileLoader:
+
     def __init__(self, path):
         self.path = pathlib.Path(path)
 

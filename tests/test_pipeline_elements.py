@@ -2,6 +2,7 @@ import unittest
 
 
 class Test(unittest.TestCase):
+
     def test_gcn_cnn_split(self):
         pass
 
