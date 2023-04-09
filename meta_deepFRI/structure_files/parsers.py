@@ -26,6 +26,7 @@ def parse_pdb(file: str) -> Tuple[list, np.ndarray, np.ndarray]:
                     groups.append(line[21:26])
         line = file.readline()
 
+    sequence = np.array(sequence)
     positions = np.array(positions, dtype=np.float32)
     groups = np.array(groups)
 
