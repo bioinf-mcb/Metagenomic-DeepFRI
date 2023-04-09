@@ -1,5 +1,4 @@
 import numpy as np
-import gzip
 import pathlib
 import pytest
 
