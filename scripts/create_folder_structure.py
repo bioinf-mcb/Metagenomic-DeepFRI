@@ -40,8 +40,7 @@ def create_folder_structure(fsc: FolderStructureConfig):
     try:
         fsc.DATA_ROOT.mkdir(exist_ok=True, parents=True)
     except PermissionError:
-        print("Need permissions to create this folder. \n"
-              f"sudo mkdir -m 777 {fsc.DATA_ROOT}")
+        print("Need permissions to create this folder. \n" f"sudo mkdir -m 777 {fsc.DATA_ROOT}")
         exit(1)
 
     fsc.STRUCTURE_FILES_PATH.mkdir(exist_ok=True, parents=True)
