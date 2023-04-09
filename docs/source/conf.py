@@ -73,7 +73,7 @@ todo_include_todos = False
 
 html_sidebars = {
     '**': [
-        'relations.html',    # needs 'show_related': True theme option to display
+        'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
     ]
 }

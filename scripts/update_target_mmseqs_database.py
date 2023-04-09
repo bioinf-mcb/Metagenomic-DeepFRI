@@ -8,9 +8,10 @@ from typing import List
 # Create logger
 import logging
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -170,11 +171,12 @@ def main() -> None:
     # if args.database:
     #     input_seqs.append(pathlib.Path(args.database))
 
-    update_target_mmseqs_database(input_paths=input_seqs,
-                                  output_path=output_path,
-                                  overwrite=args.overwrite,
-                                  threads=args.threads,
-                                  max_protein_length=args.max_protein_length)
+    update_target_mmseqs_database(
+        input_paths=input_seqs,
+        output_path=output_path,
+        overwrite=args.overwrite,
+        threads=args.threads,
+        max_protein_length=args.max_protein_length)
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import time
 
 
 class ElapsedTimeLogger(object):
+
     def __init__(self, path=None):
         self.path = path
         self.current_start = time.time()
@@ -20,7 +21,7 @@ class ElapsedTimeLogger(object):
         self._append_to_file(text)
 
     def _append_to_file(self, text):
-        print(text[:-1])    # omitting newline
+        print(text[:-1])  # omitting newline
         if self.path is not None:
             with open(self.path, "a") as f:
                 f.write(text)

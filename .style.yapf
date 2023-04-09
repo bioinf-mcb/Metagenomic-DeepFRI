@@ -2,4 +2,3 @@
 based_on_style = yapf
 column_limit = 120
 indent_width = 4
-

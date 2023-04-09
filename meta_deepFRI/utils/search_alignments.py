@@ -20,13 +20,8 @@ def alignment_sequences_identity(alignment):
 
 # skipped in testing as wrapper
 def align(query_seq, target_seq, match, missmatch, gap_open, gap_continuation):
-    return pairwise2.align.globalms(query_seq,
-                                    target_seq,
-                                    match,
-                                    missmatch,
-                                    gap_open,
-                                    gap_continuation,
-                                    one_alignment_only=True)[0]
+    return pairwise2.align.globalms(
+        query_seq, target_seq, match, missmatch, gap_open, gap_continuation, one_alignment_only=True)[0]
 
 
 def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
