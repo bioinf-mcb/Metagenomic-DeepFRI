@@ -6,20 +6,20 @@ import traceback
 
 import numpy as np
 
-from meta_deepFRI import CPP_lib
-from meta_deepFRI import structure_files
+from meta_deepFRI.CPP_lib import libAtomDistanceIO
+from meta_deepFRI.structure_files.parsers import parse_pdb, parse_mmcif
 from meta_deepFRI.config.names import SEQUENCES, ATOMS
 from meta_deepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a pattern with a parser in this dict.
 # read structure_files_parsers/README.md for more information about how to create new parser.
 PARSERS = {
-    '.pdb': structure_files.parse_pdb,
-    '.pdb.gz': structure_files.parse_pdb,
-    '.cif': structure_files.parse_mmcif,
-    '.cif.gz': structure_files.parse_mmcif,
-    '.ent': structure_files.parse_pdb,
-    '.ent.gz': structure_files.parse_pdb
+    '.pdb': parse_pdb,
+    '.pdb.gz': parse_pdb,
+    '.cif': parse_mmcif,
+    '.cif.gz': parse_mmcif,
+    '.ent': parse_pdb,
+    '.ent.gz': parse_pdb
 }
 
 
@@ -68,13 +68,13 @@ def read_structure_file(file_path: pathlib.Path) -> SeqAtoms:
     :param file_path:
     :return:
     """
-    for pattern in PARSERS.keys():
+    for pattern, structure_parsing_func in PARSERS.items():
         if file_path.name.endswith(pattern):
             if file_path.name.endswith('.gz'):
                 f = gzip.open(file_path, 'rt')
             else:
                 f = open(file_path, 'r')
-            atom_amino_group, positions, groups = PARSERS[pattern](f)
+            atom_amino_group, positions, groups = structure_parsing_func(f)
             f.close()
 
             protein_id = file_path.name.replace(pattern, '')
@@ -104,7 +104,7 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
 
     if len(groups) < 9:
         # Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA
-        return "sequences too short, probably DNA or corrupted"
+        return "Sequence is too short, probably DNA or corrupted"
 
     truncated = False
     if len(groups) > max_target_chain_length:
@@ -120,7 +120,8 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
     sequence = ''.join([bio_utils.PROTEIN_LETTERS[seq_atoms.atom_amino_group[i]] for i in group_indexes[:-1]])
     with open(sequence_path, "w") as f:
         f.write(f">{seq_atoms.protein_id}\n{sequence}\n")
-    CPP_lib.save_atoms(seq_atoms.positions, group_indexes, str(atoms_path))
+
+    libAtomDistanceIO.save_atoms(seq_atoms.positions, group_indexes, str(atoms_path))
 
     if truncated:
         return f"SUCCEED, but sequences and contact maps got truncated to {max_target_chain_length}"
@@ -137,21 +138,27 @@ def process_structure_file(structure_file, save_path, max_target_chain_length):
     :return:
     """
     try:
-        seq_atoms = structure_files.read_structure_file(structure_file)
+        seq_atoms = read_structure_file(structure_file)
     except Exception:
         print("EXCEPTION WHILE READING FILE ", str(structure_file))
         logging.error(traceback.format_exc())
         return "file reading exceptions"
 
-    # process and store sequence and atom positions in SEQ_ATOMS_DATASET_PATH / output_name
-    sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id + ".faa")
-    atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
+    # create directories for saving if they don't exist
+    sequences_folder = save_path / SEQUENCES
+    atoms_path = save_path / ATOMS
+    sequences_folder.mkdir(parents=True, exist_ok=True)
+    atoms_path.mkdir(parents=True, exist_ok=True)
+
+    # process single protein
+    prot_sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id + ".faa")
+    prot_atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
 
     try:
-        return save_sequence_and_atoms(seq_atoms, sequence_path, atoms_path, max_target_chain_length)
+        return save_sequence_and_atoms(seq_atoms, prot_sequence_path, prot_atoms_path, max_target_chain_length)
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
         logging.error(traceback.format_exc())
-        sequence_path.unlink(missing_ok=True)
-        atoms_path.unlink(missing_ok=True)
+        prot_sequence_path.unlink(missing_ok=True)
+        prot_atoms_path.unlink(missing_ok=True)
         return "file processing exceptions"
