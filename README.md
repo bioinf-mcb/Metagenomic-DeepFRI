@@ -19,10 +19,10 @@ This is the right project for this task! Pipeline in a nutshell:
 ## Local
 
 ### Quick start
-1. Upload structure files, for example from [PDB](https://www.rcsb.org/), to `STRUCTURE_FILES_PATH` (paths are defined in `CONFIG/FOLDER_STRUCTURE.py`)
+1. Create a folder with protein structures, for example from [PDB](https://www.rcsb.org/)
 2. Create target database
 ```{code-block} bash
-python update_target_mmseqs_database.py --input all
+python build_database.py --input path/to/folder/with/strucures
 ```
 3. Upload protein sequences `.faa` files into `QUERY_PATH`
 4. Run main_pipeline.py.
@@ -32,47 +32,17 @@ python main_pipeline.py --input all
 5. Collect results from `FINISHED_PATH`
 
 ### Linux
-1. Setup python environment
+1. Setup conda environment
+```{code-block} bash
+conda env install --name deepfri --file
+```
+2. Install `meta-DeepFRI`
 ```{code-block} bash
 pip install .
-```
-2. Install `mmseqs2` and `boost` libraries
-```{code-block} bash
-sudo apt install mmseqs2 libboost-numpy1.71 libboost-python1.71
 ```
 3. (optional) Edit `CONFIG/FOLDER_STRUCTURE.py` to customize your folder structure
 ```{code-block} bash
 nano CONFIG/FOLDER_STRUCTURE.py
-```
-4. Run `post_setup.py` script to create folder structure according to `FOLDER_STRUCTURE.py` and to download and unzip DeepFRI model weights
-```{code-block} bash
-python post_setup.py
-```
-
-### MacOS
-1. Setup conda environment
-```{code-block} bash
-conda upgrade
-```
-and check what packages you need, for example:
-```{code-block} bash
-conda install pip
-```
-2. Setup python environment
-```{code-block} bash
-pip install .
-```
-3. Using Homebrew install `mmseqs2` and `boost` libraries
-```{code-block} bash
-brew install mmseqs2 boost-python3
-```
-4.  (optional) Edit `CONFIG/FOLDER_STRUCTURE.py` to customize your folder structure
-```{code-block} bash
-nano CONFIG/FOLDER_STRUCTURE.py
-```
-5. Run `post_setup.py` script to create folder structure according to `FOLDER_STRUCTURE.py` and to download and unzip DeepFRI model weights
-```{code-block} bash
-python post_setup.py
 ```
 
 ### Docker
@@ -116,35 +86,30 @@ Similarly `update_target_mmseqs_database.py`. It will store `MAX_TARGET_CHAIN_LE
 
 ## Mmseqs2 target database setup
 
-1. Upload structure files to `STRUCTURE_FILES_PATH / your_project_name`.
-2. Run `update_target_mmseqs_database.py` script.
+1. Upload structure files to a folder.
+2. Run `build_database.py` script.
    ```
-   python update_target_mmseqs_database.py --project_name your_project_name
+   python scripts/build_database.py --input path/to/folder/with/strucures --output path/to/database
    ```
+
+Use parameter `-max_len` to define maximal length of the protein. Due to initial DeepFRI training set
+default value is set to `1000 aa`.
 
 Main feature of this project is its ability to generate query contact map on the fly
 using results from mmseqs2 target database search for similar protein sequences with known structures.
 Later in the `metagenomic_deepfri.py` contact map alignment is performed to use it as input to DeepFRI GCN.
 (implemented in CPP_lib/load_contact_maps.h)
 
-`update_target_mmseqs_database.py` script will search for structure files,
-process them and store protein chain sequence and atoms positions inside `SEQ_ATOMS_DATASET_PATH / project_name`.
-It will also create a mmseqs2 database in `MMSEQS_DATABASES_PATH / project_name`.
+`build_database.py` script will search for structure files,
+process them and store protein chain sequence and atoms positions inside `database/SEQ_ATOMS_DATASET_PATH`.
+It will also create a mmseqs2 database in `database/MMSEQS_DATABASES_PATH`.
 This operation will append new structures to existing ones.
 
 You can also use `--input DIR_1 FILE_2 ...` argument list to parse structures from multiple sources.
-Both absolute and relative to `STRUCTURE_FILES_PATH`.
-Use `--input .` to parse all structure files inside `STRUCTURE_FILES_PATH`.
-Accepted formats are: `.pdb .cif .ent` both raw and compressed `.gz`
-
-To add another structure file format edit `STRUCTURE_FILES_PARSERS` inside `update_target_mmseqs_database.py`
-
-`target_db_config.json` contains `MAX_TARGET_CHAIN_LENGTH`.
-This value is copied from `CONFIG / RUNTIME_PARAMETERS.py` while creating new target database.
+Accepted formats are: `.pdb .cif .ent` both raw and compressed with `.gz`
 
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
-Also use this argument if you want to apply changes to `MAX_TARGET_CHAIN_LENGTH` inside `target_db_config.json`
 
 ## Running main pipeline
 
