@@ -8,9 +8,23 @@ Here you can find a few performance critical functions used in metagenomic_deepf
 
 ### Build from source
 For more information please refer to the [cmake documentation](https://cmake.org/runningcmake/).
-You will probably have to edit `CMakeLists.txt :13` to set python include path.
+
+First we need to install boost
+```bash
+wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz
+tar -xf boost_1_81_0.tar.gz
+cd boost_1_81_0
+./bootstrap.sh
+./b2
 ```
-sudo snap install cmake
+
+After building boost you will have to copy and paste include path.
+Additional libraries will be installed in `boost_1_81_0/stage/lib` directory.
+You will need to find and paste path to `libboost_python310.so.1.81.0`
+and `libboost_numpy310.so.1.81.0` files.
+
+```bash
+cd ../meta_deepFRI/CPP_lib
 ccmake .
 make
 ```
