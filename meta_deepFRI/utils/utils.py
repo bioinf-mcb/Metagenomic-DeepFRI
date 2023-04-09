@@ -7,6 +7,7 @@ import requests
 import shutil
 import subprocess
 import time
+import sys
 
 ENV_PATHS = set()
 
@@ -37,12 +38,12 @@ def run_command(command, timeout=-1):
                                                check=True,
                                                universal_newlines=True)
 
-    except subprocess.TimeoutExpired as timeout:
-        raise TimeoutError(f"command {' '.join(command)} timed out") from timeout
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"command {' '.join(command)} timed out") from None
 
     except subprocess.CalledProcessError as err:
         raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}: {err.stderr.decode()}") from err
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}: {err.stderr}") from err
 
     return completed_process.stdout
 
@@ -142,3 +143,13 @@ def query_yes_no(question: str, default: str = "yes") -> str:
             print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
     return choice
+
+
+def shutdown(message):
+    """
+    Terminates program execution with a reason.
+
+    Args:
+        message (str): Reason for termination.
+    """
+    sys.exit(message)

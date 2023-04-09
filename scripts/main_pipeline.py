@@ -9,7 +9,7 @@ import dataclasses
 from itertools import repeat
 from typing import List, Union
 
-from meta_deepFRI.config import CPU_COUNT
+##TODO: add threading option
 from meta_deepFRI.config.folder_structure import FolderStructureConfig, load_folder_structure_config
 from meta_deepFRI.config.names import MERGED_SEQUENCES, PROJECT_CONFIG, JOB_CONFIG, TASK_CONFIG, ALIGNMENTS, \
     MMSEQS_SEARCH_RESULTS, \
@@ -36,9 +36,12 @@ def parse_args():
 
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i", "--input", nargs='+', required=False, default=None,
-                        help=f"List of folder or file paths containing query .faa files. Both absolute and relative to FolderStructureConfig.QUERY_PATH are accepted."
-                             f"If not provided pipeline will search in FolderStructureConfig.QUERY_PATH/project_name. "
-                             f"Use '--input .' to process all files within FolderStructureConfig.QUERY_PATH")
+                        help="List of folder or file paths containing query .faa files. Both absolute and relative to FolderStructureConfig.QUERY_PATH are accepted."
+                             "If not provided pipeline will search in FolderStructureConfig.QUERY_PATH/project_name. "
+                             "Use '--input .' to process all files within FolderStructureConfig.QUERY_PATH")
+
+    parser.add_argument("-t", "--threads", required=False, default=1, type=int,
+                        help="Number of threads to use for parallel processing.")
 
     # todo add possibility to use specific target_database path and timestamp instead of name only
     parser.add_argument("-t", "--target_db_name", required=False, default=None,
@@ -177,7 +180,7 @@ def split_job_into_tasks(job_work_path: pathlib.Path) -> None:
 
 
 # search for job config files and start metagenomic_deepfri in parallel
-def run_parallel_pipelines(fsc: FolderStructureConfig, job_work_path: pathlib.Path) -> None:
+def run_parallel_pipelines(fsc: FolderStructureConfig, job_work_path: pathlib.Path, threads: int) -> None:
     timer = ElapsedTimeLogger(job_work_path / "metadata_total_task_time.csv")
 
     task_configs_paths = [task_config.parent for task_config in job_work_path.glob(f"**/{TASK_CONFIG}")]
@@ -185,8 +188,8 @@ def run_parallel_pipelines(fsc: FolderStructureConfig, job_work_path: pathlib.Pa
     if len(task_configs_paths) == 1:
         metagenomic_deepfri.metagenomic_deepfri(fsc, task_configs_paths[0])
     else:
-        print(f"Running {len(task_configs_paths)} jobs. Parallel: {min(len(task_configs_paths), CPU_COUNT)}\n")
-        with multiprocessing.Pool(min(len(task_configs_paths), CPU_COUNT)) as p:
+        print(f"Running {len(task_configs_paths)} jobs. Parallel: {min(len(task_configs_paths), threads)}\n")
+        with multiprocessing.Pool(min(len(task_configs_paths), threads)) as p:
             p.starmap(metagenomic_deepfri.metagenomic_deepfri, zip(repeat(fsc), task_configs_paths))
 
     timer.log("metagenomic_deepfri")
@@ -250,11 +253,11 @@ def merge_completed_task_results(fsc: FolderStructureConfig, job_work_path: path
 
 # main_pipeline() simply executes functions implemented above step by step
 def main_pipeline(fsc: FolderStructureConfig, project_name: str, input_paths: list, target_db_name: str,
-                  delete_query: bool, parallel_jobs: int):
+                  delete_query: bool, parallel_jobs: int, threads: int):
     job_work_path = prepare_job(fsc, project_name, input_paths, target_db_name, delete_query, parallel_jobs)
 
     split_job_into_tasks(job_work_path)
-    run_parallel_pipelines(fsc, job_work_path)
+    run_parallel_pipelines(fsc, job_work_path, threads=threads)
     merge_completed_task_results(fsc, job_work_path)
     shutil.rmtree(job_work_path)
 
@@ -270,7 +273,6 @@ def main():
 
     project_name = args.project_name
     delete_query = args.delete_query
-    n_parallel_tasks = args.n_parallel_tasks
 
     if args.target_db_name is None:
         try:
@@ -286,7 +288,7 @@ def main():
 
     input_paths = parse_input_paths(args.input, project_name, fsc.QUERY_PATH)
 
-    main_pipeline(fsc, project_name, input_paths, target_db_name, delete_query, n_parallel_tasks)
+    main_pipeline(fsc, project_name, input_paths, target_db_name, delete_query, args.n_parallel_tasks, args.threads)
 
 
 if __name__ == '__main__':
