@@ -14,21 +14,21 @@ authors:
   orcid: https://orcid.org/0000-0002-5165-0973
 - given-names: P. Douglas
   family-names: Renfrew
-  affiliation: Center for Computational Biology, Flatiron Institute, 
+  affiliation: Center for Computational Biology, Flatiron Institute,
     New York, NY, USA
 - given-names: Tomasz
   family-names: Kosciolek
-  affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
+  affiliation: Malopolska Centre of Biotechnology, Jagiellonian University,
     Krakow, Poland
   orcid: https://orcid.org/0000-0002-5693-3593
 - given-names: Julia Koehler
   family-names: Leman
-  affiliation: Center for Computational Biology, Flatiron Institute, 
+  affiliation: Center for Computational Biology, Flatiron Institute,
     New York, NY, USA
   orcid: https://orcid.org/0000-0002-5693-3593
 - given-names: Daniel
   family-names: Berenberg
-  affiliation: Center for Computational Biology, Flatiron Institute, 
+  affiliation: Center for Computational Biology, Flatiron Institute,
     New York, NY, USA
 - given-names: Tommi
   family-names: Vatanen
@@ -36,15 +36,15 @@ authors:
   orcid: https://orcid.org/0000-0003-0949-1291
 - given-names: Chris
   family-names: Chandler
-  affiliation: Center for Computational Biology, Flatiron Institute, 
+  affiliation: Center for Computational Biology, Flatiron Institute,
     New York, NY, USA
 - given-names: Bryn C.
   family-names: Taylor
-  affiliation: Biomedical Sciences Graduate Program, 
+  affiliation: Biomedical Sciences Graduate Program,
     University of California San Diego, La Jolla, CA, USA
 - given-names: Ian M.
   family-names: Fisk
-  affiliation: Scientific Computing Core, Flatiron Institute, 
+  affiliation: Scientific Computing Core, Flatiron Institute,
     Simons Foundation, New York, NY, USA
 - given-names: Hera
   family-names: Vlamakis
@@ -56,7 +56,7 @@ authors:
   orcid: https://orcid.org/0000-0002-5630-5167
 - given-names: Rob
   family-names: Knight
-  affiliation: Department of Pediatrics, University of California San Diego, 
+  affiliation: Department of Pediatrics, University of California San Diego,
     La Jolla, CA, USA
   orcid: https://orcid.org/0000-0002-0975-9019
 - given-names: Kyunghyun
@@ -84,21 +84,21 @@ preferred-citation:
     orcid: https://orcid.org/0000-0002-5165-0973
   - given-names: P. Douglas
     family-names: Renfrew
-    affiliation: Center for Computational Biology, Flatiron Institute, 
+    affiliation: Center for Computational Biology, Flatiron Institute,
       New York, NY, USA
   - given-names: Tomasz
     family-names: Kosciolek
-    affiliation: Malopolska Centre of Biotechnology, Jagiellonian University, 
+    affiliation: Malopolska Centre of Biotechnology, Jagiellonian University,
       Krakow, Poland
     orcid: https://orcid.org/0000-0002-5693-3593
   - given-names: Julia Koehler
     family-names: Leman
-    affiliation: Center for Computational Biology, Flatiron Institute, 
+    affiliation: Center for Computational Biology, Flatiron Institute,
       New York, NY, USA
     orcid: https://orcid.org/0000-0002-5693-3593
   - given-names: Daniel
     family-names: Berenberg
-    affiliation: Center for Computational Biology, Flatiron Institute, 
+    affiliation: Center for Computational Biology, Flatiron Institute,
       New York, NY, USA
   - given-names: Tommi
     family-names: Vatanen
@@ -106,15 +106,15 @@ preferred-citation:
     orcid: https://orcid.org/0000-0003-0949-1291
   - given-names: Chris
     family-names: Chandler
-    affiliation: Center for Computational Biology, Flatiron Institute, 
+    affiliation: Center for Computational Biology, Flatiron Institute,
       New York, NY, USA
   - given-names: Bryn C.
     family-names: Taylor
-    affiliation: Biomedical Sciences Graduate Program, 
+    affiliation: Biomedical Sciences Graduate Program,
       University of California San Diego, La Jolla, CA, USA
   - given-names: Ian M.
     family-names: Fisk
-    affiliation: Scientific Computing Core, Flatiron Institute, 
+    affiliation: Scientific Computing Core, Flatiron Institute,
       Simons Foundation, New York, NY, USA
   - given-names: Hera
     family-names: Vlamakis
@@ -126,7 +126,7 @@ preferred-citation:
     orcid: https://orcid.org/0000-0002-5630-5167
   - given-names: Rob
     family-names: Knight
-    affiliation: Department of Pediatrics, University of California San Diego, 
+    affiliation: Department of Pediatrics, University of California San Diego,
       La Jolla, CA, USA
     orcid: https://orcid.org/0000-0002-0975-9019
   - given-names: Kyunghyun
@@ -141,20 +141,20 @@ preferred-citation:
   month: 5
   title: "Structure-based protein function prediction using
     graph convolutional networks"
-  abstract: 'The rapid increase in the number of proteins in sequence databases 
-    and the diversity of their functions challenge computational approaches for 
-    automated function prediction. Here, we introduce DeepFRI, 
-    a Graph Convolutional Network for predicting protein functions by leveraging 
-    sequence features extracted from a protein language model and protein structures. 
-    It outperforms current leading methods and sequence-based Convolutional Neural Networks 
-    and scales to the size of current sequence repositories. Augmenting the training set 
-    of experimental structures with homology models allows us to significantly 
-    expand the number of predictable functions. DeepFRI has significant de-noising capability, 
-    with only a minor drop in performance when experimental structures are replaced 
-    by protein models. Class activation mapping allows function predictions 
-    at an unprecedented resolution, allowing site-specific annotations at the 
-    residue-level in an automated manner. We show the utility and high performance 
-    of our method by annotating structures from the PDB and SWISS-MODEL, 
-    making several new confident function predictions. 
+  abstract: 'The rapid increase in the number of proteins in sequence databases
+    and the diversity of their functions challenge computational approaches for
+    automated function prediction. Here, we introduce DeepFRI,
+    a Graph Convolutional Network for predicting protein functions by leveraging
+    sequence features extracted from a protein language model and protein structures.
+    It outperforms current leading methods and sequence-based Convolutional Neural Networks
+    and scales to the size of current sequence repositories. Augmenting the training set
+    of experimental structures with homology models allows us to significantly
+    expand the number of predictable functions. DeepFRI has significant de-noising capability,
+    with only a minor drop in performance when experimental structures are replaced
+    by protein models. Class activation mapping allows function predictions
+    at an unprecedented resolution, allowing site-specific annotations at the
+    residue-level in an automated manner. We show the utility and high performance
+    of our method by annotating structures from the PDB and SWISS-MODEL,
+    making several new confident function predictions.
     DeepFRI is available as a webserver at https://beta.deepfri.flatironinstitute.org/.'
   year: 2021
