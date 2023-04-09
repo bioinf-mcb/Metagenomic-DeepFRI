@@ -10,7 +10,7 @@ add_library(AtomDistanceIO SHARED
         load_contact_maps.h)
 
 
-target_include_directories(AtomDistanceIO PUBLIC ~/miniconda3/include/python3.8)
+target_include_directories(AtomDistanceIO PUBLIC $ENV{CONDA_PREFIX}/include/python3.10)
 
 FIND_PACKAGE( Boost COMPONENTS python numpy REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )

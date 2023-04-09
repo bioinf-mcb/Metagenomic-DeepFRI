@@ -4,9 +4,9 @@ import tempfile
 
 import pandas as pd
 
-from meta_deepFRI.config.names import SEQUENCES, MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME, MMSEQS_SEARCH_RESULTS
+from meta_deepFRI.config.names import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME, MMSEQS_SEARCH_RESULTS
 from meta_deepFRI.utils.utils import run_command, merge_files_binary
-from utils.encode_sequence_ids import encode_faa_ids
+from .fasta_file_io import encode_faa_ids
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start", "query_end",
@@ -15,6 +15,18 @@ MMSEQS_COLUMN_NAMES = [
 
 
 def createdb(sequences_file, db_path):
+    """
+    Converts FASTA file to a DB format needed for MMseqs2.
+    This should generate five files,
+    e.g. queryDB, queryDB_h and its corresponding index file queryDB.index,
+    queryDB_h.index and queryDB.lookup from the FASTA QUERY.fasta input sequences.
+
+    sequence_file (str): path to FASTA file.
+    db_path (str): path to output db file.
+
+    Returns:
+        None
+    """
     run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")
 
 
@@ -40,7 +52,7 @@ def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Pa
     :param freshly_added_ids:
     :return:
     """
-    sequence_files = list((seq_atoms_path / SEQUENCES).glob("**/*.faa"))
+    sequence_files = list((seq_atoms_path).glob("**/*.faa"))
     print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")
     merge_files_binary(sequence_files, seq_atoms_path / MERGED_SEQUENCES)
 

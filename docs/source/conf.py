@@ -10,15 +10,16 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'Metagenomic-DeepFRI'
-copyright = '2022, Piotr Kucharski, Paweł Szczerbiak, Valentyn Bezshapkin & Tomasz Kosciolek'
-author = 'Piotr Kucharski, Paweł Szczerbiak, Valentyn Bezshapkin & Tomasz Kosciolek'
+copyright = '2022, Metagenomic-DeepFRI team'
+author = 'Metagenomic-DeepFRI team'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'
@@ -28,7 +29,12 @@ release = '1.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['myst_parser', 'sphinxawesome_theme']
+extensions = [
+    'myst_parser', 'sphinxawesome_theme', 'sphinx.ext.intersphinx', 'sphinx.ext.duration', 'sphinx.ext.doctest',
+    'sphinx.ext.autodoc', 'sphinxcontrib.bibtex'
+]
+
+bibtex_bibfiles = ['_static/references.bib']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
