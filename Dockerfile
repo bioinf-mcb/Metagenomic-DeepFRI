@@ -14,6 +14,7 @@ RUN apt update &&  \
 WORKDIR /metagenomic-deepfri
 
 COPY requirements.txt requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+COPY setup.py setup.py
+RUN pip3 install --no-cache-dir .
 
 COPY . .
