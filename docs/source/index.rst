@@ -39,10 +39,6 @@ Hey, want to contribute to the project and become a co-author?
    :caption: Use cases
 
    examples/index.rst
-   :maxdepth: 2
-   :caption: Examples
-
-   contribution.md
 
 .. toctree::
    :maxdepth: 1
@@ -64,6 +60,3 @@ Hey, want to contribute to the project and become a co-author?
           :width: 70 %
       -
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
