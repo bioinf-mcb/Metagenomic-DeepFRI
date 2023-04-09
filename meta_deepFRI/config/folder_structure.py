@@ -10,6 +10,7 @@ class FolderStructureConfig:
     WORK_PATH - contains all currently running or interrupted tasks. Each project folder also contain runtime parameters in project_config.json
     FINISHED_PATH - root for all finished pipeline results. Will contain folders named after project_name
     """
+
     def __init__(self, data_root: pathlib.Path = pathlib.Path("/meta_deepfri_data")):
         self.DATA_ROOT = data_root
 

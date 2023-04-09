@@ -57,10 +57,11 @@ def load_and_verify_job_data(fsc: FolderStructureConfig, runtime_config: JobConf
         print(f"Skipping {len(proteins_over_max_length)} proteins due to sequence length over "
               f"CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH. "
               f"\nSkipped protein ids will be saved in metadata_skipped_ids_due_to_max_length.json")
-        json.dump(proteins_over_max_length,
-                  open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
-                  indent=4,
-                  sort_keys=True)
+        json.dump(
+            proteins_over_max_length,
+            open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
+            indent=4,
+            sort_keys=True)
         if len(query_seqs) == 0:
             print(f"All sequences in {query_file} were too long. No sequences will be processed.")
 
@@ -133,8 +134,8 @@ def metagenomic_deepfri(fsc: FolderStructureConfig, job_path: pathlib.Path):
                     generated_query_contact_map = CPP_lib.load_aligned_contact_map(
                         str(fsc.SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
                         job_config.ANGSTROM_CONTACT_THRESHOLD,
-                        alignment["alignment"][0],    # query alignment
-                        alignment["alignment"][1],    # target alignment
+                        alignment["alignment"][0],  # query alignment
+                        alignment["alignment"][1],  # target alignment
                         job_config.GENERATE_CONTACTS)
 
                     gcn.predict_with_cmap(query_seq, generated_query_contact_map, query_id)

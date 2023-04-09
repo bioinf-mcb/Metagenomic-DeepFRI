@@ -7,12 +7,8 @@ import pytest
 from functools import partial
 from Bio import pairwise2
 
-default_pair_align = partial(pairwise2.align.globalms,
-                             match=2,
-                             mismatch=-1,
-                             open=-0.5,
-                             extend=-0.1,
-                             one_alignment_only=True)
+default_pair_align = partial(
+    pairwise2.align.globalms, match=2, mismatch=-1, open=-0.5, extend=-0.1, one_alignment_only=True)
 
 from meta_deepFRI.utils import (bio_utils, elapsed_time_logger, fasta_file_io, search_alignments)
 # hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file
@@ -78,7 +74,7 @@ def test_elapsed_time_logger():
     log_contents = log_contents.replace("step2,", "")
     log_contents = log_contents.replace("total_time,", "")
     log_contents = log_contents.replace("\n", ",")
-    log_contents = log_contents[:-1]    # remove last comma
+    log_contents = log_contents[:-1]  # remove last comma
     # turn into floats
     log_contents = [float(x) for x in log_contents.split(",")]
 
