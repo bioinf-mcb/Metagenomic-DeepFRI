@@ -8,10 +8,9 @@ from typing import List
 # Create logger
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +59,9 @@ def parse_args():
                         help="List of folder or file paths containing structure files. Both absolute and relative to FolderStructureConfig.STRUCTURE_FILES_PATH are accepted."
                              "If not provided pipeline will search in FolderStructureConfig.STRUCTURE_FILES_PATH/--name. "
                              "Use '--input .' to process all files within FolderStructureConfig.STRUCTURE_FILES_PATH")
-    parser.add_argument("-db", "--database", required=False, default=None,
-                        help="Path to a previous MMSEQS2 database to be updated.")
 
     parser.add_argument("-o", "--output", required=True, default=None,
-                        help="Path to folder where new MMSEQS2 database will be created.")
+                        help="Path to folder where new MMSeqs2 database will be created.")
 
     parser.add_argument("-t", "--threads", required=False, default=1, type=int,
                         help="Number of threads to use. If not provided, the program will use single core.")
@@ -77,7 +74,7 @@ def parse_args():
     # yapf: enable
 
 
-def update_target_mmseqs_database(
+def build_database(
     input_paths: List[str],
     output_path: str,
     overwrite: bool,
@@ -119,7 +116,7 @@ def update_target_mmseqs_database(
     if n_structures == 0:
         shutdown("No structure files found")
     else:
-        logger.info(f"Found %s structure files to extract", n_structures)
+        logger.info("Found %s structure files to extract" % n_structures)
 
     # search for already processed protein_ids to skip them
     if not overwrite:
@@ -164,19 +161,12 @@ def main() -> None:
     args = parse_args()
     input_seqs = [pathlib.Path(seqs) for seqs in args.input]
     output_path = pathlib.Path(args.output)
-    print(args.overwrite)
 
-    ## TODO merge with previous database
-
-    # if args.database:
-    #     input_seqs.append(pathlib.Path(args.database))
-
-    update_target_mmseqs_database(
-        input_paths=input_seqs,
-        output_path=output_path,
-        overwrite=args.overwrite,
-        threads=args.threads,
-        max_protein_length=args.max_protein_length)
+    build_database(input_paths=input_seqs,
+                   output_path=output_path,
+                   overwrite=args.overwrite,
+                   threads=args.threads,
+                   max_protein_length=args.max_protein_length)
 
 
 if __name__ == '__main__':
