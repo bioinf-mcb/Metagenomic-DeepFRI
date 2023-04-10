@@ -31,9 +31,6 @@ def parse_args():
     parser.add_argument("-r", "--data_root", required=False, default="default_config/data_root_path.json",
                         help="Path to json file containing DATA_ROOT or path to folder that will be used as DATA_ROOT")
 
-    parser.add_argument("-p", "--project_name", required=False, default=DEFAULT_NAME,
-                        help="Task name")
-
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i", "--input", nargs='+', required=False, default=None,
                         help="List of folder or file paths containing query .faa files. Both absolute and relative to FolderStructureConfig.QUERY_PATH are accepted."
@@ -47,8 +44,6 @@ def parse_args():
     parser.add_argument("-t", "--target_db_name", required=False, default=None,
                         help="Target database name or relative path. Will use --project_name if not provided or DEFAULT_NAME if --project_name db is missing.")
 
-    parser.add_argument("-d", "--delete_query", action="store_true",
-                        help="Use this flag so that query files are deleted from --input after being copied to project workspace")
     parser.add_argument("-n", "--n_parallel_tasks", required=False, default=1, type=int,
                         help="Number of parallel tasks")
     # yapf: enable
@@ -71,7 +66,7 @@ def find_query_faa_files(input_paths: List[Union[str, pathlib.Path]]) -> List[pa
             query_faa_files.remove(empty_file)
 
     # check if there is anything to process
-    assert len(query_faa_files) > 0, f"No query .faa files found inside {[str(x) for x in input_paths]}"
+    assert len(query_faa_files) > 0, f"No .faa files found inside {[str(x) for x in input_paths]}"
     print(f"Query files to be processed: {len(query_faa_files)}")
     for file in query_faa_files:
         print(f"\t{file}")
@@ -79,7 +74,7 @@ def find_query_faa_files(input_paths: List[Union[str, pathlib.Path]]) -> List[pa
     return query_faa_files
 
 
-def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list, target_db_name, delete_query,
+def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list, target_db_name,
                 n_parallel_tasks) -> pathlib.Path:
     """
     Validates input data and runtime data used by pipeline
@@ -92,7 +87,6 @@ def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list
     :param project_name:
     :param input_paths:
     :param target_db_name:
-    :param delete_query:
     :param n_parallel_tasks:
     :return:
     """
@@ -117,10 +111,6 @@ def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list
     (job_work_path / "query_files").mkdir()
     for query_faa_file in query_faa_files:
         os.system(f"cp {query_faa_file} {job_work_path / 'query_files'}")
-    # delete query files from input if specified
-    if delete_query:
-        for query_path in query_faa_files:
-            query_path.unlink()
 
     # Load PROJECT_RUNTIME_CONFIG
     if (project_work_directory / PROJECT_CONFIG).exists():
@@ -133,14 +123,13 @@ def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list
         print(f"\t{v} - {k}")
 
     # add additional values to job config.
-    job_config = JobConfig(
-        project_runtime_config,
-        project_name=project_name,
-        target_db=str(target_db),
-        target_db_name=target_db_name,
-        timestamp=job_work_path.name,
-        n_parallel_tasks=n_parallel_tasks,
-        query_files=[str(x) for x in query_faa_files])
+    job_config = JobConfig(project_runtime_config,
+                           project_name=project_name,
+                           target_db=str(target_db),
+                           target_db_name=target_db_name,
+                           timestamp=job_work_path.name,
+                           n_parallel_tasks=n_parallel_tasks,
+                           query_files=[str(x) for x in query_faa_files])
 
     # JOB_CONFIG is later copied into task subdirectories as TASK_CONFIG.
     # this file is also used to find jobs inside WORK_PATH to resume them in case of interruption
@@ -254,8 +243,8 @@ def merge_completed_task_results(fsc: FolderStructureConfig, job_work_path: path
 
 # main_pipeline() simply executes functions implemented above step by step
 def main_pipeline(fsc: FolderStructureConfig, project_name: str, input_paths: list, target_db_name: str,
-                  delete_query: bool, parallel_jobs: int, threads: int):
-    job_work_path = prepare_job(fsc, project_name, input_paths, target_db_name, delete_query, parallel_jobs)
+                  parallel_jobs: int, threads: int):
+    job_work_path = prepare_job(fsc, project_name, input_paths, target_db_name, parallel_jobs)
 
     split_job_into_tasks(job_work_path)
     run_parallel_pipelines(fsc, job_work_path, threads=threads)
@@ -273,7 +262,6 @@ def main():
         fsc = load_folder_structure_config(data_root)
 
     project_name = args.project_name
-    delete_query = args.delete_query
 
     if args.target_db_name is None:
         try:
@@ -289,7 +277,7 @@ def main():
 
     input_paths = parse_input_paths(args.input, project_name, fsc.QUERY_PATH)
 
-    main_pipeline(fsc, project_name, input_paths, target_db_name, delete_query, args.n_parallel_tasks, args.threads)
+    main_pipeline(fsc, project_name, input_paths, target_db_name, args.n_parallel_tasks, args.threads)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,14 @@
 import json
 import os.path
 import pathlib
+import logging
 
-from meta_deepFRI.config.folder_structure import FolderStructureConfig
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger(__name__)
+
 from meta_deepFRI.config.names import TASK_CONFIG, ATOMS
 from meta_deepFRI.config.job_config import load_job_config, JobConfig
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
@@ -11,8 +17,10 @@ from meta_deepFRI import CPP_lib
 
 from meta_deepFRI.utils.elapsed_time_logger import ElapsedTimeLogger
 from meta_deepFRI.utils.fasta_file_io import load_fasta_file, SeqFileLoader
-from meta_deepFRI.utils.pipeline_utils import find_target_database, load_deepfri_config
+from meta_deepFRI.utils.utils import load_deepfri_config
 from meta_deepFRI.utils.search_alignments import search_alignments
+
+from utils.mmseqs import run_mmseqs_search
 
 ###########################################################################
 # in a nutshell:
@@ -30,21 +38,15 @@ from meta_deepFRI.utils.search_alignments import search_alignments
 #       else:
 #           DeepFRI CNN for query sequence alone
 ###########################################################################
-from utils.mmseqs import run_mmseqs_search
 
 
-def load_and_verify_job_data(fsc: FolderStructureConfig, runtime_config: JobConfig, job_path: pathlib.Path):
-    # selects only one .faa file from task_path directory
-    query_files = list(job_path.glob("**/*.faa"))
-    assert len(query_files) > 0, f"No query .faa files found in {job_path}"
-    query_file = query_files[0]
-    if len(query_files) > 1:
-        print(f"{job_path} contains more than one .faa file. "
-              f"Only {query_file} will be processed. {query_files[1:]} will not be processed")
+def load_and_verify_job_data(query_file: pathlib.Path, runtime_config: JobConfig, job_path: pathlib.Path):
 
     query_seqs = {record.id: record.seq for record in load_fasta_file(query_file)}
-    assert len(query_seqs) > 0, f"{query_file} does not contain protein sequences that SeqIO can parse."
-    print(f"Found total of {len(query_seqs)} protein sequences in {query_file}")
+    if len(query_seqs) > 0:
+        raise ValueError(f"{query_file} does not contain parsable protein sequences.")
+
+    logging.info("Found total of %s protein sequences in %s" % len(query_seqs), query_file)
 
     # filter out proteins that length is over the CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH
     proteins_over_max_length = []
@@ -57,11 +59,10 @@ def load_and_verify_job_data(fsc: FolderStructureConfig, runtime_config: JobConf
         print(f"Skipping {len(proteins_over_max_length)} proteins due to sequence length over "
               f"CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH. "
               f"\nSkipped protein ids will be saved in metadata_skipped_ids_due_to_max_length.json")
-        json.dump(
-            proteins_over_max_length,
-            open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
-            indent=4,
-            sort_keys=True)
+        json.dump(proteins_over_max_length,
+                  open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
+                  indent=4,
+                  sort_keys=True)
         if len(query_seqs) == 0:
             print(f"All sequences in {query_file} were too long. No sequences will be processed.")
 
@@ -79,11 +80,14 @@ def load_and_verify_job_data(fsc: FolderStructureConfig, runtime_config: JobConf
     return query_file, query_seqs, target_db, target_seqs
 
 
-def metagenomic_deepfri(fsc: FolderStructureConfig, job_path: pathlib.Path):
+## TODO: loading of weights and db as a user-provided parameter
+
+
+def metagenomic_deepfri(job_path: pathlib.Path):
     assert (job_path / TASK_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / TASK_CONFIG}"
     job_config = load_job_config(job_path / TASK_CONFIG)
 
-    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(fsc, job_config, job_path)
+    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(job_config, job_path)
 
     if len(query_seqs) == 0:
         print(f"No sequences found. Terminating pipeline.")

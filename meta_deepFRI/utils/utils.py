@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 from typing import List, Union, Any
@@ -25,11 +26,18 @@ def run_command(command, timeout=-1):
 
     try:
         if timeout > 0:
-            completed_process = subprocess.run(
-                command, capture_output=True, env=my_env, timeout=timeout, check=True, universal_newlines=True)
+            completed_process = subprocess.run(command,
+                                               capture_output=True,
+                                               env=my_env,
+                                               timeout=timeout,
+                                               check=True,
+                                               universal_newlines=True)
         else:
-            completed_process = subprocess.run(
-                command, capture_output=True, env=my_env, check=True, universal_newlines=True)
+            completed_process = subprocess.run(command,
+                                               capture_output=True,
+                                               env=my_env,
+                                               check=True,
+                                               universal_newlines=True)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
@@ -146,3 +154,25 @@ def shutdown(message):
         message (str): Reason for termination.
     """
     sys.exit(message)
+
+
+def load_deepfri_config(filepath_model_config_json: str) -> dict:
+    """Loads model_config.json with paths to different models.
+
+    Args:
+        filepath_model_config_json (str): path to a file within trained_models folder.
+        Distributed with original DeepFRI repo.
+
+    Returns:
+        dict: a dict of different models and paths to their weights.
+    """
+    json_filepath = pathlib.Path(filepath_model_config_json)
+    if not json_filepath.exists():
+        raise FileNotFoundError(f"Config file not found at {json_filepath}.")
+
+    # load and replace local paths to files with absolute paths
+    with open(filepath_model_config_json, "r") as json_file:
+        json_string = json_file.read().replace("./trained_models", f"{json_filepath.parent}")
+    deepfri_config = json.loads(json_string)
+
+    return deepfri_config
