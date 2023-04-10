@@ -11,15 +11,17 @@ logging.basicConfig(level=logging.DEBUG,
 
 logger = logging.getLogger(__name__)
 
+from pysam.libcfaidx import FastxFile
+
 from meta_deepFRI.config.names import TASK_CONFIG, ATOMS
-from meta_deepFRI.config.job_config import load_job_config, JobConfig
+from meta_deepFRI.config.job_config import load_job_config
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
 from CPP_lib import libAtomDistanceIO
 from config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
 
 from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.fasta_file_io import load_fasta_file, SeqFileLoader
+from utils.fasta_file_io import SeqFileLoader
 from utils.utils import load_deepfri_config
 from utils.search_alignments import search_alignments
 from utils.mmseqs import run_mmseqs_search
@@ -64,7 +66,9 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
     MIN_PROTEIN_LENGTH = 60
 
-    query_seqs = {record.id: record.seq for record in load_fasta_file(query_file)}
+    with FastxFile(query_file) as fasta:
+        query_seqs = {record.name: record.sequence for record in fasta}
+
     if len(query_seqs) == 0:
         raise ValueError(f"{query_file} does not contain parsable protein sequences.")
 
