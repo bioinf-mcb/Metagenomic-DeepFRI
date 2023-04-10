@@ -20,6 +20,7 @@ from meta_deepFRI.CPP_lib import libAtomDistanceIO
 from meta_deepFRI.structure_files.parse_structure_file import process_structure_file, search_structure_files
 from meta_deepFRI.utils.mmseqs import create_target_database
 from meta_deepFRI.utils.utils import shutdown
+from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH
 
 ###################################################################################################################
 # utils.mmseqs.update_target_mmseqs_database:
@@ -96,10 +97,10 @@ def build_database(
         None
     """
     output_path = pathlib.Path(output_path)
-    seq_atoms_path = output_path / "seq_atom_db"
+
+    seq_atoms_path = output_path / SEQ_ATOMS_DATASET_PATH
     if not seq_atoms_path.exists():
         seq_atoms_path.mkdir(parents=True)
-    target_db_path = output_path / "mmseqs_db"
 
     # report max_protein_length
     logger.info("MAX_PROTEIN_LENGTH: %s" % max_protein_length)
@@ -148,10 +149,6 @@ def build_database(
         message = "\nNo new protein structures added.\n No new target database will be created."
         shutdown(message)
 
-    # create a folder for target db
-    if not target_db_path.exists():
-        target_db_path.mkdir(parents=True)
-
     # save db params
     param_dict = {}
     param_dict["sequences"] = sorted(freshly_added_ids)
@@ -160,7 +157,7 @@ def build_database(
 
     json.dump(param_dict, open(output_path / "db_params.json", "w"), indent=4)
 
-    create_target_database(seq_atoms_path, target_db_path)
+    create_target_database(seq_atoms_path, output_path)
 
 
 def main() -> None:

@@ -3,6 +3,8 @@ import os.path
 import pathlib
 import logging
 
+from typing import Tuple
+
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
@@ -13,13 +15,13 @@ from meta_deepFRI.config.names import TASK_CONFIG, ATOMS
 from meta_deepFRI.config.job_config import load_job_config, JobConfig
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
-from meta_deepFRI import CPP_lib
+from CPP_lib import libAtomDistanceIO
+from config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
 
-from meta_deepFRI.utils.elapsed_time_logger import ElapsedTimeLogger
-from meta_deepFRI.utils.fasta_file_io import load_fasta_file, SeqFileLoader
-from meta_deepFRI.utils.utils import load_deepfri_config
-from meta_deepFRI.utils.search_alignments import search_alignments
-
+from utils.elapsed_time_logger import ElapsedTimeLogger
+from utils.fasta_file_io import load_fasta_file, SeqFileLoader
+from utils.utils import load_deepfri_config
+from utils.search_alignments import search_alignments
 from utils.mmseqs import run_mmseqs_search
 
 ###########################################################################
@@ -40,42 +42,71 @@ from utils.mmseqs import run_mmseqs_search
 ###########################################################################
 
 
-def load_and_verify_job_data(query_file: pathlib.Path, runtime_config: JobConfig, job_path: pathlib.Path):
+def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
+                 output_path: pathlib.Path) -> Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]:
+    """
+    Check if input files and directories exist and are valid. Filters out proteins that are too long
+    or too short.
+
+    Args:
+        query_file (pathlib.Path): Path to a query file with protein sequences.
+        database (pathlib.Path): Path to a directory with a pre-built database.
+        output_path (pathlib.Path): Path to a directory where results will be saved.
+
+    Raises:
+        ValueError: Query file does not contain parsable protein sequences.
+        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+
+    Returns:
+        Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]: Tuple of query file path, query sequences,
+            path to target MMSeqs2 database and target sequences.
+    """
+
+    MIN_PROTEIN_LENGTH = 60
 
     query_seqs = {record.id: record.seq for record in load_fasta_file(query_file)}
-    if len(query_seqs) > 0:
+    if len(query_seqs) == 0:
         raise ValueError(f"{query_file} does not contain parsable protein sequences.")
 
-    logging.info("Found total of %s protein sequences in %s" % len(query_seqs), query_file)
+    logging.info("Found total of %s protein sequences in %s" % (len(query_seqs), query_file))
 
-    # filter out proteins that length is over the CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH
-    proteins_over_max_length = []
-    for query_id in list(query_seqs.keys()):
-        if len(query_seqs[query_id]) > runtime_config.MAX_QUERY_CHAIN_LENGTH:
-            query_seqs.pop(query_id)
-            proteins_over_max_length.append(query_id)
+    with open(database / "db_params.json", "r") as f:
+        MAX_PROTEIN_LENGTH = json.load(f)["MAX_PROTEIN_LENGTH"]
 
-    if len(proteins_over_max_length) > 0:
-        print(f"Skipping {len(proteins_over_max_length)} proteins due to sequence length over "
-              f"CONFIG.RUNTIME_PARAMETERS.MAX_QUERY_CHAIN_LENGTH. "
-              f"\nSkipped protein ids will be saved in metadata_skipped_ids_due_to_max_length.json")
-        json.dump(proteins_over_max_length,
-                  open(job_path / 'metadata_skipped_ids_due_to_max_length.json', "w"),
+    prot_len_outliers = {}
+    for prot_id, sequence in query_seqs.items():
+        prot_len = len(sequence)
+        if prot_len > MAX_PROTEIN_LENGTH or prot_len < MIN_PROTEIN_LENGTH:
+            prot_len_outliers[prot_id] = prot_len
+
+    for outlier in prot_len_outliers.keys():
+        query_seqs.pop(outlier)
+
+    if len(prot_len_outliers) > 0:
+        logging.info("Skipping %s proteins due to sequence length outside range %s-%s aa." \
+                      % (len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH))
+        logging.info("Skipped protein ids will be saved in " \
+                     "metadata_skipped_ids_length.json")
+        json.dump(prot_len_outliers,
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
                   indent=4,
                   sort_keys=True)
         if len(query_seqs) == 0:
-            print(f"All sequences in {query_file} were too long. No sequences will be processed.")
+            logging.info("All sequences in %s were too long. No sequences will be processed." % query_file)
 
-    # select target database
-    if os.path.isfile(runtime_config.target_db):
-        target_db = runtime_config.target_db
+    # Verify all the files for MMSeqs2 database
+    mmseqs2_ext = [
+        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx", ".idx.index", ".idx.dbtype", ".lookup", ".source"
+    ]
+
+    if os.path.isfile(database / TARGET_MMSEQS_DB_NAME):
+        target_db = pathlib.Path(database / TARGET_MMSEQS_DB_NAME)
+        for ext in mmseqs2_ext:
+            assert os.path.isfile(f"{target_db}{ext}")
     else:
-        # if original database got deleted, try to use the newest database. Its path will be stored in metadata_final_target_db.txt
-        print(f"Unable to locate target database {runtime_config.target_db}. Looking for the newest one.")
-        target_db = find_target_database(fsc, runtime_config.target_db_name)
-        print(f"Found the newest {runtime_config.target_db_name} target database. Will be using {target_db}")
-        open(job_path / "metadata_final_target_db.txt").write(str(target_db))
-    target_seqs = SeqFileLoader(fsc.SEQ_ATOMS_DATASET_PATH / runtime_config.target_db_name)
+        raise FileNotFoundError(f"MMSeqs2 database appears to be corrupted. Please, rebuild it.")
+
+    target_seqs = SeqFileLoader(database / SEQ_ATOMS_DATASET_PATH)
 
     return query_file, query_seqs, target_db, target_seqs
 
@@ -87,7 +118,7 @@ def metagenomic_deepfri(job_path: pathlib.Path):
     assert (job_path / TASK_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / TASK_CONFIG}"
     job_config = load_job_config(job_path / TASK_CONFIG)
 
-    query_file, query_seqs, target_db, target_seqs = load_and_verify_job_data(job_config, job_path)
+    query_file, query_seqs, target_db, target_seqs = check_inputs(job_config, job_path)
 
     if len(query_seqs) == 0:
         print(f"No sequences found. Terminating pipeline.")
@@ -110,7 +141,7 @@ def metagenomic_deepfri(job_path: pathlib.Path):
     gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
     json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
-    CPP_lib.initialize()
+    libAtomDistanceIO.initialize()
     deepfri_models_config = load_deepfri_config(fsc)
     target_db_name = job_config.target_db_name
 
@@ -135,7 +166,7 @@ def metagenomic_deepfri(job_path: pathlib.Path):
                     query_seq = query_seqs[query_id]
                     target_id = alignment["target_id"]
 
-                    generated_query_contact_map = CPP_lib.load_aligned_contact_map(
+                    generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
                         str(fsc.SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
                         job_config.ANGSTROM_CONTACT_THRESHOLD,
                         alignment["alignment"][0],  # query alignment

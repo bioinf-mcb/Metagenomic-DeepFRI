@@ -6,6 +6,7 @@ build/
 .vscode/
 CMakeFiles/
 dev.ipynb
+test_output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

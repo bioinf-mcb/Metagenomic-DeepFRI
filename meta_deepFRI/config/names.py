@@ -3,6 +3,7 @@ DEFAULT_NAME = "default"
 TARGET_MMSEQS_DB_NAME = "targetDB"
 SEQUENCES = "seq"
 ATOMS = "atom"
+SEQ_ATOMS_DATASET_PATH = "seq_atom_db"
 
 # file names
 PROJECT_CONFIG = "project_config.json"
