@@ -5,10 +5,9 @@ import logging
 
 from typing import Tuple
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -92,11 +91,10 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
                       % (len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH))
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
-        json.dump(
-            prot_len_outliers,
-            open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
-            indent=4,
-            sort_keys=True)
+        json.dump(prot_len_outliers,
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
+                  indent=4,
+                  sort_keys=True)
         if len(query_seqs) == 0:
             logging.info("All sequences in %s were too long. No sequences will be processed." % query_file)
 
@@ -130,11 +128,12 @@ def metagenomic_deepfri(
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
     logging.info("Running metagenomic_deepfri for %s sequences" % len(query_seqs))
-
+    # TODO: remove job path from mmseqs search
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)
     # timer.log("mmseqs2")
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
+    # TODO: remove job_path and job_config from alignments
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, job_path, job_config)
     unaligned_queries = query_seqs.keys() - alignments.keys()
     # timer.log("alignments")

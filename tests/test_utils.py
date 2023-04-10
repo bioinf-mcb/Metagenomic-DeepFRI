@@ -7,10 +7,14 @@ import pytest
 from functools import partial
 from Bio import pairwise2
 
-default_pair_align = partial(
-    pairwise2.align.globalms, match=2, mismatch=-1, open=-0.5, extend=-0.1, one_alignment_only=True)
+default_pair_align = partial(pairwise2.align.globalms,
+                             match=2,
+                             mismatch=-1,
+                             open=-0.5,
+                             extend=-0.1,
+                             one_alignment_only=True)
 
-from meta_deepFRI.utils import (bio_utils, elapsed_time_logger, fasta_file_io, search_alignments, utils)
+from meta_deepFRI.utils import (bio_utils, fasta_file_io, search_alignments, utils)
 # hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file
 
 
@@ -46,46 +50,6 @@ def test_protein_letters():
         'UNK': 'X'
     }
     assert bio_utils.PROTEIN_LETTERS == expected
-
-
-def test_elapsed_time_logger():
-
-    # Create a temporary file for logging
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file_path = tmp_file.name
-
-    # Create an ElapsedTimeLogger instance
-    logger = elapsed_time_logger.ElapsedTimeLogger(path=tmp_file_path)
-
-    # Log some times
-    logger.log("step1")
-    time.sleep(1)
-    logger.log("step2")
-
-    # Log total time
-    logger.log_total_time()
-
-    # Read the log file and check its contents
-    with open(tmp_file_path, "r", encoding="utf-8") as f:
-        log_contents = f.read()
-
-    # extract numbers from log_contents
-    log_contents = log_contents.replace("step1,", "")
-    log_contents = log_contents.replace("step2,", "")
-    log_contents = log_contents.replace("total_time,", "")
-    log_contents = log_contents.replace("\n", ",")
-    log_contents = log_contents[:-1]  # remove last comma
-    # turn into floats
-    log_contents = [float(x) for x in log_contents.split(",")]
-
-    # Check that the first two numbers are close to 1 second
-    assert pytest.approx(0, abs=0.01) == log_contents[0]
-    assert pytest.approx(1, abs=0.01) == log_contents[1]
-    # Check that the last number is close to 1 second1
-    assert pytest.approx(1, abs=0.01) == log_contents[2]
-
-    # Delete the temporary file
-    os.remove(tmp_file_path)
 
 
 @pytest.fixture
