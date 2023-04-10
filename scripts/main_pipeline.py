@@ -123,13 +123,14 @@ def prepare_job(fsc: FolderStructureConfig, project_name: str, input_paths: list
         print(f"\t{v} - {k}")
 
     # add additional values to job config.
-    job_config = JobConfig(project_runtime_config,
-                           project_name=project_name,
-                           target_db=str(target_db),
-                           target_db_name=target_db_name,
-                           timestamp=job_work_path.name,
-                           n_parallel_tasks=n_parallel_tasks,
-                           query_files=[str(x) for x in query_faa_files])
+    job_config = JobConfig(
+        project_runtime_config,
+        project_name=project_name,
+        target_db=str(target_db),
+        target_db_name=target_db_name,
+        timestamp=job_work_path.name,
+        n_parallel_tasks=n_parallel_tasks,
+        query_files=[str(x) for x in query_faa_files])
 
     # JOB_CONFIG is later copied into task subdirectories as TASK_CONFIG.
     # this file is also used to find jobs inside WORK_PATH to resume them in case of interruption

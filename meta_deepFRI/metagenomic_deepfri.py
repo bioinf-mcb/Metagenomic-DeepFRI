@@ -5,9 +5,10 @@ import logging
 
 from typing import Tuple
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +92,11 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
                       % (len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH))
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
-        json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
-                  indent=4,
-                  sort_keys=True)
+        json.dump(
+            prot_len_outliers,
+            open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
+            indent=4,
+            sort_keys=True)
         if len(query_seqs) == 0:
             logging.info("All sequences in %s were too long. No sequences will be processed." % query_file)
 
@@ -118,26 +120,24 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 ## TODO: loading of weights and db as a user-provided parameter
 
 
-def metagenomic_deepfri(job_path: pathlib.Path):
-    assert (job_path / TASK_CONFIG).exists(), f"No JOB_CONFIG config file found {job_path / TASK_CONFIG}"
-    job_config = load_job_config(job_path / TASK_CONFIG)
+def metagenomic_deepfri(
+    query_file: pathlib.Path,
+    database: pathlib.Path,
+    model_config_json: pathlib.Path,
+    output_path: pathlib.Path,
+):
 
-    query_file, query_seqs, target_db, target_seqs = check_inputs(job_config, job_path)
+    query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
-    if len(query_seqs) == 0:
-        print(f"No sequences found. Terminating pipeline.")
-        return
-
-    print(f"\nRunning metagenomic_deepfri for {len(query_seqs)} sequences")
-    timer = ElapsedTimeLogger(job_path / "metadata_runtime.csv")
+    logging.info("Running metagenomic_deepfri for %s sequences" % len(query_seqs))
 
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)
-    timer.log("mmseqs2")
+    # timer.log("mmseqs2")
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, job_path, job_config)
     unaligned_queries = query_seqs.keys() - alignments.keys()
-    timer.log("alignments")
+    # timer.log("alignments")
     if len(alignments) > 0:
         print(f"Using GCN for {len(alignments)} proteins")
     if len(unaligned_queries) > 0:
@@ -146,7 +146,7 @@ def metagenomic_deepfri(job_path: pathlib.Path):
     json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
     libAtomDistanceIO.initialize()
-    deepfri_models_config = load_deepfri_config(fsc)
+    deepfri_models_config = load_deepfri_config(model_config_json)
     target_db_name = job_config.target_db_name
 
     # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
@@ -155,8 +155,7 @@ def metagenomic_deepfri(job_path: pathlib.Path):
     # cc = cellular_component
     # ec = enzyme_commission
     for mode in job_config.DEEPFRI_PROCESSING_MODES:
-        timer.reset()
-        print("Processing mode: ", mode)
+        logging.info("Processing mode: %s" % mode)
         # GCN for queries with aligned contact map
         if len(alignments) > 0:
             output_file_name = job_path / f"results_gcn_{mode}"
@@ -183,7 +182,6 @@ def metagenomic_deepfri(job_path: pathlib.Path):
                 gcn.export_tsv(output_file_name.with_suffix('.tsv'))
                 gcn.export_json(output_file_name.with_suffix('.json'))
                 del gcn
-                timer.log(f"deepfri_gcn_{mode}")
 
         # CNN for queries without satisfying alignments
         if len(unaligned_queries) > 0:
@@ -200,6 +198,3 @@ def metagenomic_deepfri(job_path: pathlib.Path):
                 cnn.export_tsv(output_file_name.with_suffix('.tsv'))
                 cnn.export_json(output_file_name.with_suffix('.json'))
                 del cnn
-                timer.log(f"deepfri_cnn_{mode}")
-
-    timer.log_total_time()
