@@ -3,22 +3,19 @@ import multiprocessing
 import pathlib
 
 from itertools import repeat
+import json
 
 from typing import List
 # Create logger
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
-import numpy as np
-
 from meta_deepFRI.CPP_lib import libAtomDistanceIO
-from meta_deepFRI.config.names import ATOMS
 
 from meta_deepFRI.structure_files.parse_structure_file import process_structure_file, search_structure_files
 from meta_deepFRI.utils.mmseqs import create_target_database
@@ -155,7 +152,15 @@ def build_database(
     if not target_db_path.exists():
         target_db_path.mkdir(parents=True)
 
-    create_target_database(seq_atoms_path, target_db_path, freshly_added_ids)
+    # save db params
+    param_dict = {}
+    param_dict["sequences"] = sorted(freshly_added_ids)
+    param_dict["MAX_PROTEIN_LENGTH"] = max_protein_length
+    param_dict["input_structures_path"] = [str(path) for path in sorted(input_paths)]
+
+    json.dump(param_dict, open(output_path / "db_params.json", "w"), indent=4)
+
+    create_target_database(seq_atoms_path, target_db_path)
 
 
 def main() -> None:
@@ -163,12 +168,11 @@ def main() -> None:
     input_seqs = [pathlib.Path(seqs) for seqs in args.input]
     output_path = pathlib.Path(args.output)
 
-    build_database(
-        input_paths=input_seqs,
-        output_path=output_path,
-        overwrite=args.overwrite,
-        threads=args.threads,
-        max_protein_length=args.max_protein_length)
+    build_database(input_paths=input_seqs,
+                   output_path=output_path,
+                   overwrite=args.overwrite,
+                   threads=args.threads,
+                   max_protein_length=args.max_protein_length)
 
 
 if __name__ == '__main__':

@@ -44,7 +44,7 @@ def convertalis(query_db, target_db, result_db, output_file):
     run_command(f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
 
 
-def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Path, freshly_added_ids: list) -> None:
+def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Path) -> None:
     """
 
     :param seq_atoms_path:
@@ -60,9 +60,6 @@ def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Pa
     createdb(seq_atoms_path / MERGED_SEQUENCES, new_db_path / TARGET_MMSEQS_DB_NAME)
     print("Indexing new target mmseqs2 database " + str(new_db_path))
     createindex(new_db_path / TARGET_MMSEQS_DB_NAME)
-
-    print("Saving freshly added sequence ids to " + str(new_db_path / "structure_ids_added.json"))
-    json.dump(sorted(freshly_added_ids), open(new_db_path / "structure_ids_added.json", "w"), indent=4)
 
 
 def run_mmseqs_search(query_file, target_db, job_path):
