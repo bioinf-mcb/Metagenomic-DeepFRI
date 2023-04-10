@@ -7,4 +7,4 @@ requests==2.27.1
 setuptools==58.0.4
 tensorflow==2.8.0
 tqdm~=4.63.0
-pysam==0.21.0
+pysam==0.20.0
