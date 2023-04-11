@@ -65,7 +65,7 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
     MIN_PROTEIN_LENGTH = 60
 
     with FastxFile(query_file) as fasta:
-        query_seqs = {record.name: record.sequence for record in fasta}
+        query_seqs = {" ".join([record.name, record.comment]): record.sequence for record in fasta}
 
     if len(query_seqs) == 0:
         raise ValueError(f"{query_file} does not contain parsable protein sequences.")
@@ -114,33 +114,31 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
 
 ## TODO: loading of weights and db as a user-provided parameter
-
-
-def metagenomic_deepfri(
-    query_file: pathlib.Path,
-    database: pathlib.Path,
-    model_config_json: pathlib.Path,
-    output_path: pathlib.Path,
-):
+def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_config_json: pathlib.Path,
+                        output_path: pathlib.Path, task_path: pathlib.Path):
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
-    logging.info("Running metagenomic_deepfri for %i sequences" % len(query_seqs))
-    # TODO: remove job path from mmseqs search
-    mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)
-    # timer.log("mmseqs2")
+    logging.info("Running metagenomic-DeepFRI for %i sequences", len(query_seqs))
+    logging.info("Running MMSeqs2 search for the query against database")
+    mmseqs_search_output = run_mmseqs_search(query_file, target_db, output_path)
+    mmseqs2_found_proteins = mmseqs_search_output.shape[0]
+    logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
     # TODO: remove job_path and job_config from alignments
-    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, job_path, job_config)
+    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, task_path)
     unaligned_queries = query_seqs.keys() - alignments.keys()
     # timer.log("alignments")
+    logging.info(
+        "Type of model used depends on whether similar structure was found in the database. If yes, GCN will be used. GCN tends to give better predictions over CNN."
+    )
     if len(alignments) > 0:
-        print(f"Using GCN for {len(alignments)} proteins")
+        logging.info("Using GCN for %i proteins", len(alignments))
     if len(unaligned_queries) > 0:
-        print(f"Using CNN for {len(unaligned_queries)} proteins")
+        logging.info("Using CNN for %i proteins", len(unaligned_queries))
     gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
-    json.dump(gcn_cnn_count, open(job_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
+    json.dump(gcn_cnn_count, open(output_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
     libAtomDistanceIO.initialize()
     deepfri_models_config = load_deepfri_config(model_config_json)
