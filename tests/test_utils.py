@@ -7,12 +7,8 @@ import pytest
 from functools import partial
 from Bio import pairwise2
 
-default_pair_align = partial(pairwise2.align.globalms,
-                             match=2,
-                             mismatch=-1,
-                             open=-0.5,
-                             extend=-0.1,
-                             one_alignment_only=True)
+default_pair_align = partial(
+    pairwise2.align.globalms, match=2, mismatch=-1, open=-0.5, extend=-0.1, one_alignment_only=True)
 
 from meta_deepFRI.utils import (bio_utils, fasta_file_io, search_alignments, utils)
 # hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file

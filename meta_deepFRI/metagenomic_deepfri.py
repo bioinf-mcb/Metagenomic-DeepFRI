@@ -18,9 +18,10 @@ from meta_deepFRI.utils.utils import load_deepfri_config
 from meta_deepFRI.utils.search_alignments import search_alignments
 from meta_deepFRI.utils.mmseqs import run_mmseqs_search
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +90,11 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
                      MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
-        json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
-                  indent=4,
-                  sort_keys=True)
+        json.dump(
+            prot_len_outliers,
+            open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
+            indent=4,
+            sort_keys=True)
         if len(query_seqs) == 0:
             logging.info("All sequences in %s were too long. No sequences will be processed.", query_file)
 

@@ -43,13 +43,8 @@ def align(query_seq: str, target_seq: str, match: float, missmatch: float, gap_o
     Returns:
         Bio.pairwise2.Alignment: problematic output type. Outputs Alignment object with required info.
     """
-    return pairwise2.align.globalms(query_seq,
-                                    target_seq,
-                                    match,
-                                    missmatch,
-                                    gap_open,
-                                    gap_continuation,
-                                    one_alignment_only=True)[0]
+    return pairwise2.align.globalms(
+        query_seq, target_seq, match, missmatch, gap_open, gap_continuation, one_alignment_only=True)[0]
 
 
 def search_alignments(query_seqs: dict,
