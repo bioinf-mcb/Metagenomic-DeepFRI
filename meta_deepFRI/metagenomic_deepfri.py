@@ -5,26 +5,24 @@ import logging
 
 from typing import Tuple
 
+from pysam.libcfaidx import FastxFile
+
+from meta_deepFRI.config.names import ATOMS
+from meta_deepFRI.DeepFRI.deepfrier import Predictor
+
+from meta_deepFRI.CPP_lib import libAtomDistanceIO
+from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
+
+from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
+from meta_deepFRI.utils.utils import load_deepfri_config
+from meta_deepFRI.utils.search_alignments import search_alignments
+from meta_deepFRI.utils.mmseqs import run_mmseqs_search
+
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
-
-from pysam.libcfaidx import FastxFile
-
-from meta_deepFRI.config.names import TASK_CONFIG, ATOMS
-from meta_deepFRI.config.job_config import load_job_config
-from meta_deepFRI.DeepFRI.deepfrier import Predictor
-
-from CPP_lib import libAtomDistanceIO
-from config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
-
-from utils.elapsed_time_logger import ElapsedTimeLogger
-from utils.fasta_file_io import SeqFileLoader
-from utils.utils import load_deepfri_config
-from utils.search_alignments import search_alignments
-from utils.mmseqs import run_mmseqs_search
 
 ###########################################################################
 # in a nutshell:
@@ -72,9 +70,9 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
     if len(query_seqs) == 0:
         raise ValueError(f"{query_file} does not contain parsable protein sequences.")
 
-    logging.info("Found total of %s protein sequences in %s" % (len(query_seqs), query_file))
+    logging.info("Found total of %i protein sequences in %s", len(query_seqs), query_file)
 
-    with open(database / "db_params.json", "r") as f:
+    with open(database / "db_params.json", "r", encoding="utf-8") as f:
         MAX_PROTEIN_LENGTH = json.load(f)["MAX_PROTEIN_LENGTH"]
 
     prot_len_outliers = {}
@@ -87,16 +85,16 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
         query_seqs.pop(outlier)
 
     if len(prot_len_outliers) > 0:
-        logging.info("Skipping %s proteins due to sequence length outside range %s-%s aa." \
-                      % (len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH))
+        logging.info("Skipping %i proteins due to sequence length outside range %i-%i aa.", len(prot_len_outliers),
+                     MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
         json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w"),
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
                   indent=4,
                   sort_keys=True)
         if len(query_seqs) == 0:
-            logging.info("All sequences in %s were too long. No sequences will be processed." % query_file)
+            logging.info("All sequences in %s were too long. No sequences will be processed.", query_file)
 
     # Verify all the files for MMSeqs2 database
     mmseqs2_ext = [
@@ -108,7 +106,7 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
         for ext in mmseqs2_ext:
             assert os.path.isfile(f"{target_db}{ext}")
     else:
-        raise FileNotFoundError(f"MMSeqs2 database appears to be corrupted. Please, rebuild it.")
+        raise FileNotFoundError("MMSeqs2 database appears to be corrupted. Please, rebuild it.")
 
     target_seqs = SeqFileLoader(database / SEQ_ATOMS_DATASET_PATH)
 
@@ -127,7 +125,7 @@ def metagenomic_deepfri(
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
-    logging.info("Running metagenomic_deepfri for %s sequences" % len(query_seqs))
+    logging.info("Running metagenomic_deepfri for %i sequences" % len(query_seqs))
     # TODO: remove job path from mmseqs search
     mmseqs_search_output = run_mmseqs_search(query_file, target_db, job_path)
     # timer.log("mmseqs2")
