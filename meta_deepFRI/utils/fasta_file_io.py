@@ -1,7 +1,6 @@
-import hashlib
 import dataclasses
 import pathlib
-from typing import List, Tuple
+from typing import List
 
 from Bio import SeqIO
 
@@ -25,7 +24,7 @@ def load_fasta_file(file: str) -> List[SeqRecord]:
         List of records from FASTA file.
     """
     seq_records = []
-    with open(file, "r") as f:
+    with open(file, "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith(">"):
                 seq_id = line[1:].replace("\n", "")
@@ -69,41 +68,3 @@ class SeqFileLoader:
         with open(self.path / SEQUENCES / (target_id + ".faa"), "r") as f:
             sequence = SeqIO.read(f, "fasta").seq
         return sequence
-
-
-def hash_sequence_id(sequence: str) -> str:
-    """Return the SHA256 encoding of protein sequence
-
-    Args:
-        sequence (str): Aminoacid sequence of the protein.
-
-    Returns:
-        SHA256 encoding of the protein sequence.
-    """
-    return hashlib.sha256(bytes(sequence, encoding='utf-8')).hexdigest()
-
-
-def encode_faa_ids(path: str) -> Tuple[str, dict]:
-    """Encodes multiline FASTA file IDs with SHA256 encoding.
-
-    Args:
-        path (str): Path to a fasta file.
-
-    Returns:
-        Path to the new file with ID and respective SHA256-encoded sequences and
-        a dictionary where keys represent sequence ID, and values SHA256 encoding.
-    """
-
-    seq_records = load_fasta_file(path)
-    hash_lookup_dict = {}
-
-    for fasta_entry in seq_records:
-        seq_id_hash = hash_sequence_id(fasta_entry.id)
-        while seq_id_hash in hash_lookup_dict.keys():
-            seq_id_hash = hash_sequence_id(fasta_entry.id + "1")
-        hash_lookup_dict[seq_id_hash] = fasta_entry.id
-        fasta_entry.id = seq_id_hash
-
-    faa_hashed_ids_path = str(path) + ".hashed_ids"
-    write_fasta_file(seq_records, faa_hashed_ids_path)
-    return faa_hashed_ids_path, hash_lookup_dict
