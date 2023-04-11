@@ -5,10 +5,10 @@ import tempfile
 from typing import Tuple
 
 import pandas as pd
+from pysam.libcfaidx import FastxFile
 
 from meta_deepFRI.config.names import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME, MMSEQS_SEARCH_RESULTS
 from meta_deepFRI.utils.utils import run_command, merge_files_binary
-from .fasta_file_io import load_fasta_file, write_fasta_file
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start", "query_end",
@@ -41,17 +41,17 @@ def encode_faa_ids(input_file: pathlib.Path, output_file: pathlib.Path) -> Tuple
         a dictionary where keys represent sequence ID, and values SHA256 encoding.
     """
 
-    seq_records = load_fasta_file(input_file)
     hash_lookup_dict = {}
+    with FastxFile(input_file) as fasta_in, open(output_file, "w", encoding="utf-8") as fasta_out:
+        for fasta_entry in fasta_in:
+            seq_id_hash = hash_sequence_id(fasta_entry.name)
+            while seq_id_hash in hash_lookup_dict.keys():
+                seq_id_hash = hash_sequence_id(fasta_entry.name + "1")
+            hash_lookup_dict[seq_id_hash] = fasta_entry.name
+            fasta_entry.name = seq_id_hash
+            fasta_entry.comment = ""
+            fasta_out.write(str(fasta_entry) + "\n")
 
-    for fasta_entry in seq_records:
-        seq_id_hash = hash_sequence_id(fasta_entry.id)
-        while seq_id_hash in hash_lookup_dict.keys():
-            seq_id_hash = hash_sequence_id(fasta_entry.id + "1")
-        hash_lookup_dict[seq_id_hash] = fasta_entry.id
-        fasta_entry.id = seq_id_hash
-
-    write_fasta_file(seq_records, output_file)
     return output_file, hash_lookup_dict
 
 
@@ -118,7 +118,6 @@ def run_mmseqs_search(query_file: pathlib.Path, target_db: pathlib.Path, output_
 
     # Check if search results already exist
     if output_file.exists():
-
         return pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
 
     else:
