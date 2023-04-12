@@ -7,6 +7,9 @@ build/
 CMakeFiles/
 dev.ipynb
 test_output/
+test.png
+predict_gpu.py
+run_predict.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

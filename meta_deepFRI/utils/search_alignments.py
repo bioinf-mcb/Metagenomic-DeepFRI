@@ -85,8 +85,6 @@ def search_alignments(query_seqs: dict,
     #         3. start and end of alignment
 
     alignment_output_json_path = task_path / ALIGNMENTS
-    if alignment_output_json_path.exists():
-        return json.load(open(alignment_output_json_path, "r"))
 
     query_seqs_keys = list(query_seqs.keys())
     # MMSeqs2 alginment filters
@@ -99,7 +97,7 @@ def search_alignments(query_seqs: dict,
 
     filtered = mmseqs_search_output[mmseqs_search_output['query'].isin(query_seqs_keys)]
     logging.info("Filtered %i mmseqs matches", len(mmseqs_search_output) - len(filtered))
-    logging.info("Total alignments to check %i", {len(filtered)})
+    logging.info("Total alignments to check %i", len(filtered))
 
     queries = list(map(lambda x: query_seqs[x], filtered["query"]))
     targets = list(map(lambda x: target_seqs[x], filtered["target"]))
@@ -121,7 +119,7 @@ def search_alignments(query_seqs: dict,
         if sequence_identity > alignment_min_identity:
             query_id = filtered["query"].iloc[i]
             target_id = filtered["target"].iloc[i]
-            if query_id not in alignments_output.keys():
+            if query_id not in alignments_output:
                 alignments_output[query_id] = {
                     "target_id": target_id,
                     "alignment": alignment,

@@ -9,10 +9,9 @@ from typing import List
 # Create logger
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -104,11 +103,11 @@ def build_database(
         seq_atoms_path.mkdir(parents=True)
 
     # report max_protein_length
-    logger.info("MAX_PROTEIN_LENGTH: %s" % max_protein_length)
+    logger.info("MAX_PROTEIN_LENGTH: %s", max_protein_length)
 
     logger.info("Searching for structure files in following paths:")
     for input_path in input_paths:
-        logger.info("%s" % str(input_path))
+        logger.info("%s", str(input_path))
     # dict [ structure_file_id ] = pathlib.Path( structure_file_path )
     structure_files_paths = search_structure_files(input_paths)
 
@@ -116,21 +115,21 @@ def build_database(
     if n_structures == 0:
         shutdown("No structure files found")
     else:
-        logger.info("Found %s structure files to extract" % n_structures)
+        logger.info("Found %s structure files to extract", n_structures)
 
     # search for already processed protein_ids to skip them
     if not overwrite:
         duplicated_ids_counter = 0
         # remove duplicates from structure_files_paths
-        for structure_id in structure_files_paths.keys():
+        for structure_id in structure_files_paths:
             if (seq_atoms_path / structure_id).exists():
-                logger.info(f"Skipping {structure_id} - already in database")
+                logger.info("Skipping %s - already in database", structure_id)
                 del structure_files_paths[structure_id]
                 duplicated_ids_counter += 1
-        logger.info("Found %s duplicated IDs" % duplicated_ids_counter)
+        logger.info("Found %s duplicated IDs", duplicated_ids_counter)
 
     # actual processing of structure files takes place here
-    logger.info("Processing %s files" % len(structure_files_paths))
+    logger.info("Processing %s files", len(structure_files_paths))
     libAtomDistanceIO.initialize()
     with multiprocessing.Pool(processes=threads) as p:
         processing_status = p.starmap(
@@ -138,7 +137,7 @@ def build_database(
             zip(structure_files_paths.values(), repeat(seq_atoms_path.absolute()), repeat(max_protein_length)))
 
     for struct, status in zip(structure_files_paths.values(), processing_status):
-        logging.info(f"{struct} - {status}")
+        logging.info("%s - %s", struct, status)
 
     freshly_added_ids = []
     structure_file_ids = list(structure_files_paths.keys())
@@ -156,7 +155,7 @@ def build_database(
     param_dict["MAX_PROTEIN_LENGTH"] = max_protein_length
     param_dict["input_structures_path"] = [str(path) for path in sorted(input_paths)]
 
-    json.dump(param_dict, open(output_path / "db_params.json", "w"), indent=4)
+    json.dump(param_dict, open(output_path / "db_params.json", "w", encoding="utf-8"), indent=4)
 
     create_target_database(seq_atoms_path, output_path)
 
@@ -166,12 +165,11 @@ def main() -> None:
     input_seqs = [pathlib.Path(seqs) for seqs in args.input]
     output_path = pathlib.Path(args.output)
 
-    build_database(
-        input_paths=input_seqs,
-        output_path=output_path,
-        overwrite=args.overwrite,
-        threads=args.threads,
-        max_protein_length=args.max_protein_length)
+    build_database(input_paths=input_seqs,
+                   output_path=output_path,
+                   overwrite=args.overwrite,
+                   threads=args.threads,
+                   max_protein_length=args.max_protein_length)
 
 
 if __name__ == '__main__':

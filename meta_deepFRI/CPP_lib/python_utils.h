@@ -24,7 +24,8 @@ static void DestroyCapsule(PyObject* self) {
 
 static np::ndarray CreateNumpyArray(bool* array, int size){
   // handling over memory management to python
-  // https://stackoverflow.com/questions/57068443/setting-owner-in-boostpythonndarray-so-that-data-is-owned-and-managed-by-pyt
+  // https://stackoverflow.com/questions/57068443/
+  //setting-owner-in-boostpythonndarray-so-that-data-is-owned-and-managed-by-python
   PyObject* capsule = PyCapsule_New((void*) array, nullptr, (PyCapsule_Destructor) &DestroyCapsule);
   py::handle<> capsule_handle{capsule};
   py::object capsule_owner{capsule_handle};
