@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 import tempfile
 import pandas as pd
 
@@ -41,7 +41,7 @@ def convertalis(query_db, target_db, result_db, output_file):
     run_command(f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
 
 
-def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Path) -> None:
+def create_target_database(seq_atoms_path: Path, new_db_path: Path) -> None:
     """
 
     :param seq_atoms_path:
@@ -59,7 +59,7 @@ def create_target_database(seq_atoms_path: pathlib.Path, new_db_path: pathlib.Pa
     createindex(new_db_path / TARGET_MMSEQS_DB_NAME)
 
 
-def run_mmseqs_search(query_file: pathlib.Path, target_db: pathlib.Path, output_path: pathlib.Path) -> pd.DataFrame:
+def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path) -> pd.DataFrame:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 
     Args:
@@ -72,22 +72,19 @@ def run_mmseqs_search(query_file: pathlib.Path, target_db: pathlib.Path, output_
     """
     output_file = output_path / MMSEQS_SEARCH_RESULTS
 
-    # Check if search results already exist
-    if output_file.exists():
-        return pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
+    query_db = output_path / 'queryDB'
+    createdb(query_file, query_db)
 
-    else:
-        query_db = output_path / 'queryDB'
-        createdb(query_file, query_db)
+    with tempfile.TemporaryDirectory() as tmp_path:
 
-        result_db = output_path / 'search_resultDB'
+        result_db = Path(tmp_path) / 'search_resultDB'
         search(query_db, target_db, result_db)
 
         # Convert results to tabular format
         convertalis(query_db, target_db, result_db, output_file)
 
-        output = pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
+    output = pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
 
-        output.to_csv(output_file, sep="\t")
+    output.to_csv(output_file, sep="\t", index=False)
 
-        return output
+    return output
