@@ -114,14 +114,17 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
 
 ## TODO: loading of weights and db as a user-provided parameter
-def metagenomic_deepfri(query_file: pathlib.Path,
-                        database: pathlib.Path,
-                        model_config_json: pathlib.Path,
-                        output_path: pathlib.Path,
-                        task_path: pathlib.Path,
-                        deepfri_processing_modes: List[str],
-                        angstrom_contact_threshold: float = 6,
-                        generate_contacts: int = 2):
+def metagenomic_deepfri(
+    query_file: pathlib.Path,
+    database: pathlib.Path,
+    model_config_json: pathlib.Path,
+    output_path: pathlib.Path,
+    task_path: pathlib.Path,
+    output_format: List[str],
+    deepfri_processing_modes: List[str],
+    angstrom_contact_threshold: float = 6,
+    generate_contacts: int = 2,
+):
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
@@ -174,9 +177,12 @@ def metagenomic_deepfri(query_file: pathlib.Path,
 
                 gcn.predict_with_cmap(query_seq, cmap, query_id)
 
-                # gcn.export_csv(output_file_name.with_suffix('.csv'))
-                gcn.export_tsv(output_file_name.with_suffix('.tsv'))
-                # gcn.export_json(output_file_name.with_suffix('.json'))
+                if "tsv" in output_format:
+                    gcn.export_tsv(output_file_name.with_suffix('.tsv'))
+                if "csv" in output_format:
+                    gcn.export_csv(output_file_name.with_suffix('.csv'))
+                if "json" in output_format:
+                    gcn.export_json(output_file_name.with_suffix('.json'))
 
             del gcn
 
@@ -191,9 +197,12 @@ def metagenomic_deepfri(query_file: pathlib.Path,
                 logging.info("Predicting %s", query_id)
                 cnn.predict_from_sequence(query_seqs[query_id], query_id)
 
-            # cnn.export_csv(output_file_name.with_suffix('.csv'))
-            cnn.export_tsv(output_file_name.with_suffix('.tsv'))
-            # cnn.export_json(output_file_name.with_suffix('.json'))
+            if "tsv" in output_format:
+                cnn.export_tsv(output_file_name.with_suffix('.tsv'))
+            if "csv" in output_format:
+                cnn.export_csv(output_file_name.with_suffix('.csv'))
+            if "json" in output_format:
+                cnn.export_json(output_file_name.with_suffix('.json'))
 
             del cnn
 
