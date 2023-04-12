@@ -3,7 +3,7 @@ import os.path
 import pathlib
 import logging
 
-from typing import Tuple
+from typing import Tuple, List
 
 from pysam.libcfaidx import FastxFile
 
@@ -65,7 +65,7 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
     MIN_PROTEIN_LENGTH = 60
 
     with FastxFile(query_file) as fasta:
-        query_seqs = {" ".join([record.name, record.comment]): record.sequence for record in fasta}
+        query_seqs = {record.name: record.sequence for record in fasta}
 
     if len(query_seqs) == 0:
         raise ValueError(f"{query_file} does not contain parsable protein sequences.")
@@ -114,8 +114,14 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
 
 ## TODO: loading of weights and db as a user-provided parameter
-def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_config_json: pathlib.Path,
-                        output_path: pathlib.Path, task_path: pathlib.Path):
+def metagenomic_deepfri(query_file: pathlib.Path,
+                        database: pathlib.Path,
+                        model_config_json: pathlib.Path,
+                        output_path: pathlib.Path,
+                        task_path: pathlib.Path,
+                        deepfri_processing_modes: List[str],
+                        angstrom_contact_threshold: float = 6,
+                        generate_contacts: int = 2):
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
@@ -126,70 +132,69 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_
     logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    # TODO: remove job_path and job_config from alignments
+    # TODO: remove task path from alignments
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, task_path)
     unaligned_queries = query_seqs.keys() - alignments.keys()
-    # timer.log("alignments")
-    logging.info(
-        "Type of model used depends on whether similar structure was found in the database. If yes, GCN will be used. GCN tends to give better predictions over CNN."
-    )
-    if len(alignments) > 0:
-        logging.info("Using GCN for %i proteins", len(alignments))
-    if len(unaligned_queries) > 0:
-        logging.info("Using CNN for %i proteins", len(unaligned_queries))
-    gcn_cnn_count = {"GCN": len(alignments), "CNN": len(unaligned_queries)}
-    json.dump(gcn_cnn_count, open(output_path / "metadata_cnn_gcn_counts.json", "w"), indent=4)
 
     libAtomDistanceIO.initialize()
     deepfri_models_config = load_deepfri_config(model_config_json)
-    target_db_name = job_config.target_db_name
 
-    # DEEPFRI_PROCESSING_MODES = ['mf', 'bp', 'cc', 'ec']
+    # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
     # bp = biological_process
     # cc = cellular_component
     # ec = enzyme_commission
-    for mode in job_config.DEEPFRI_PROCESSING_MODES:
-        logging.info("Processing mode: %s" % mode)
+
+    for mode in deepfri_processing_modes:
+        logging.info("Processing mode: %s", mode)
         # GCN for queries with aligned contact map
-        if len(alignments) > 0:
-            output_file_name = job_path / f"results_gcn_{mode}"
-            if output_file_name.with_suffix('.csv').exists():
-                print(f"{output_file_name} results already exists.")
-            else:
-                gcn_params = deepfri_models_config["gcn"]["models"][mode]
-                gcn = Predictor.Predictor(gcn_params, gcn=True)
-                for query_id in alignments.keys():
-                    alignment = alignments[query_id]
-                    query_seq = query_seqs[query_id]
-                    target_id = alignment["target_id"]
+        gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
 
-                    generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
-                        str(fsc.SEQ_ATOMS_DATASET_PATH / target_db_name / ATOMS / (target_id + ".bin")),
-                        job_config.ANGSTROM_CONTACT_THRESHOLD,
-                        alignment["alignment"][0],  # query alignment
-                        alignment["alignment"][1],  # target alignment
-                        job_config.GENERATE_CONTACTS)
+        if gcn_prots > 0:
+            logging.info("Predicting %i proteins with GCN", gcn_prots)
+            output_file_name = output_path / f"results_gcn_{mode}"
 
-                    gcn.predict_with_cmap(query_seq, generated_query_contact_map, query_id)
+            gcn_params = deepfri_models_config["gcn"]["models"][mode]
+            gcn = Predictor.Predictor(gcn_params, gcn=True)
 
-                gcn.export_csv(output_file_name.with_suffix('.csv'))
+            for query_id, alignment in alignments.items():
+                logging.info("Predicting %s", query_id)
+                query_seq = query_seqs[query_id]
+                target_id = alignment["target_id"]
+
+                generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
+                    str(database / "seq_atom_db" / ATOMS / (target_id + ".bin")),
+                    angstrom_contact_threshold,
+                    alignment["alignment"][0],  # query alignment
+                    alignment["alignment"][1],  # target alignment
+                    generate_contacts)
+
+                # conversion of cmap to an adequate format
+                cmap = generated_query_contact_map.reshape(1, *generated_query_contact_map.shape) * 1
+
+                gcn.predict_with_cmap(query_seq, cmap, query_id)
+
+                # gcn.export_csv(output_file_name.with_suffix('.csv'))
                 gcn.export_tsv(output_file_name.with_suffix('.tsv'))
-                gcn.export_json(output_file_name.with_suffix('.json'))
-                del gcn
+                # gcn.export_json(output_file_name.with_suffix('.json'))
+
+            del gcn
 
         # CNN for queries without satisfying alignments
-        if len(unaligned_queries) > 0:
-            output_file_name = job_path / f"results_cnn_{mode}"
-            if output_file_name.with_suffix('.csv').exists():
-                print(f"{output_file_name.name} already exists.")
-            else:
-                cnn_params = deepfri_models_config["cnn"]["models"][mode]
-                cnn = Predictor.Predictor(cnn_params, gcn=False)
-                for query_id in unaligned_queries:
-                    cnn.predict_from_sequence(query_seqs[query_id], query_id)
+        if cnn_prots > 0:
+            logging.info("Predicting %i proteins with CNN", cnn_prots)
+            output_file_name = output_path / f"results_cnn_{mode}"
 
-                cnn.export_csv(output_file_name.with_suffix('.csv'))
-                cnn.export_tsv(output_file_name.with_suffix('.tsv'))
-                cnn.export_json(output_file_name.with_suffix('.json'))
-                del cnn
+            cnn_params = deepfri_models_config["cnn"]["models"][mode]
+            cnn = Predictor.Predictor(cnn_params, gcn=False)
+            for query_id in unaligned_queries:
+                logging.info("Predicting %s", query_id)
+                cnn.predict_from_sequence(query_seqs[query_id], query_id)
+
+            # cnn.export_csv(output_file_name.with_suffix('.csv'))
+            cnn.export_tsv(output_file_name.with_suffix('.tsv'))
+            # cnn.export_json(output_file_name.with_suffix('.json'))
+
+            del cnn
+
+    logging.info("meta-DeepFRI finished successfully")
