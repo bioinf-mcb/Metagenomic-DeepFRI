@@ -33,6 +33,10 @@ pip install .
 ```
 ## Retrieve `DeepFRI` model weights
 
+- [CPU weights](https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz)
+- [GPU weights](https://users.flatironinstitute.org/~renfrew/DeepFRI_data/trained_models.tar.gz)
+
+**Attention:** Using DeepFRI with GPU requires extra installation steps, described in section 4. GPU Setup of [tensorfow installation guide](https://www.tensorflow.org/install/pip).
 ## Database setup
 
 1. Upload structure files to a folder.
