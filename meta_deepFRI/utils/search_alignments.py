@@ -52,28 +52,12 @@ def align(query_seq: str, target_seq: str, match: float, missmatch: float, gap_o
                                     one_alignment_only=True)[0]
 
 
-def search_alignments(query_seqs: dict,
-                      mmseqs_search_output: pd.DataFrame,
-                      target_seqs: SeqFileLoader,
-                      task_path: pathlib.Path,
-                      mmseqs_min_bit_score: float = None,
-                      mmseqs_max_eval: float = None,
-                      mmseqs_min_identity: float = 0.5,
-                      alignment_match: float = 2,
-                      alignment_missmatch: float = -1,
-                      alignment_gap_open: float = -0.5,
-                      alignment_gap_continuation: float = -0.1,
-                      alignment_min_identity: float = 0.3,
-                      threads: int = 1):
-    """
+def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
+                      output_path: pathlib.Path, mmseqs_min_bit_score: float, mmseqs_max_eval: float,
+                      mmseqs_min_identity: float, alignment_match: float, alignment_missmatch: float,
+                      alignment_gap_open: float, alignment_gap_continuation: float, alignment_min_identity: float,
+                      threads):
 
-    :param query_seqs:
-    :param mmseqs_search_output:
-    :param target_seqs:
-    :param task_path:
-    :param job_config:
-    :return:
-    """
     # format of output JSON file:
     # alignments = dict[query_id]
     #     "target_id": target_id,
@@ -84,7 +68,7 @@ def search_alignments(query_seqs: dict,
     #         2. score = biopython alignment score
     #         3. start and end of alignment
 
-    alignment_output_json_path = task_path / ALIGNMENTS
+    alignment_output_json_path = output_path / ALIGNMENTS
 
     query_seqs_keys = list(query_seqs.keys())
     # MMSeqs2 alginment filters

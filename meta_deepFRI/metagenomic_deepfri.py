@@ -10,7 +10,7 @@ from pysam.libcfaidx import FastxFile
 from meta_deepFRI.config.names import ATOMS
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
-from meta_deepFRI.CPP_lib import libAtomDistanceIO
+from meta_deepFRI import libAtomDistanceIO
 from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
 
 from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
@@ -114,17 +114,25 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
 
 ## TODO: loading of weights and db as a user-provided parameter
-def metagenomic_deepfri(
-    query_file: pathlib.Path,
-    database: pathlib.Path,
-    model_config_json: pathlib.Path,
-    output_path: pathlib.Path,
-    task_path: pathlib.Path,
-    output_format: List[str],
-    deepfri_processing_modes: List[str],
-    angstrom_contact_threshold: float = 6,
-    generate_contacts: int = 2,
-):
+def metagenomic_deepfri(query_file: pathlib.Path,
+                        database: pathlib.Path,
+                        model_config_json: pathlib.Path,
+                        output_path: pathlib.Path,
+                        output_format: List[str],
+                        deepfri_processing_modes: List[str],
+                        angstrom_contact_threshold: float = 6,
+                        generate_contacts: int = 2,
+                        mmseqs_min_bit_score: float = None,
+                        mmseqs_max_eval: float = None,
+                        mmseqs_min_identity: float = 0.5,
+                        alignment_match: float = 2,
+                        alignment_missmatch: float = -1,
+                        alignment_gap_open: float = -0.5,
+                        alignment_gap_continuation: float = -0.1,
+                        alignment_min_identity: float = 0.3,
+                        threads: int = 1):
+
+    logging.info("Starting metagenomic-DeepFRI.")
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
@@ -135,8 +143,10 @@ def metagenomic_deepfri(
     logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    # TODO: remove task path from alignments
-    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, task_path)
+    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, mmseqs_min_bit_score,
+                                   mmseqs_max_eval, mmseqs_min_identity, alignment_match, alignment_missmatch,
+                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
+
     unaligned_queries = query_seqs.keys() - alignments.keys()
 
     libAtomDistanceIO.initialize()
@@ -154,7 +164,7 @@ def metagenomic_deepfri(
         gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
 
         if gcn_prots > 0:
-            logging.info("Predicting %i proteins with GCN", gcn_prots)
+            logging.info("Predicting with GCN: %i proteins", gcn_prots)
             output_file_name = output_path / f"results_gcn_{mode}"
 
             gcn_params = deepfri_models_config["gcn"]["models"][mode]
@@ -166,7 +176,7 @@ def metagenomic_deepfri(
                 target_id = alignment["target_id"]
 
                 generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
-                    str(database / "seq_atom_db" / ATOMS / (target_id + ".bin")),
+                    str(database / SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
                     angstrom_contact_threshold,
                     alignment["alignment"][0],  # query alignment
                     alignment["alignment"][1],  # target alignment
@@ -175,6 +185,7 @@ def metagenomic_deepfri(
                 # conversion of cmap to an adequate format
                 cmap = generated_query_contact_map.reshape(1, *generated_query_contact_map.shape) * 1
 
+                # running the actual prediction
                 gcn.predict_with_cmap(query_seq, cmap, query_id)
 
                 if "tsv" in output_format:
@@ -188,7 +199,7 @@ def metagenomic_deepfri(
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
-            logging.info("Predicting %i proteins with CNN", cnn_prots)
+            logging.info("Predicting with CNN:  %i proteins", cnn_prots)
             output_file_name = output_path / f"results_cnn_{mode}"
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
