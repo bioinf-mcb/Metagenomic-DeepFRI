@@ -5,9 +5,10 @@ from meta_deepFRI.metagenomic_deepfri import metagenomic_deepfri
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser(
-        description="This script contains all the logic to run DeepFri's GCN or CNN experiments.")
+    description="This script for prediction of protein function from sequence using" \
+                "structure database, contact map alignment and DeepFRI model.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i",

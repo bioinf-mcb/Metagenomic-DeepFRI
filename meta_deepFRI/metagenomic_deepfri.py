@@ -10,7 +10,7 @@ from pysam.libcfaidx import FastxFile
 from meta_deepFRI.config.names import ATOMS
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
 
-from meta_deepFRI import libAtomDistanceIO
+from meta_deepFRI.CPP_lib import libAtomDistanceIO
 from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
 
 from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
