@@ -13,10 +13,9 @@ def parse_args():
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i",
                         "--input",
-                        nargs='+',
                         required=True,
                         default=None,
-                        help="List of filepaths containing query protein FASTA files (.faa or .faa.gz)")
+                        help="Filepath to a query protein FASTA files (.faa or .faa.gz)")
     parser.add_argument("-db", "--db_path", required=True, default=None, help="Database path.")
     parser.add_argument("-c", "--config", required=True, default=None, help="Path to a config file from models folder.")
     parser.add_argument("-o", "--output_path", required=True, default=None, help="Output directory path.")
@@ -100,9 +99,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    metagenomic_deepfri(Path(args.input), Path(args.db_path), Path(args.config), Path(args.output_path),
-                        args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts, args.output_format,
+    output_path = Path(args.output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
+    metagenomic_deepfri(Path(args.input), Path(args.db_path), Path(args.config), output_path, args.output_format,
+                        args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts,
                         args.mmseqs_min_bit_score, args.mmseqs_max_evalue, args.mmseqs_min_identity,
                         args.alignment_match, args.alignment_missmatch, args.alignment_gap_open,
                         args.alignment_gap_continuation, args.alignment_min_identity, args.threads)

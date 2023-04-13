@@ -188,7 +188,7 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
-            logging.info("Predicting with CNN:  %i proteins", cnn_prots)
+            logging.info("Predicting with CNN: %i proteins", cnn_prots)
             output_file_name = output_path / f"results_cnn_{mode}"
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
