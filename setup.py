@@ -51,12 +51,16 @@ setup(
     name="meta_deepFRI",
     version="0.2.0",
     description="Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
-    author="Piotr Kucharski",
-    author_email="soliareofastorauj@gmail.com",
+    author="Piotr Kucharski, Valentyn Bezshapkin",
+    author_email="soliareofastorauj@gmail.com, valentyn.bezshapkin@micro.biol.ethz.ch",
     url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
+    include_package_data=True,
     entry_points={
-        "console_scripts": ["deepfri = scripts.main_pipeline:main",],
+        "console_scripts": [
+            "deepfri = scripts.main_pipeline:main",
+            "deepfri_db_build = scripts.build_database:main",
+        ],
     },
     ext_modules=[CMakeExtension("meta_deepFRI/CPP_lib/library_definition")],
     cmdclass={
@@ -64,4 +68,13 @@ setup(
     },
     license="GNU GPLv3",
     packages=find_packages(),
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent',
+    ],
 )

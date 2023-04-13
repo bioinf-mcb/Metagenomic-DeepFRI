@@ -51,7 +51,8 @@ from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH
 def parse_args():
     # yapf: disable
     parser = argparse.ArgumentParser(description="Read structure files from folders --input to extract sequence and atom positions. "
-                                                 "Create and index new --output MMSEQS2 database")
+                                                 "Create and index new --output MMSEQS2 database",
+                                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # logic described here is implemented in parse_input_paths
     parser.add_argument("-i", "--input", nargs='+', required=True, default=None,
@@ -67,8 +68,8 @@ def parse_args():
     parser.add_argument("-max_len", "--max_protein_length", required=False, default=1_000, type=int,
                         help="If protein chain is longer than this value, it will be truncated")
 
-    parser.add_argument("--overwrite", action="store_true",
-                        help="Flag to override existing sequences and atom positions")
+    # parser.add_argument("--overwrite", action="store_true",
+    #                     help="Flag to override existing sequences and atom positions")
     return parser.parse_args()
     # yapf: enable
 
@@ -167,7 +168,7 @@ def main() -> None:
 
     build_database(input_paths=input_seqs,
                    output_path=output_path,
-                   overwrite=args.overwrite,
+                   overwrite=True,
                    threads=args.threads,
                    max_protein_length=args.max_protein_length)
 

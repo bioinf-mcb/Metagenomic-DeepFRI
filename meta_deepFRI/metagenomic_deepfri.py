@@ -113,7 +113,7 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
     return query_file, query_seqs, target_db, target_seqs
 
 
-## TODO: loading of weights and db as a user-provided parameter
+## TODO: structure output folder
 def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_config_json: pathlib.Path,
                         output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
                         angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
