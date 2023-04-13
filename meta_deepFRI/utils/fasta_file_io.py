@@ -1,57 +1,8 @@
-import dataclasses
 import pathlib
-from typing import List
 
 from Bio import SeqIO
 
 from meta_deepFRI.config.names import SEQUENCES, ATOMS
-
-
-@dataclasses.dataclass
-class SeqRecord:
-    id: str
-    seq: str
-
-
-def load_fasta_file(file: str) -> List[SeqRecord]:
-    """
-    Loads FASTA file.
-
-    Args:
-        file (str): path to a FASTA file.
-
-    Returns:
-        List of records from FASTA file.
-    """
-    seq_records = []
-    with open(file, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith(">"):
-                seq_id = line[1:].replace("\n", "")
-                seq_records.append(SeqRecord(id=seq_id, seq=""))
-            else:
-                seq_records[-1].seq += line.replace("\n", "")
-    return seq_records
-
-
-def write_fasta_file(seq_records: List[SeqRecord], path: str) -> None:
-    """Writes a FASTA file
-
-    Args:
-        seq_records (List[SeqRecords]): list of FASTA records.
-        path (str): path to the output file.
-
-    Returns:
-        A FASTA file.
-    """
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            for seq_record in seq_records:
-                f.write(f">{seq_record.id}\n{seq_record.seq}\n")
-    except IsADirectoryError as err:
-        raise IsADirectoryError(f"Path {path} is a directory. Please provide a path to a file.") from err
-    except FileNotFoundError as err:
-        raise FileNotFoundError(f"Path {path} does not exist. Please provide a valid path.") from err
 
 
 class SeqFileLoader:
