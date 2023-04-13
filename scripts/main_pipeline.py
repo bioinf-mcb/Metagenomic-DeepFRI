@@ -85,7 +85,7 @@ def parse_args():
                         help="Gap continuation score for pairwise sequence alignment.")
     parser.add_argument("--alignment_min_identity",
                         required=False,
-                        default=0.5,
+                        default=0.3,
                         type=float,
                         help="Minimum sequence identity for pairwise sequence alignment.")
     parser.add_argument("-t",

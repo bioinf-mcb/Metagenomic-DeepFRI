@@ -114,23 +114,12 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
 
 
 ## TODO: loading of weights and db as a user-provided parameter
-def metagenomic_deepfri(query_file: pathlib.Path,
-                        database: pathlib.Path,
-                        model_config_json: pathlib.Path,
-                        output_path: pathlib.Path,
-                        output_format: List[str],
-                        deepfri_processing_modes: List[str],
-                        angstrom_contact_threshold: float = 6,
-                        generate_contacts: int = 2,
-                        mmseqs_min_bit_score: float = None,
-                        mmseqs_max_eval: float = None,
-                        mmseqs_min_identity: float = 0.5,
-                        alignment_match: float = 2,
-                        alignment_missmatch: float = -1,
-                        alignment_gap_open: float = -0.5,
-                        alignment_gap_continuation: float = -0.1,
-                        alignment_min_identity: float = 0.3,
-                        threads: int = 1):
+def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_config_json: pathlib.Path,
+                        output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
+                        angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
+                        mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_match: float,
+                        alignment_missmatch: float, alignment_gap_open: float, alignment_gap_continuation: float,
+                        alignment_min_identity: float, threads: int):
 
     logging.info("Starting metagenomic-DeepFRI.")
 
