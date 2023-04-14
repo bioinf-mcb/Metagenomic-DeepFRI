@@ -44,7 +44,7 @@ pip install .
    ```
    deepfri_build_db --input path/to/folder/with/strucures --output path/to/database
    ```
-
+**Tip:** building a database from AF2 predicted structures took ~30 min.
 
 Use parameter `-max_len` to define maximal length of the protein. Due to initial DeepFRI training set
 default value is set to `1000 aa`.
@@ -70,7 +70,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
    ```
    deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -c /path/to/deepfri/confg -o /output_path
    ```
-
+**Attention:** Single instance of DeepFRI on GPU requires 10GB VRAM.
 Other available parameters can be found upon command `deepfri --help`.
 
 ## Results
