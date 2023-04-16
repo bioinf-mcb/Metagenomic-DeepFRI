@@ -4,6 +4,7 @@ import pathlib
 
 from itertools import repeat
 import json
+import numpy as np
 
 from typing import List
 # Create logger
@@ -137,13 +138,19 @@ def build_database(
             process_structure_file,
             zip(structure_files_paths.values(), repeat(seq_atoms_path.absolute()), repeat(max_protein_length)))
 
+    # General stats over database
+    for status, status_count in np.unique(processing_status, return_counts=True):
+        logger.info("%i - %s", status_count, status)
+
+    # Print out failed structures
     for struct, status in zip(structure_files_paths.values(), processing_status):
-        logging.info("%s - %s", struct, status)
+        if status.startswith("FAIL"):
+            logger.error("%s - %s", struct, status)
 
     freshly_added_ids = []
     structure_file_ids = list(structure_files_paths.keys())
     for status, structure_id in zip(processing_status, structure_file_ids):
-        if status.startswith("SUCCEED"):
+        if status.startswith("SUCCESS"):
             freshly_added_ids.append(structure_id)
 
     if len(freshly_added_ids) == 0:

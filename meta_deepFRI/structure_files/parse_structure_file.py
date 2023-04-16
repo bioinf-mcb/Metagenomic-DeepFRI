@@ -42,7 +42,7 @@ def search_structure_files(input_paths: list):
     for input_path in input_paths:
         print(f"{str(input_path)}")
         if input_path.is_file():
-            for pattern in PARSERS.keys():
+            for pattern in PARSERS:
                 if str(input_path).endswith(pattern):
                     print(f"\tFile {input_path} is {pattern}")
                     structure_file_id = input_path.name[:-len(pattern)]
@@ -50,7 +50,7 @@ def search_structure_files(input_paths: list):
                     continue
         elif input_path.is_dir():
             files_inside_input_path = list(input_path.glob("**/*"))
-            for pattern in PARSERS.keys():
+            for pattern in PARSERS:
                 structure_file_paths = list(filter(lambda x: str(x).endswith(pattern), files_inside_input_path))
                 if len(structure_file_paths) == 0:
                     continue
@@ -104,7 +104,7 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
 
     if len(groups) < 9:
         # Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA
-        return "Sequence is too short, probably DNA or corrupted"
+        return "FAIL - Sequence is too short, probably DNA or corrupted"
 
     truncated = False
     if len(groups) > max_target_chain_length:
@@ -118,15 +118,15 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
         group_indexes = np.append(groups, seq_atoms.positions.shape[0]).astype(np.int32)
 
     sequence = ''.join([bio_utils.PROTEIN_LETTERS[seq_atoms.atom_amino_group[i]] for i in group_indexes[:-1]])
-    with open(sequence_path, "w") as f:
+    with open(sequence_path, "w", encoding="utf-8") as f:
         f.write(f">{seq_atoms.protein_id}\n{sequence}\n")
 
     libAtomDistanceIO.save_atoms(seq_atoms.positions, group_indexes, str(atoms_path))
 
     if truncated:
-        return f"SUCCEED, but sequences and contact maps got truncated to {max_target_chain_length}"
+        return f"SUCCESS, but sequences and contact maps got truncated to {max_target_chain_length}"
     else:
-        return "SUCCEED"
+        return "SUCCESS"
 
 
 def process_structure_file(structure_file, save_path, max_target_chain_length):

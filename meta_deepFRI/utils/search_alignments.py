@@ -117,5 +117,5 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
                     "sequence_identity": sequence_identity
                 }
 
-    json.dump(alignments_output, open(alignment_output_json_path, "w"), indent=4, sort_keys=True)
+    json.dump(alignments_output, open(alignment_output_json_path, "w", encoding="utf-8"), indent=4, sort_keys=True)
     return alignments_output
