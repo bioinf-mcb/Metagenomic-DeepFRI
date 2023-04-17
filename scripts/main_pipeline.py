@@ -103,6 +103,7 @@ def main():
     - Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
     - Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. https://doi.org/10.1038/nbt.3988
     - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
+    - Cock et al. "Biopython: freely available Python tools for computational molecular biology and bioinformatics" Bioinformatics (2009) https://doi.org/10.1093/bioinformatics/btp163
     """)
     args = parse_args()
     output_path = Path(args.output_path)
