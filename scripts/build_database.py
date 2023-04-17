@@ -139,8 +139,11 @@ def build_database(
             zip(structure_files_paths.values(), repeat(seq_atoms_path.absolute()), repeat(max_protein_length)))
 
     # General stats over database
-    for status, status_count in np.unique(processing_status, return_counts=True):
-        logger.info("%i - %s", status_count, status)
+    status, status_count = np.unique(processing_status, return_counts=True)
+
+    # reversing the list, so that FAIL is the last one printed
+    for stat, count in list(zip(status, status_count))[::-1]:
+        logger.info("%s - %i", stat, count)
 
     # Print out failed structures
     for struct, status in zip(structure_files_paths.values(), processing_status):

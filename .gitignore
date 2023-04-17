@@ -1,9 +1,5 @@
 # project specific folder
-deepfri.err
-af2db/
-af2_structures_db/
-GCA_000731455.1.output/
-database_build_test
+test_database/
 docs/build/*
 build/
 *.egg-info
