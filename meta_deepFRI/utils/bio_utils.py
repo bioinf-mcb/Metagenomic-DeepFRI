@@ -24,12 +24,17 @@ protein_letters_1to3 = {
 }
 protein_letters_1to3_extended = {
     **protein_letters_1to3,
-    **{"B": "Asx", "X": "Xaa", "Z": "Glx", "J": "Xle", "U": "Sec", "O": "Pyl"},
+    **{
+        "B": "Asx",
+        "X": "Xaa",
+        "Z": "Glx",
+        "J": "Xle",
+        "U": "Sec",
+        "O": "Pyl"
+    },
 }
 
-protein_letters_3to1_extended = {
-    value: key for key, value in protein_letters_1to3_extended.items()
-}
+protein_letters_3to1_extended = {value: key for key, value in protein_letters_1to3_extended.items()}
 
 PROTEIN_LETTERS = dict()
 for k, v in protein_letters_3to1_extended.items():
