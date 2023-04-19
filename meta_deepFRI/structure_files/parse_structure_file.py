@@ -11,7 +11,7 @@ from meta_deepFRI.structure_files.parsers import parse_pdb, parse_mmcif
 from meta_deepFRI.config.names import SEQUENCES, ATOMS
 from meta_deepFRI.utils import bio_utils
 
-# need to parse different type of files? Add a pattern with a parser in this dict.
+# need to parse different type of files? Add a file name pattern with a parser in this dict.
 # read structure_files_parsers/README.md for more information about how to create new parser.
 PARSERS = {
     '.pdb': parse_pdb,
@@ -84,38 +84,45 @@ def read_structure_file(file_path: pathlib.Path) -> SeqAtoms:
 def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, atoms_path: pathlib.Path,
                             max_target_chain_length: int) -> str:
     """
-  1. reads the structure file extracting sequence and atom positions
-  2. skip short sequences and truncate ones that size is over MAX_TARGET_CHAIN_LENGTH inside target_db_config.json
-  3. save extracted data:
-          sequence - protein_id.faa file containing single sequence f.write(f">{protein_id}\n{sequence}\n")
-              SEQ_ATOMS_DATASET_PATH / project_name / SEQUENCES / (protein_id + ".faa")
-          atom positions - binary file containing positions of all atoms and correlated amino acid chain index
-              SEQ_ATOMS_DATASET_PATH / project_name / ATOMS / (protein_id + ".bin")
-              For more information on how those binary are saved check out source code at CPP_lib/atoms_file_io.h
+    Reads the structure file extracting sequence and atom positions.
+    If the sequence is too short, it is skipped as it is considered to be corrupted or DNA sequence.
+    If the sequence is too long, it is truncated based on the max_target_chain_length defined in target_db_config.json.
 
-    :param seq_atoms:
-    :param sequence_path:
-    :param atoms_path:
-    :param max_target_chain_length:
-    :return:
+    Saves the extracted data:
+        sequence - protein_id.faa file containing single sequence f.write(f">{protein_id}\n{sequence}\n")
+            SEQ_ATOMS_DATASET_PATH / project_name / SEQUENCES / (protein_id + ".faa")
+        atom positions - binary file containing positions of all atoms and correlated amino acid chain index
+            SEQ_ATOMS_DATASET_PATH / project_name / ATOMS / (protein_id + ".bin")
+            For more information on how those binary are saved check out source code at CPP_lib/atoms_file_io.h
+
+    Args:
+        seq_atoms: An object of SeqAtoms containing the sequence and atom positions.
+        sequence_path: A pathlib.Path object containing the path to the sequence file to be saved.
+        atoms_path: A pathlib.Path object containing the path to the atom positions file to be saved.
+        max_target_chain_length: An integer value of the maximum length of the protein chain.
+
+    Returns:
+        If the protein chain is too short, it returns "Sequence is too short, probably DNA or corrupted".
+        If the protein chain is truncated, it returns the string with the new length of the chain.
+        Otherwise, it returns "SUCCEED".
     """
-    _, groups = np.unique(seq_atoms.groups, return_index=True)
-    groups.sort()
+    _, groups_index = np.unique(seq_atoms.groups, return_index=True)
+    groups_index.sort()
 
-    if len(groups) < 9:
+    if len(groups_index) < 9:
         # Files containing protein chains shorter than 9 amino acids might be corrupted or contain DNA
         return "FAIL - Sequence is too short, probably DNA or corrupted"
 
     truncated = False
-    if len(groups) > max_target_chain_length:
+    if len(groups_index) > max_target_chain_length:
         # Protein chains with more than {max_target_chain_length} are truncated.
         # Change CONFIG/RUNTIME_PARAMETERS.py :max_target_chain_length
         # and rerun this script with --overwrite to process this file again
         truncated = True
-        group_indexes = groups[:max_target_chain_length]
-        group_indexes = np.append(group_indexes, groups[max_target_chain_length]).astype(np.int32)
+        group_indexes = groups_index[:max_target_chain_length]
+        group_indexes = np.append(group_indexes, groups_index[max_target_chain_length]).astype(np.int32)
     else:
-        group_indexes = np.append(groups, seq_atoms.positions.shape[0]).astype(np.int32)
+        group_indexes = np.append(groups_index, seq_atoms.positions.shape[0]).astype(np.int32)
 
     sequence = ''.join([bio_utils.PROTEIN_LETTERS[seq_atoms.atom_amino_group[i]] for i in group_indexes[:-1]])
     with open(sequence_path, "w", encoding="utf-8") as f:
