@@ -49,7 +49,7 @@ deepfri --help
 1. Upload structure files to a folder.
 2. Run `build_database.py` script.
    ```
-   deepfri_build_db --input path/to/folder/with/strucures --output path/to/database
+   deepfri_db_build --input path/to/folder/with/strucures --output path/to/database
    ```
 **Tip:** building a database from AF2 predicted structures took ~30 min.
 

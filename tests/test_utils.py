@@ -1,19 +1,15 @@
-import tempfile
-import os
-import pytest
-
 from functools import partial
+
+import pytest
 from Bio import pairwise2
+
+from meta_deepFRI.utils import bio_utils, search_alignments, utils
 
 default_pair_align = partial(
     pairwise2.align.globalms, match=2, mismatch=-1, open=-0.5, extend=-0.1, one_alignment_only=True)
 
-from meta_deepFRI.utils import (bio_utils, search_alignments, utils)
-# hash_sequence_id, encode_faa_ids, load_fasta_file, write_fasta_file
-
 
 def test_protein_letters():
-
     expected = {
         'ALA': 'A',
         'CYS': 'C',
@@ -75,3 +71,9 @@ def test_load_deepfri_config_file_not_found():
     """Test FileNotFoundError is raised if config file is not found."""
     with pytest.raises(FileNotFoundError):
         utils.load_deepfri_config("non_existing_file.json")
+
+
+def test_run_command():
+    command = "echo 'Hello World!'"
+    result = utils.run_command(command).strip()
+    assert result == "Hello World!"
