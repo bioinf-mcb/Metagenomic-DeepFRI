@@ -22,6 +22,7 @@ This is the right project for this task! Pipeline in a nutshell:
 ```{code-block} bash
 git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI --recursive
 cd Metagenomic-DeepFRI
+touch meta_deepFRI/DeepFRI/__init__.py
 ```
 2. Setup conda environment
 ```{code-block} bash
