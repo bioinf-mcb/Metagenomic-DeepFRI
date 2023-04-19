@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from setuptools import find_packages, setup, Extension
+from setuptools import find_namespace_packages, setup, Extension
 from setuptools.command.build_ext import build_ext as build_ext_orig
 
 
@@ -67,7 +67,7 @@ setup(
         'build_ext': build_ext,
     },
     license="GNU GPLv3",
-    packages=find_packages(),
+    packages=find_namespace_packages(),
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
