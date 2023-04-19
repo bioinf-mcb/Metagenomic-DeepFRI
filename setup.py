@@ -1,8 +1,11 @@
 import os
 import pathlib
+import sys
 
 from setuptools import find_namespace_packages, setup, Extension
 from setuptools.command.build_ext import build_ext as build_ext_orig
+
+# TODO: Add __init__.py file to meta_deepFRI/DeepFRI/
 
 
 class CMakeExtension(Extension):
@@ -30,9 +33,15 @@ class build_ext(build_ext_orig):
         extdir.mkdir(parents=True, exist_ok=True)
 
         # example of cmake args
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        python_include_path = str(pathlib.Path(
+            sys.executable).parent.parent.absolute()) + f'/include/python{python_version}/'
+
         config = 'Debug' if self.debug else 'Release'
         cmake_args = [
-            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(extdir.parent.absolute()), '-DCMAKE_BUILD_TYPE=' + config
+            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(extdir.parent.absolute()),
+            '-DPY_INCLUDE_PATH=' + python_include_path,
+            '-DCMAKE_BUILD_TYPE=' + config,
         ]
 
         # example of build args

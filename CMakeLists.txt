@@ -10,15 +10,10 @@ add_library(AtomDistanceIO SHARED
         meta_deepFRI/CPP_lib/load_contact_maps.h)
 
 
-target_include_directories(AtomDistanceIO PUBLIC $ENV{CONDA_PREFIX}/include/python3.10)
+target_include_directories(AtomDistanceIO PUBLIC ${PY_INCLUDE_PATH})
 
 FIND_PACKAGE( Boost COMPONENTS python numpy REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 TARGET_LINK_LIBRARIES( AtomDistanceIO LINK_PUBLIC ${Boost_LIBRARIES} )
 
-# add_custom_command(TARGET AtomDistanceIO POST_BUILD
-#         COMMAND "${CMAKE_COMMAND}" -E copy
-#         "libAtomDistanceIO.so"
-#         "../libAtomDistanceIO.so"
-#         COMMENT "Copying to output directory")
