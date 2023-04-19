@@ -22,15 +22,24 @@ This is the right project for this task! Pipeline in a nutshell:
 ```{code-block} bash
 git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI
 cd Metagenomic-DeepFRI
+git submodule init
+git submodule update --recursive --remote
 ```
 2. Setup conda environment
 ```{code-block} bash
-conda env install --name deepfri --file deepfri.yaml
+conda env create --name deepfri --file deepfri.yaml
+conda activate deepfri
 ```
 3. Install `meta-DeepFRI`
 ```{code-block} bash
 pip install .
 ```
+4. Verify installation
+```{code-block} bash
+pytest
+deepfri --help
+```
+
 ## Retrieve `DeepFRI` model weights
 
 - [CPU weights](https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz)
@@ -94,5 +103,5 @@ If you have a suggestion that would make this project better, email me or fork t
 
 ### Contact
 
-Piotr Kucharski - soliareofastorauj@gmail.com
+Piotr Kucharski - soliareofastorauj@gmail.com \
 Valentyn Bezshapkin - valentyn.bezshapkin@micro.biol.ethz.ch

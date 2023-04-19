@@ -17,4 +17,3 @@ dependencies:
   - pytest=7.2.2
   - python=3.9
   - cmake=3.22.1
-prefix: /nfs/cds-peta/exports/biol_micro_cds_gr_sunagawa/scratch/vbezshapkin/conda-envs/deepfri
