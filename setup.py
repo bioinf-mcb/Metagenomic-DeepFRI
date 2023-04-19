@@ -5,6 +5,8 @@ import sys
 from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext as build_ext_orig
 
+# TODO: Add __init__.py file to meta_deepFRI/DeepFRI/
+
 
 class CMakeExtension(Extension):
 
@@ -32,7 +34,8 @@ class build_ext(build_ext_orig):
 
         # example of cmake args
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        python_include_path = str(pathlib.Path(sys.executable).parent.parent.absolute()) + f'/include/python{python_version}/'
+        python_include_path = str(pathlib.Path(
+            sys.executable).parent.parent.absolute()) + f'/include/python{python_version}/'
 
         config = 'Debug' if self.debug else 'Release'
         cmake_args = [
