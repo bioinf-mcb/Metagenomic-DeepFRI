@@ -20,7 +20,7 @@ This is the right project for this task! Pipeline in a nutshell:
 
 1. Clone repo locally
 ```{code-block} bash
-git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI
+git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI --recursive
 cd Metagenomic-DeepFRI
 ```
 2. Setup conda environment
