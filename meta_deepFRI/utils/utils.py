@@ -25,18 +25,11 @@ def run_command(command, timeout=-1):
 
     try:
         if timeout > 0:
-            completed_process = subprocess.run(command,
-                                               capture_output=True,
-                                               env=my_env,
-                                               timeout=timeout,
-                                               check=True,
-                                               universal_newlines=True)
+            completed_process = subprocess.run(
+                command, capture_output=True, env=my_env, timeout=timeout, check=True, universal_newlines=True)
         else:
-            completed_process = subprocess.run(command,
-                                               capture_output=True,
-                                               env=my_env,
-                                               check=True,
-                                               universal_newlines=True)
+            completed_process = subprocess.run(
+                command, capture_output=True, env=my_env, check=True, universal_newlines=True)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
