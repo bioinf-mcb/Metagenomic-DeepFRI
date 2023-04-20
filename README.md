@@ -87,7 +87,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
 1. Run main_pipeline.py
    ```
-   deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -o /output_path
+   deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -w /path/to/deepfri/weights/folder -o /output_path
    ```
 **Attention:** Single instance of DeepFRI on GPU requires 10GB VRAM.
 Other available parameters can be found upon command `deepfri --help`.
