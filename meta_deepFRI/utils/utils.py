@@ -1,7 +1,5 @@
 import json
-import os
 import pathlib
-from typing import List, Union, Any
 import shlex
 
 import requests
@@ -9,34 +7,24 @@ import shutil
 import subprocess
 import sys
 
-ENV_PATHS = set()
-
-
-def add_path_to_env(path):
-    ENV_PATHS.add(path)
-
 
 def run_command(command, timeout=-1):
     if isinstance(command, str):
         command = shlex.split(command, ' ')
 
-    my_env = os.environ.copy()
-    my_env["PATH"] += os.pathsep + os.pathsep.join(ENV_PATHS)
-
     try:
         if timeout > 0:
             completed_process = subprocess.run(
-                command, capture_output=True, env=my_env, timeout=timeout, check=True, universal_newlines=True)
+                command, capture_output=True, timeout=timeout, check=True, universal_newlines=True)
         else:
-            completed_process = subprocess.run(
-                command, capture_output=True, env=my_env, check=True, universal_newlines=True)
+            completed_process = subprocess.run(command, capture_output=True, check=True, universal_newlines=True)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
 
     except subprocess.CalledProcessError as err:
         raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}: {err.stderr}") from err
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}") from err
 
     return completed_process.stdout
 

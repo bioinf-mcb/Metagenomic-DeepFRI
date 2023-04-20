@@ -43,13 +43,25 @@ deepfri --help
 - [CPU weights](https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz)
 - [GPU weights](https://users.flatironinstitute.org/~renfrew/DeepFRI_data/trained_models.tar.gz)
 
+### CPU weights
+```bash
+wget https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz
+tar -xf newest_trained_models.tar.gz
+```
+
+### GPU weights
+```bash
+wget https://users.flatironinstitute.org/~renfrew/DeepFRI_data/trained_models.tar.gz
+tar -xf trained_models.tar.gz
+```
+
 **Attention:** Using DeepFRI with GPU requires extra installation steps, described in section 4. GPU Setup of [tensorfow installation guide](https://www.tensorflow.org/install/pip).
 ## Database setup
 
 1. Upload structure files to a folder.
 2. Run `build_database.py` script.
    ```
-   deepfri_build_db --input path/to/folder/with/strucures --output path/to/database
+   deepfri_db_build --input path/to/folder/with/strucures --output path/to/database
    ```
 **Tip:** building a database from AF2 predicted structures took ~30 min.
 
@@ -75,7 +87,7 @@ Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
 1. Run main_pipeline.py
    ```
-   deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -c /path/to/deepfri/confg -o /output_path
+   deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -o /output_path
    ```
 **Attention:** Single instance of DeepFRI on GPU requires 10GB VRAM.
 Other available parameters can be found upon command `deepfri --help`.
