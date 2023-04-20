@@ -2,7 +2,7 @@
 
 ## 1. Prepare database
 
-1. Upload structure (`.pdb` or `.mmcif`) files to a folder in your system.
+1. Upload structure (`.pdb` or `.mmcif`, can be gzipped) files to a folder in your system.
 2. Run command:
    ```
    deepfri_db_build --input path/to/folder/with/strucures --output path/to/database
@@ -21,7 +21,6 @@ process them and store protein sequence and atoms positions inside `database/seq
 It will also create a mmseqs2 database within `database/`.
 
 You can also use `--input DIR_1 FILE_2 ...` argument list to parse structures from multiple sources.
-Accepted formats are: `.pdb`, `.cif`, `.ent` both raw and compressed with `.gz`
 
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
