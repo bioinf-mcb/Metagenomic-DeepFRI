@@ -1,9 +1,12 @@
+import pathlib
 import subprocess
 
 import pytest
 
-TEST_INPUT_DATA = 'tests/data'
-TEST_OUTPUT_DATA = 'test_database'
+INPUT_STRUCTURES = 'tests/data'
+OUTPUT_DATABASE = 'test_database'
+QUERY_FILE = 'tests/data/small_query.faa'
+RESULTS = 'test_results'
 
 
 def execute_command(command):
@@ -14,6 +17,27 @@ def execute_command(command):
 
 
 @pytest.fixture
-def built_database():
-    stdout, stderr = execute_command(f'deepfri_db_build -i {TEST_INPUT_DATA} -o {TEST_OUTPUT_DATA}')
+def deepfri_database():
+    stdout, stderr = execute_command(f'deepfri_db_build -i {INPUT_STRUCTURES} -o {OUTPUT_DATABASE}')
     print(stdout)
+
+
+def test_database(deepfri_database):
+    return
+
+
+@pytest.fixture
+def deepri_results(deepfri_database):
+    stdout, stderr = execute_command(f"deepfri -i {QUERY_FILE} -db {OUTPUT_DATABASE} -o {RESULTS}")
+    print(stdout)
+
+
+def test_results(deepri_results):
+    results_path = pathlib.Path(RESULTS)
+    assert results_path.exists()
+    assert results_path.is_dir()
+    assert len(list(results_path.glob('*.tsv'))) == 8
+
+
+def test_clean(deepri_results):
+    execute_command(f'rm -r {OUTPUT_DATABASE} {RESULTS}')

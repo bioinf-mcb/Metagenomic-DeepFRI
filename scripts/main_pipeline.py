@@ -14,12 +14,17 @@ def parse_args():
     parser.add_argument(
         "-i", "--input", required=True, default=None, help="Filepath to a query protein FASTA files (.faa or .faa.gz)")
     parser.add_argument("-db", "--db_path", required=True, default=None, help="Database path.")
-    parser.add_argument("-c", "--config", required=True, default=None, help="Path to a config file from models folder.")
     parser.add_argument("-o", "--output_path", required=True, default=None, help="Output directory path.")
     parser.add_argument(
         "--output_format", nargs="*", choices=['tsv', 'json', 'csv'], default=['tsv'], help="Output format.")
 
     # DeepFRI parameters
+    parser.add_argument(
+        "-w",
+        "--weights",
+        required=False,
+        default="trained_models",
+        help="Path to a folder containing downloaded deepfri weights and model_config.json.")
     parser.add_argument("--processing_modes", nargs="*", choices=['mf', 'bp', 'cc', 'ec'],
                         default=['mf', 'bp', 'cc', 'ec'],
                         help="DeepFRI processing modes. mf - molecular function, " \
@@ -98,10 +103,10 @@ def main():
     output_path = Path(args.output_path)
     output_path.mkdir(parents=True, exist_ok=True)
     metagenomic_deepfri(
-        Path(args.input), Path(args.db_path), Path(args.config), output_path, args.output_format, args.processing_modes,
-        args.angstrom_contact_thresh, args.generate_contacts, args.mmseqs_min_bit_score, args.mmseqs_max_evalue,
-        args.mmseqs_min_identity, args.alignment_match, args.alignment_missmatch, args.alignment_gap_open,
-        args.alignment_gap_continuation, args.alignment_min_identity, args.threads)
+        Path(args.input), Path(args.db_path), Path(args.weights), output_path, args.output_format,
+        args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts, args.mmseqs_min_bit_score,
+        args.mmseqs_max_evalue, args.mmseqs_min_identity, args.alignment_match, args.alignment_missmatch,
+        args.alignment_gap_open, args.alignment_gap_continuation, args.alignment_min_identity, args.threads)
 
 
 if __name__ == '__main__':

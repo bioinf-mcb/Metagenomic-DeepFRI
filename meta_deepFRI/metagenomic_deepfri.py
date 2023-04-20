@@ -115,15 +115,66 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
     return query_file, query_seqs, target_db, target_seqs
 
 
+def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
+    """
+    Check if DeepFRI weights are valid.
+    Args:
+        weights:
+
+    Returns:
+        pathlib.Path: Path to DeepFRI config.
+    """
+
+    assert weights.exists(), f"DeepFRI weights not found at {weights}"
+    assert weights.is_dir(), f"DeepFRI weights should be a directory, not a file"
+    assert (weights / "model_config.json").exists(), f"DeepFRI weights are missing model_config.json"
+    config_path = pathlib.Path("./trained_models/model_config.json")
+    with open(config_path, "r", encoding="utf-8") as f:
+        models_config = json.load(f)
+
+    for type in ["cnn", "gcn"]:
+        for model_type, model_path in models_config[type]["models"].items():
+            model_name = pathlib.Path(model_path + ".hdf5")
+            config_name = pathlib.Path(model_path + "_model_params.json")
+            assert model_name.exists(), f"DeepFRI weights are missing {model_type} model at {model_name}"
+            assert config_name.exists(), f"DeepFRI weights are missing {model_type} model config at {config_name}"
+
+    return config_path
+
+
 ## TODO: structure output folder
-def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, model_config_json: pathlib.Path,
+def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weights: pathlib.Path,
                         output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
                         angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
                         mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_match: float,
                         alignment_missmatch: float, alignment_gap_open: float, alignment_gap_continuation: float,
                         alignment_min_identity: float, threads: int):
+    """
+    Run metagenomic-DeepFRI.
+    Args:
+        query_file:
+        database:
+        weights:
+        output_path:
+        output_format:
+        deepfri_processing_modes:
+        angstrom_contact_threshold:
+        generate_contacts:
+        mmseqs_min_bit_score:
+        mmseqs_max_eval:
+        mmseqs_min_identity:
+        alignment_match:
+        alignment_missmatch:
+        alignment_gap_open:
+        alignment_gap_continuation:
+        alignment_min_identity:
+        threads:
 
+    Returns:
+
+    """
     logging.info("Starting metagenomic-DeepFRI.")
+    model_config_json = check_deepfri_weights(weights)
 
     query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
 
