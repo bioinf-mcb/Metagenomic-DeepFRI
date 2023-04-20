@@ -8,12 +8,19 @@
 #include <cmath>
 #include <iostream>
 #include <queue>
+#include <string>
+#include <sys/stat.h>
 
 #include "atoms_file_io.h"
 #include "python_utils.h"
 
 static float Distance(float* array, int i, int j) {
   return sqrtf(powf(array[i * 3] - array[j * 3], 2) + powf(array[i * 3 + 1] - array[j * 3 + 1], 2) + powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
+}
+
+inline bool exists (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
 }
 
 
@@ -60,6 +67,13 @@ static std::vector<std::pair<int, int>>* LoadSparseContactMap(const std::string&
   int chain_length;
   int* group_indexes;
   float* atoms_positions;
+
+  // verbose error if file_path doesn't exist
+  if (!exists(file_path)) {
+    std::cout << "Error: file " << file_path << " doesn't exist" << std::endl;
+    return nullptr;
+  }
+
   std::tie(chain_length, group_indexes, atoms_positions) = LoadAtomsFile(file_path);
 
   // fill up vector with sparse atom contacts

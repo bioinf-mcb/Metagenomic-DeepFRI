@@ -1,11 +1,19 @@
 # project specific folder
-database_build_test
+test_database/
+trained_models
+trained_models.tar.gz
+newest_trained_models.tar.gz
+
 docs/build/*
 build/
 *.egg-info
 .vscode/
 CMakeFiles/
 dev.ipynb
+test_output/
+test.png
+predict_gpu.py
+run_predict.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
