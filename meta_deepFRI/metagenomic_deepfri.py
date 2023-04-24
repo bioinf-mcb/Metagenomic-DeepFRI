@@ -132,10 +132,10 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
     with open(config_path, "r", encoding="utf-8") as f:
         models_config = json.load(f)
 
-    for type in ["cnn", "gcn"]:
-        for model_type, model_path in models_config[type]["models"].items():
-            model_name = model_path.with_suffix(".hdf5")
-            config_name = pathlib.Path(model_path + "_model_params.json")
+    for net in ["cnn", "gcn"]:
+        for model_type, model_path in models_config[net]["models"].items():
+            model_name = weights / (pathlib.Path(model_path).name + ".hdf5")
+            config_name = weights / (pathlib.Path(model_path).name + "_model_params.json")
             assert model_name.exists(), f"DeepFRI weights are missing {model_type} model at {model_name}"
             assert config_name.exists(), f"DeepFRI weights are missing {model_type} model config at {config_name}"
 
@@ -220,8 +220,8 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
                 generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
                     str(database / SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
                     angstrom_contact_threshold,
-                    alignment["alignment"][0],  # query alignment
-                    alignment["alignment"][1],  # target alignment
+                    alignment["query_sequence"],  # query alignment
+                    alignment["target_sequence"],  # target alignment
                     generate_contacts)
 
                 # conversion of cmap to an adequate format

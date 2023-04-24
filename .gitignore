@@ -3,6 +3,8 @@ test_database/
 trained_models
 trained_models.tar.gz
 newest_trained_models.tar.gz
+biopython_test_output
+parasail_test_output
 
 docs/build/*
 build/
