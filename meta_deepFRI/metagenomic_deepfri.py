@@ -18,10 +18,9 @@ from meta_deepFRI.utils.utils import load_deepfri_config
 from meta_deepFRI.utils.search_alignments import search_alignments
 from meta_deepFRI.utils.mmseqs import run_mmseqs_search
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +89,10 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
                      MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
-        json.dump(
-            prot_len_outliers,
-            open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
-            indent=4,
-            sort_keys=True)
+        json.dump(prot_len_outliers,
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
+                  indent=4,
+                  sort_keys=True)
         if len(query_seqs) == 0:
             logging.info("All sequences in %s were too long. No sequences will be processed.", query_file)
 
@@ -119,22 +117,24 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
     """
     Check if DeepFRI weights are valid.
     Args:
-        weights:
+        weights :
 
     Returns:
         pathlib.Path: Path to DeepFRI config.
     """
 
     assert weights.exists(), f"DeepFRI weights not found at {weights}"
-    assert weights.is_dir(), f"DeepFRI weights should be a directory, not a file"
-    assert (weights / "model_config.json").exists(), f"DeepFRI weights are missing model_config.json"
-    config_path = pathlib.Path("./trained_models/model_config.json")
+    assert weights.is_dir(), f"DeepFRI weights should be a directory, not a file."
+
+    config_path = weights / "model_config.json"
+    assert config_path.exists(), f"DeepFRI weights are missing model_config.json"
+
     with open(config_path, "r", encoding="utf-8") as f:
         models_config = json.load(f)
 
     for type in ["cnn", "gcn"]:
         for model_type, model_path in models_config[type]["models"].items():
-            model_name = pathlib.Path(model_path + ".hdf5")
+            model_name = model_path.with_suffix(".hdf5")
             config_name = pathlib.Path(model_path + "_model_params.json")
             assert model_name.exists(), f"DeepFRI weights are missing {model_type} model at {model_name}"
             assert config_name.exists(), f"DeepFRI weights are missing {model_type} model config at {config_name}"
@@ -146,9 +146,8 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
 def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weights: pathlib.Path,
                         output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
                         angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
-                        mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_match: float,
-                        alignment_missmatch: float, alignment_gap_open: float, alignment_gap_continuation: float,
-                        alignment_min_identity: float, threads: int):
+                        mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_matrix: str,
+                        alignment_gap_open: float, alignment_gap_continuation: float, alignment_min_identity: float):
     """
     Run metagenomic-DeepFRI.
     Args:
@@ -180,14 +179,15 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
 
     logging.info("Running metagenomic-DeepFRI for %i sequences", len(query_seqs))
     logging.info("Running MMSeqs2 search for the query against database")
-    mmseqs_search_output = run_mmseqs_search(query_file, target_db, output_path)
+    mmseqs_search_output = run_mmseqs_search(query_file, target_db, output_path, mmseqs_min_bit_score, mmseqs_max_eval,
+                                             mmseqs_min_identity)
+
     mmseqs2_found_proteins = mmseqs_search_output.shape[0]
     logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, mmseqs_min_bit_score,
-                                   mmseqs_max_eval, mmseqs_min_identity, alignment_match, alignment_missmatch,
-                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
+    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, alignment_matrix,
+                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity)
 
     unaligned_queries = query_seqs.keys() - alignments.keys()
 

@@ -59,7 +59,8 @@ def create_target_database(seq_atoms_path: Path, new_db_path: Path) -> None:
     createindex(new_db_path / TARGET_MMSEQS_DB_NAME)
 
 
-def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path) -> pd.DataFrame:
+def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path, min_bit_score: float, max_evalue: float,
+                      min_identity: float) -> pd.DataFrame:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 
     Args:
@@ -84,6 +85,14 @@ def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path) -> p
         convertalis(query_db, target_db, result_db, output_file)
 
     output = pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
+
+    # MMSeqs2 alginment filters
+    if min_identity:
+        output = output.query(f"identity >= {min_identity}")
+    if min_bit_score:
+        output = output.query(f"bitscore >= {min_bit_score}")
+    if max_evalue:
+        output = output.query(f"e_value <= {max_evalue}")
 
     output.to_csv(output_file, sep="\t", index=False)
 
