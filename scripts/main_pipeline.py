@@ -111,7 +111,7 @@ def main():
     metagenomic_deepfri(Path(args.input), Path(args.db_path), Path(args.weights), output_path, args.output_format,
                         args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts,
                         args.mmseqs_min_bit_score, args.mmseqs_max_evalue, args.mmseqs_min_identity,
-                        args.alignment_matrix, args.alignment_gap_open, args.alignment_gap_continuation,
+                        args.alignment_matrix, args.alignment_gap_open, args.alignment_gap_extend,
                         args.alignment_min_identity)
 
 
