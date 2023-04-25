@@ -3,6 +3,7 @@ from functools import partial
 import pandas as pd
 import pathlib
 import parasail
+from multiprocessing.pool import ThreadPool
 
 import logging
 
@@ -64,7 +65,7 @@ def align(query: str, target: str, matrix: parasail.bindings_v2.Matrix, gap_open
 
 def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
                       output_path: pathlib.Path, matrix: str, alignment_gap_open: float, alignment_gap_extend: float,
-                      alignment_min_identity: float):
+                      alignment_min_identity: float, threads: int):
 
     # format of output JSON file:
     # alignments = dict[query_id]
@@ -92,7 +93,8 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
                                  gap_extend=alignment_gap_extend)
 
     # align with parasail
-    all_alignments = [parametrized_align(query_seq, target_seq) for query_seq, target_seq in zip(queries, targets)]
+    with ThreadPool(threads) as pool:
+        all_alignments = pool.starmap(parametrized_align, zip(queries, targets))
 
     alignments_output = dict()
     for i, alignment in enumerate(all_alignments):

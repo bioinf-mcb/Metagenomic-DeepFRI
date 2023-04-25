@@ -147,7 +147,8 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
                         output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
                         angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
                         mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_matrix: str,
-                        alignment_gap_open: float, alignment_gap_continuation: float, alignment_min_identity: float):
+                        alignment_gap_open: float, alignment_gap_continuation: float, alignment_min_identity: float,
+                        threads: int):
     """
     Run metagenomic-DeepFRI.
     Args:
@@ -187,7 +188,7 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
 
     # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, alignment_matrix,
-                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity)
+                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
 
     unaligned_queries = query_seqs.keys() - alignments.keys()
 

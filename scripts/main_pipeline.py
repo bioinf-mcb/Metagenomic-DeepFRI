@@ -86,12 +86,12 @@ def parse_args():
                         default=0.5,
                         type=float,
                         help="Minimum sequence identity for pairwise sequence alignment.")
-    # parser.add_argument("-t",
-    #                     "--threads",
-    #                     required=False,
-    #                     default=1,
-    #                     type=int,
-    #                     help="Number of threads to use for parallel processing.")
+    parser.add_argument("-t",
+                        "--threads",
+                        required=False,
+                        default=1,
+                        type=int,
+                        help="Number of threads to use for parallel processing.")
 
     return parser.parse_args()
 
@@ -112,7 +112,7 @@ def main():
                         args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts,
                         args.mmseqs_min_bit_score, args.mmseqs_max_evalue, args.mmseqs_min_identity,
                         args.alignment_matrix, args.alignment_gap_open, args.alignment_gap_extend,
-                        args.alignment_min_identity)
+                        args.alignment_min_identity, args.threads)
 
 
 if __name__ == '__main__':
