@@ -30,8 +30,9 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser', 'sphinxawesome_theme', 'sphinx.ext.intersphinx', 'sphinx.ext.duration', 'sphinx.ext.doctest',
-    'sphinx.ext.autodoc', 'sphinxcontrib.bibtex'
+    'myst_parser', 'sphinxawesome_theme', 'sphinx.ext.intersphinx',
+    'sphinx.ext.duration', 'sphinx.ext.doctest', 'sphinx.ext.autodoc',
+    'sphinxcontrib.bibtex'
 ]
 
 bibtex_bibfiles = ['_static/references.bib']
@@ -107,7 +108,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Metagenomic-DeepFri.tex', 'Metagenomic-DeepFri Documentation', 'P. Kucharski & V. Bezshapkin',
+    (master_doc, 'Metagenomic-DeepFri.tex',
+     'Metagenomic-DeepFri Documentation', 'P. Kucharski & V. Bezshapkin',
      'manual'),
 ]
 
@@ -115,7 +117,8 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, 'metagenomicdeepfri', 'Metagenomic-DeepFri Documentation', [author], 1)]
+man_pages = [(master_doc, 'metagenomicdeepfri',
+              'Metagenomic-DeepFri Documentation', [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -123,6 +126,8 @@ man_pages = [(master_doc, 'metagenomicdeepfri', 'Metagenomic-DeepFri Documentati
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Metagenomic-DeepFri.', 'Metagenomic-DeepFri Documentation', author, 'Metagenomic-DeepFri',
-     'Deep learnsping based functional profiling of metagenomic data.', 'Microbiome'),
+    (master_doc, 'Metagenomic-DeepFri.', 'Metagenomic-DeepFri Documentation',
+     author, 'Metagenomic-DeepFri',
+     'Deep learnsping based functional profiling of metagenomic data.',
+     'Microbiome'),
 ]

@@ -1,11 +1,11 @@
 import json
 import pathlib
 import shlex
-
-import requests
 import shutil
 import subprocess
 import sys
+
+import requests
 
 
 def run_command(command, timeout=-1):
@@ -14,17 +14,24 @@ def run_command(command, timeout=-1):
 
     try:
         if timeout > 0:
-            completed_process = subprocess.run(
-                command, capture_output=True, timeout=timeout, check=True, universal_newlines=True)
+            completed_process = subprocess.run(command,
+                                               capture_output=True,
+                                               timeout=timeout,
+                                               check=True,
+                                               universal_newlines=True)
         else:
-            completed_process = subprocess.run(command, capture_output=True, check=True, universal_newlines=True)
+            completed_process = subprocess.run(command,
+                                               capture_output=True,
+                                               check=True,
+                                               universal_newlines=True)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
 
     except subprocess.CalledProcessError as err:
         raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}") from err
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}"
+        ) from err
 
     return completed_process.stdout
 
@@ -52,7 +59,9 @@ def search_files_in_paths(paths: list, pattern: str):
             files.extend(list(path.glob("**/*" + pattern)))
         else:
             if not path.name.endswith(pattern):
-                print(f"{path} is not an {pattern} file which is excepted format.")
+                print(
+                    f"{path} is not an {pattern} file which is excepted format."
+                )
             else:
                 files.append(path)
     return files
@@ -84,7 +93,8 @@ def load_deepfri_config(filepath_model_config_json: str) -> dict:
 
     # load and replace local paths to files with absolute paths
     with open(filepath_model_config_json, "r") as json_file:
-        json_string = json_file.read().replace("./trained_models", f"{json_filepath.parent}")
+        json_string = json_file.read().replace("./trained_models",
+                                               f"{json_filepath.parent}")
     deepfri_config = json.loads(json_string)
 
     return deepfri_config

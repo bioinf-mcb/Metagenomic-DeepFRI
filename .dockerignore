@@ -1,5 +1,0 @@
-.git/
-.idea/
-__pycache__/
-newest_trained_models.tar.gz
-CPP_lib/cmake-build*

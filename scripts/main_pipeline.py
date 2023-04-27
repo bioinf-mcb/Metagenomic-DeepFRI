@@ -12,11 +12,26 @@ def parse_args():
 
     # logic described here is implemented in parse_input_paths
     parser.add_argument(
-        "-i", "--input", required=True, default=None, help="Filepath to a query protein FASTA files (.faa or .faa.gz)")
-    parser.add_argument("-db", "--db_path", required=True, default=None, help="Database path.")
-    parser.add_argument("-o", "--output_path", required=True, default=None, help="Output directory path.")
-    parser.add_argument(
-        "--output_format", nargs="*", choices=['tsv', 'json', 'csv'], default=['tsv'], help="Output format.")
+        "-i",
+        "--input",
+        required=True,
+        default=None,
+        help="Filepath to a query protein FASTA files (.faa or .faa.gz)")
+    parser.add_argument("-db",
+                        "--db_path",
+                        required=True,
+                        default=None,
+                        help="Database path.")
+    parser.add_argument("-o",
+                        "--output_path",
+                        required=True,
+                        default=None,
+                        help="Output directory path.")
+    parser.add_argument("--output_format",
+                        nargs="*",
+                        choices=['tsv', 'json', 'csv'],
+                        default=['tsv'],
+                        help="Output format.")
 
     # DeepFRI parameters
     parser.add_argument(
@@ -24,7 +39,9 @@ def parse_args():
         "--weights",
         required=False,
         default="trained_models",
-        help="Path to a folder containing downloaded deepfri weights and model_config.json.")
+        help=
+        "Path to a folder containing downloaded deepfri weights and model_config.json."
+    )
     parser.add_argument("--processing_modes", nargs="*", choices=['mf', 'bp', 'cc', 'ec'],
                         default=['mf', 'bp', 'cc', 'ec'],
                         help="DeepFRI processing modes. mf - molecular function, " \
@@ -32,52 +49,57 @@ def parse_args():
                             "ec - enzyme comission.")
 
     # Contact map alignment parameters
-    parser.add_argument(
-        "--angstrom_contact_thresh", required=False, default=6, type=int, help="Angstrom contact threshold.")
-    parser.add_argument(
-        "--generate_contacts", required=False, default=2, type=int, help="Gap fill during contact map alignment.")
+    parser.add_argument("--angstrom_contact_thresh",
+                        required=False,
+                        default=6,
+                        type=int,
+                        help="Angstrom contact threshold.")
+    parser.add_argument("--generate_contacts",
+                        required=False,
+                        default=2,
+                        type=int,
+                        help="Gap fill during contact map alignment.")
 
     # MMSeqs2 parameters
-    parser.add_argument(
-        "--mmseqs_min_bit_score",
-        required=False,
-        default=None,
-        type=float,
-        help="Minimum bit score for MMSeqs2 search.")
-    parser.add_argument(
-        "--mmseqs_max_evalue", required=False, default=None, type=float, help="Maximum e-value for MMSeqs2 search.")
-    parser.add_argument(
-        "--mmseqs_min_identity",
-        required=False,
-        default=0.5,
-        type=float,
-        help="Minimum sequence identity for MMSeqs2 search.")
+    parser.add_argument("--mmseqs_min_bit_score",
+                        required=False,
+                        default=None,
+                        type=float,
+                        help="Minimum bit score for MMSeqs2 search.")
+    parser.add_argument("--mmseqs_max_evalue",
+                        required=False,
+                        default=None,
+                        type=float,
+                        help="Maximum e-value for MMSeqs2 search.")
+    parser.add_argument("--mmseqs_min_identity",
+                        required=False,
+                        default=0.5,
+                        type=float,
+                        help="Minimum sequence identity for MMSeqs2 search.")
 
     # Pairwise alignment parameters
     parser.add_argument(
-        "--alignment_match", required=False, default=2, type=float, help="Match score for pairwise sequence alignment.")
-    parser.add_argument(
-        "--alignment_missmatch",
+        "--alignment_matrix",
         required=False,
-        default=-1,
-        type=float,
-        help="Missmatch score for pairwise sequence alignment.")
+        default="blosum62",
+        type=str,
+        help="Substitution matrix for pairwise sequence alignment.")
     parser.add_argument(
         "--alignment_gap_open",
         required=False,
-        default=-1,
-        type=float,
-        help="Gap open score for pairwise sequence alignment.")
+        default=11,
+        type=int,
+        help="Gap open score penalty for pairwise sequence alignment.")
     parser.add_argument(
-        "--alignment_gap_continuation",
+        "--alignment_gap_extend",
         required=False,
-        default=-0.1,
-        type=float,
-        help="Gap continuation score for pairwise sequence alignment.")
+        default=1,
+        type=int,
+        help="Gap continuation score penalty for pairwise sequence alignment.")
     parser.add_argument(
         "--alignment_min_identity",
         required=False,
-        default=0.3,
+        default=0.5,
         type=float,
         help="Minimum sequence identity for pairwise sequence alignment.")
     parser.add_argument(
@@ -92,21 +114,18 @@ def parse_args():
 
 
 def main():
-    print("""
-    If you use this software please cite:
-    - Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
-    - Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. https://doi.org/10.1038/nbt.3988
-    - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
-    - Cock et al. "Biopython: freely available Python tools for computational molecular biology and bioinformatics" Bioinformatics (2009) https://doi.org/10.1093/bioinformatics/btp163
-    """)
+
     args = parse_args()
     output_path = Path(args.output_path)
     output_path.mkdir(parents=True, exist_ok=True)
-    metagenomic_deepfri(
-        Path(args.input), Path(args.db_path), Path(args.weights), output_path, args.output_format,
-        args.processing_modes, args.angstrom_contact_thresh, args.generate_contacts, args.mmseqs_min_bit_score,
-        args.mmseqs_max_evalue, args.mmseqs_min_identity, args.alignment_match, args.alignment_missmatch,
-        args.alignment_gap_open, args.alignment_gap_continuation, args.alignment_min_identity, args.threads)
+
+    metagenomic_deepfri(Path(args.input), Path(args.db_path), Path(
+        args.weights), output_path, args.output_format, args.processing_modes,
+                        args.angstrom_contact_thresh, args.generate_contacts,
+                        args.mmseqs_min_bit_score, args.mmseqs_max_evalue,
+                        args.mmseqs_min_identity, args.alignment_matrix,
+                        args.alignment_gap_open, args.alignment_gap_extend,
+                        args.alignment_min_identity, args.threads)
 
 
 if __name__ == '__main__':

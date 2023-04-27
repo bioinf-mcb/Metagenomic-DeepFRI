@@ -1,0 +1,26 @@
+[tool.ruff]
+line-length = 120
+
+[tool.yapf]
+based_on_style = "yapf"
+spaces_before_comment = 4
+split_before_logical_operator = true
+column_limit = 120
+parallel = true
+indent_width = 4
+in_place = true
+exclude = [
+    "tests/",
+    "docs/",
+    "*.faa",
+    "*.pdb"
+    ]
+
+[tool.mypy]
+exclude = [
+    "tests/",
+    "docs/"
+    ]
+
+[tool.pytest.ini_options]
+addopts = "--ignore=boost_1_81_0"
