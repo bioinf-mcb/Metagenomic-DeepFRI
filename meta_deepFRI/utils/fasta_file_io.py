@@ -2,19 +2,22 @@ import pathlib
 
 from pysam.libcfaidx import FastxFile
 
-from meta_deepFRI.config.names import SEQUENCES, ATOMS
+from meta_deepFRI.config.names import ATOMS, SEQUENCES
 
 
 class SeqFileLoader:
-
     def __init__(self, path):
         self.path = pathlib.Path(path)
 
     def __getitem__(self, target_id):
-        assert (self.path / SEQUENCES / (target_id + ".faa")).exists(), f"Target database {self.path.name} contains ID for SEQUENCE.faa that is not in the {self.path / SEQUENCES / (target_id + '.faa')}. " \
-                                                                        f"It should not happen. Please create new target database."
-        assert (self.path / ATOMS / (target_id + ".bin")).exists(), f"Target database {self.path.name} contains ID to ATOM.bin that is not in the {self.path / ATOMS / (target_id + '.bin')}. " \
-                                                                    f"It should not happen. Please create new target database."
+        protein_file = (self.path / SEQUENCES / (target_id + ".faa"))
+        structure_file = (self.path / ATOMS / (target_id + ".bin"))
+        assert protein_file.exists(), f"Target database {self.path.name} does not contain sequence" \
+                                      f"{self.path / SEQUENCES / (target_id + '.faa')}. " \
+                                      "It should not happen. Please create new target database."
+        assert structure_file.exists(), f"Target database {self.path.name} does not contain structure" \
+                                        f"{self.path / ATOMS / (target_id + '.bin')}. " \
+                                        "It should not happen. Please create new target database."
 
         with FastxFile(self.path / SEQUENCES / (target_id + ".faa"), "r") as f:
             sequence = [record.sequence for record in f][0]

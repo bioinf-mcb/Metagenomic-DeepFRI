@@ -2,21 +2,19 @@ import os
 import pathlib
 import sys
 
-from setuptools import find_namespace_packages, setup, Extension
+from setuptools import Extension, find_namespace_packages, setup
 from setuptools.command.build_ext import build_ext as build_ext_orig
 
 # TODO: Add __init__.py file to meta_deepFRI/DeepFRI/
 
 
 class CMakeExtension(Extension):
-
     def __init__(self, name):
         # don't invoke the original build_ext for this special extension
         super().__init__(name, sources=[])
 
 
 class build_ext(build_ext_orig):
-
     def run(self):
         for ext in self.extensions:
             self.build_cmake(ext)
@@ -34,12 +32,14 @@ class build_ext(build_ext_orig):
 
         # example of cmake args
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        python_include_path = str(pathlib.Path(
-            sys.executable).parent.parent.absolute()) + f'/include/python{python_version}/'
+        python_include_path = str(
+            pathlib.Path(sys.executable).parent.parent.absolute()
+        ) + f'/include/python{python_version}/'
 
         config = 'Debug' if self.debug else 'Release'
         cmake_args = [
-            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + str(extdir.parent.absolute()),
+            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
+            str(extdir.parent.absolute()),
             '-DPY_INCLUDE_PATH=' + python_include_path,
             '-DCMAKE_BUILD_TYPE=' + config,
         ]
@@ -59,9 +59,11 @@ class build_ext(build_ext_orig):
 setup(
     name="meta_deepFRI",
     version="0.2.0",
-    description="Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
+    description=
+    "Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
     author="Piotr Kucharski, Valentyn Bezshapkin",
-    author_email="soliareofastorauj@gmail.com, valentyn.bezshapkin@micro.biol.ethz.ch",
+    author_email=
+    "soliareofastorauj@gmail.com, valentyn.bezshapkin@micro.biol.ethz.ch",
     url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     include_package_data=True,

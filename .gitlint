@@ -1,0 +1,24 @@
+[general]
+
+# Enable community contributed rules
+# See http://jorisroovers.github.io/gitlint/contrib_rules for details
+contrib=contrib-title-conventional-commits
+
+# This is an example of how to configure the "title-max-length" rule and
+# set the line-length it enforces to 50
+[title-max-length]
+line-length=80
+
+# Conversely, you can also enforce minimal length of a title with the
+# "title-min-length" rule:
+[title-min-length]
+min-length=15
+
+# [title-must-not-contain-word]
+# Comma-separated list of words that should not occur in the title. Matching is case
+# insensitive. It's fine if the keyword occurs as part of a larger word (so "WIPING"
+# will not cause a violation, but "WIP: my title" will.
+words=wip
+
+# [body-max-line-length]
+line-length=72

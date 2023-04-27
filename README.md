@@ -14,6 +14,7 @@ This is the right project for this task! Pipeline in a nutshell:
 * [DeepFRI](https://github.com/SoliareofAstora/DeepFRI)
 * [MMseqs2](https://github.com/soedinglab/MMseqs2)
 * [Boost.Python](https://www.boost.org/doc/libs/1_75_0/libs/python/doc/html/index.html)
+* [Parasail](https://github.com/jeffdaily/parasail)
 
 # Installation
 
@@ -102,6 +103,12 @@ Sometimes results from one model can be missing which means that all query prote
    cc = cellular_component
    ec = enzyme_commission
    ```
+## Citations
+If you use this software please cite:
+    - Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
+    - Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. https://doi.org/10.1038/nbt.3988
+    - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
+    - Daily "Parasail: SIMD C library for global, semi-global, and local pairwise sequence alignments" BMC Bioinform. (2016) https://doi.org/10.1186/s12859-016-0930-z
 
 ## Contributing
 

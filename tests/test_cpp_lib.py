@@ -1,6 +1,9 @@
 from typing import Callable
 
-from meta_deepFRI.CPP_lib.libAtomDistanceIO import initialize, save_atoms, load_contact_map, load_aligned_contact_map
+from meta_deepFRI.CPP_lib.libAtomDistanceIO import (initialize,
+                                                    load_aligned_contact_map,
+                                                    load_contact_map,
+                                                    save_atoms)
 
 
 def error_wrapper(func: Callable, *args, error_contains: str = None):
@@ -17,5 +20,7 @@ def test_functions():
     initialize()
 
     error_wrapper(save_atoms, error_contains="did not match C++ signature")
-    error_wrapper(load_contact_map, error_contains="did not match C++ signature")
-    error_wrapper(load_aligned_contact_map, error_contains="did not match C++ signature")
+    error_wrapper(load_contact_map,
+                  error_contains="did not match C++ signature")
+    error_wrapper(load_aligned_contact_map,
+                  error_contains="did not match C++ signature")

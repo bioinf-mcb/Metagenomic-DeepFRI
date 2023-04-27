@@ -1,15 +1,18 @@
-import numpy as np
+from io import TextIOWrapper
 from typing import Tuple
 
+import numpy as np
 
-def parse_pdb(file: str) -> Tuple[list, np.ndarray, np.ndarray]:
+
+def parse_pdb(
+        file: TextIOWrapper) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Parse a PDB file.
 
     Args:
-        file (str): Path to a file.
+        file (TextIOWrapper): Open file instance.
 
     Returns:
-        sequence (list): Aminoacid sequence
+        sequence (list): Aminoacid sequence.
     """
     sequence = []
     positions = []
@@ -33,11 +36,20 @@ def parse_pdb(file: str) -> Tuple[list, np.ndarray, np.ndarray]:
     return sequence, positions, groups
 
 
-def parse_mmcif(file):
+def parse_mmcif(
+        file: TextIOWrapper) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Parse a mmCIF file.
+
+    Args:
+        file (TextIOWrapper): Open file instance.
+
+    Returns:
+        sequence (np.array): Aminoacid sequence.
+        positions (np.array): Positions of the atoms.
+        groups (np.array): Groups of the atoms.
+    """
+
     n_atoms = -1
-    sequence = []
-    positions = []
-    groups = []
 
     label_counter = -1
     line = file.readline()
@@ -85,7 +97,8 @@ def parse_mmcif(file):
                 atom = line.split()
                 if len(atom[residue]) == 3 and atom[atom_symbol] != "H":
                     sequence[index] = atom[residue]
-                    groups[index] = ''.join([atom[assembly], atom[sequence_id]])
+                    groups[index] = ''.join(
+                        [atom[assembly], atom[sequence_id]])
                     positions[index][0] = atom[x]
                     positions[index][1] = atom[y]
                     positions[index][2] = atom[z]

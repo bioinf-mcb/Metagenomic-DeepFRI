@@ -10,15 +10,21 @@ RESULTS = 'test_results'
 
 
 def execute_command(command):
-    process = subprocess.run(command.split(), check=False, capture_output=True, text=True)
+    process = subprocess.run(command.split(),
+                             check=False,
+                             capture_output=True,
+                             text=True)
     if process.returncode != 0:
-        raise RuntimeError(f'Command {command} failed with exit code {process.returncode}\n{process.stderr}')
+        raise RuntimeError(
+            f'Command {command} failed with exit code {process.returncode}\n{process.stderr}'
+        )
     return process.stdout, process.stderr
 
 
 @pytest.fixture
 def deepfri_database():
-    stdout, stderr = execute_command(f'deepfri_db_build -i {INPUT_STRUCTURES} -o {OUTPUT_DATABASE}')
+    stdout, stderr = execute_command(
+        f'deepfri_db_build -i {INPUT_STRUCTURES} -o {OUTPUT_DATABASE}')
     print(stdout)
 
 
@@ -28,7 +34,8 @@ def test_database(deepfri_database):
 
 @pytest.fixture
 def deepri_results(deepfri_database):
-    stdout, stderr = execute_command(f"deepfri -i {QUERY_FILE} -db {OUTPUT_DATABASE} -o {RESULTS}")
+    stdout, stderr = execute_command(
+        f"deepfri -i {QUERY_FILE} -db {OUTPUT_DATABASE} -o {RESULTS}")
     print(stdout)
 
 

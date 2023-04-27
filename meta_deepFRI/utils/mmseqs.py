@@ -1,13 +1,16 @@
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pandas as pd
 
-from meta_deepFRI.config.names import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME, MMSEQS_SEARCH_RESULTS
-from meta_deepFRI.utils.utils import run_command, merge_files_binary
+from meta_deepFRI.config.names import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
+                                       TARGET_MMSEQS_DB_NAME)
+from meta_deepFRI.utils.utils import merge_files_binary, run_command
 
 MMSEQS_COLUMN_NAMES = [
-    "query", "target", "identity", "alignment_length", "mismatches", "gap_openings", "query_start", "query_end",
-    "target_start", "target_end", "e_value", "bit_score"
+    "query", "target", "identity", "alignment_length", "mismatches",
+    "gap_openings", "query_start", "query_end", "target_start", "target_end",
+    "e_value", "bit_score"
 ]
 
 
@@ -34,11 +37,13 @@ def createindex(db_path):
 
 def search(query_db, target_db, result_db):
     with tempfile.TemporaryDirectory() as tmp_path:
-        run_command(f"mmseqs search {query_db} {target_db} {result_db} {tmp_path}")
+        run_command(
+            f"mmseqs search {query_db} {target_db} {result_db} {tmp_path}")
 
 
 def convertalis(query_db, target_db, result_db, output_file):
-    run_command(f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
+    run_command(
+        f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
 
 
 def create_target_database(seq_atoms_path: Path, new_db_path: Path) -> None:
@@ -50,16 +55,19 @@ def create_target_database(seq_atoms_path: Path, new_db_path: Path) -> None:
     :return:
     """
     sequence_files = list((seq_atoms_path).glob("**/*.faa"))
-    print("\nMerging " + str(len(sequence_files)) + " sequence files for mmseqs2")
+    print("\nMerging " + str(len(sequence_files)) +
+          " sequence files for mmseqs2")
     merge_files_binary(sequence_files, seq_atoms_path / MERGED_SEQUENCES)
 
     print("Creating new target mmseqs2 database " + str(new_db_path))
-    createdb(seq_atoms_path / MERGED_SEQUENCES, new_db_path / TARGET_MMSEQS_DB_NAME)
+    createdb(seq_atoms_path / MERGED_SEQUENCES,
+             new_db_path / TARGET_MMSEQS_DB_NAME)
     print("Indexing new target mmseqs2 database " + str(new_db_path))
     createindex(new_db_path / TARGET_MMSEQS_DB_NAME)
 
 
-def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path, min_bit_score: float, max_evalue: float,
+def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path,
+                      min_bit_score: float, max_evalue: float,
                       min_identity: float) -> pd.DataFrame:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 

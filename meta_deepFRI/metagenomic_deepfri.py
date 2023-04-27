@@ -1,26 +1,25 @@
 import json
+import logging
 import os.path
 import pathlib
-import logging
-
-from typing import Tuple, List
+from typing import List, Tuple
 
 from pysam.libcfaidx import FastxFile
 
-from meta_deepFRI.config.names import ATOMS
+from meta_deepFRI.config.names import (ATOMS, SEQ_ATOMS_DATASET_PATH,
+                                       TARGET_MMSEQS_DB_NAME)
+from meta_deepFRI.CPP_lib import \
+    libAtomDistanceIO  # type: ignore[attr-defined]
 from meta_deepFRI.DeepFRI.deepfrier import Predictor
-
-from meta_deepFRI.CPP_lib import libAtomDistanceIO
-from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
-
 from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
-from meta_deepFRI.utils.utils import load_deepfri_config
-from meta_deepFRI.utils.search_alignments import search_alignments
 from meta_deepFRI.utils.mmseqs import run_mmseqs_search
+from meta_deepFRI.utils.search_alignments import search_alignments
+from meta_deepFRI.utils.utils import load_deepfri_config
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +41,9 @@ logger = logging.getLogger(__name__)
 ###########################################################################
 
 
-def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
-                 output_path: pathlib.Path) -> Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]:
+def check_inputs(
+    query_file: pathlib.Path, database: pathlib.Path, output_path: pathlib.Path
+) -> Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]:
     """
     Check if input files and directories exist and are valid. Filters out proteins that are too long
     or too short.
@@ -68,9 +68,11 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
         query_seqs = {record.name: record.sequence for record in fasta}
 
     if len(query_seqs) == 0:
-        raise ValueError(f"{query_file} does not contain parsable protein sequences.")
+        raise ValueError(
+            f"{query_file} does not contain parsable protein sequences.")
 
-    logging.info("Found total of %i protein sequences in %s", len(query_seqs), query_file)
+    logging.info("Found total of %i protein sequences in %s", len(query_seqs),
+                 query_file)
 
     with open(database / "db_params.json", "r", encoding="utf-8") as f:
         MAX_PROTEIN_LENGTH = json.load(f)["MAX_PROTEIN_LENGTH"]
@@ -85,20 +87,26 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
         query_seqs.pop(outlier)
 
     if len(prot_len_outliers) > 0:
-        logging.info("Skipping %i proteins due to sequence length outside range %i-%i aa.", len(prot_len_outliers),
-                     MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
+        logging.info(
+            "Skipping %i proteins due to sequence length outside range %i-%i aa.",
+            len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
                      "metadata_skipped_ids_length.json")
         json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json', "w", encoding="utf-8"),
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json',
+                       "w",
+                       encoding="utf-8"),
                   indent=4,
                   sort_keys=True)
         if len(query_seqs) == 0:
-            logging.info("All sequences in %s were too long. No sequences will be processed.", query_file)
+            logging.info(
+                "All sequences in %s were too long. No sequences will be processed.",
+                query_file)
 
     # Verify all the files for MMSeqs2 database
     mmseqs2_ext = [
-        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx", ".idx.index", ".idx.dbtype", ".lookup", ".source"
+        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx",
+        ".idx.index", ".idx.dbtype", ".lookup", ".source"
     ]
 
     if os.path.isfile(database / TARGET_MMSEQS_DB_NAME):
@@ -106,7 +114,8 @@ def check_inputs(query_file: pathlib.Path, database: pathlib.Path,
         for ext in mmseqs2_ext:
             assert os.path.isfile(f"{target_db}{ext}")
     else:
-        raise FileNotFoundError("MMSeqs2 database appears to be corrupted. Please, rebuild it.")
+        raise FileNotFoundError(
+            "MMSeqs2 database appears to be corrupted. Please, rebuild it.")
 
     target_seqs = SeqFileLoader(database / SEQ_ATOMS_DATASET_PATH)
 
@@ -124,10 +133,12 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
     """
 
     assert weights.exists(), f"DeepFRI weights not found at {weights}"
-    assert weights.is_dir(), f"DeepFRI weights should be a directory, not a file."
+    assert weights.is_dir(
+    ), "DeepFRI weights should be a directory, not a file."
 
     config_path = weights / "model_config.json"
-    assert config_path.exists(), f"DeepFRI weights are missing model_config.json"
+    assert config_path.exists(
+    ), "DeepFRI weights are missing model_config.json"
 
     with open(config_path, "r", encoding="utf-8") as f:
         models_config = json.load(f)
@@ -135,20 +146,27 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
     for net in ["cnn", "gcn"]:
         for model_type, model_path in models_config[net]["models"].items():
             model_name = weights / (pathlib.Path(model_path).name + ".hdf5")
-            config_name = weights / (pathlib.Path(model_path).name + "_model_params.json")
-            assert model_name.exists(), f"DeepFRI weights are missing {model_type} model at {model_name}"
-            assert config_name.exists(), f"DeepFRI weights are missing {model_type} model config at {config_name}"
+            config_name = weights / (pathlib.Path(model_path).name +
+                                     "_model_params.json")
+            assert model_name.exists(
+            ), f"DeepFRI weights are missing {model_type} model at {model_name}"
+            assert config_name.exists(
+            ), f"DeepFRI weights are missing {model_type} model config at {config_name}"
 
     return config_path
 
 
 ## TODO: structure output folder
-def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weights: pathlib.Path,
-                        output_path: pathlib.Path, output_format: List[str], deepfri_processing_modes: List[str],
-                        angstrom_contact_threshold: float, generate_contacts: int, mmseqs_min_bit_score: float,
-                        mmseqs_max_eval: float, mmseqs_min_identity: float, alignment_matrix: str,
-                        alignment_gap_open: float, alignment_gap_continuation: float, alignment_min_identity: float,
-                        threads: int):
+def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
+                        weights: pathlib.Path, output_path: pathlib.Path,
+                        output_format: List[str],
+                        deepfri_processing_modes: List[str],
+                        angstrom_contact_threshold: float,
+                        generate_contacts: int, mmseqs_min_bit_score: float,
+                        mmseqs_max_eval: float, mmseqs_min_identity: float,
+                        alignment_matrix: str, alignment_gap_open: float,
+                        alignment_gap_continuation: float,
+                        alignment_min_identity: float, threads: int):
     """
     Run metagenomic-DeepFRI.
     Args:
@@ -176,19 +194,25 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
     logging.info("Starting metagenomic-DeepFRI.")
     model_config_json = check_deepfri_weights(weights)
 
-    query_file, query_seqs, target_db, target_seqs = check_inputs(query_file, database, output_path)
+    query_file, query_seqs, target_db, target_seqs = check_inputs(
+        query_file, database, output_path)
 
-    logging.info("Running metagenomic-DeepFRI for %i sequences", len(query_seqs))
+    logging.info("Running metagenomic-DeepFRI for %i sequences",
+                 len(query_seqs))
     logging.info("Running MMSeqs2 search for the query against database")
-    mmseqs_search_output = run_mmseqs_search(query_file, target_db, output_path, mmseqs_min_bit_score, mmseqs_max_eval,
+    mmseqs_search_output = run_mmseqs_search(query_file, target_db,
+                                             output_path, mmseqs_min_bit_score,
+                                             mmseqs_max_eval,
                                              mmseqs_min_identity)
 
     mmseqs2_found_proteins = mmseqs_search_output.shape[0]
     logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
-    # format: alignments[query_id] = {target_id, identity, alignment[seqA = query_seq, seqB = target_seq, score, start, end]}
-    alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, alignment_matrix,
-                                   alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
+    alignments = search_alignments(query_seqs, mmseqs_search_output,
+                                   target_seqs, output_path, alignment_matrix,
+                                   alignment_gap_open,
+                                   alignment_gap_continuation,
+                                   alignment_min_identity, threads)
 
     unaligned_queries = query_seqs.keys() - alignments.keys()
 
@@ -219,14 +243,16 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path, weight
                 target_id = alignment["target_id"]
 
                 generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
-                    str(database / SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
+                    str(database / SEQ_ATOMS_DATASET_PATH / ATOMS /
+                        (target_id + ".bin")),
                     angstrom_contact_threshold,
                     alignment["query_sequence"],  # query alignment
                     alignment["target_sequence"],  # target alignment
                     generate_contacts)
 
                 # conversion of cmap to an adequate format
-                cmap = generated_query_contact_map.reshape(1, *generated_query_contact_map.shape) * 1
+                cmap = generated_query_contact_map.reshape(
+                    1, *generated_query_contact_map.shape) * 1
 
                 # running the actual prediction
                 gcn.predict_with_cmap(query_seq, cmap, query_id)

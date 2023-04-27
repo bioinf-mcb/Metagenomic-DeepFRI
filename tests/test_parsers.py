@@ -1,14 +1,17 @@
-import numpy as np
 import gzip
 import pathlib
+
+import numpy as np
 import pytest
 
-from meta_deepFRI.structure_files.parsers import parse_pdb, parse_mmcif
+from meta_deepFRI.structure_files.parsers import parse_mmcif, parse_pdb
 
 
 @pytest.fixture
 def pdb_file():
-    test_file = pathlib.Path(__file__).parent / "data" / "structures" / "AF-A0A2Z5TJB0-F1-model_v4.pdb.gz"
+    test_file = pathlib.Path(
+        __file__
+    ).parent / "data" / "structures" / "AF-A0A2Z5TJB0-F1-model_v4.pdb.gz"
     return gzip.open(test_file, "rt")
 
 
@@ -37,7 +40,8 @@ def test_parse_pdb_lengths(pdb_file):
 
 @pytest.fixture
 def mmcif_file():
-    test_file = pathlib.Path(__file__).parent / "data" / "structures" / "6a0j.cif.gz"
+    test_file = pathlib.Path(
+        __file__).parent / "data" / "structures" / "6a0j.cif.gz"
     return gzip.open(test_file, "rt")
 
 

@@ -39,7 +39,9 @@ def test_protein_letters():
 def test_load_deepfri_config(tmp_path):
     """Test load_deepfri_config() function."""
     tmp_json_file = tmp_path / "model_config.json"
-    tmp_json_file.write_text('{"model1": "./trained_models/model1.h5", "model2": "./trained_models/model2.h5"}')
+    tmp_json_file.write_text(
+        '{"model1": "./trained_models/model1.h5", "model2": "./trained_models/model2.h5"}'
+    )
 
     config = utils.load_deepfri_config(str(tmp_json_file))
 

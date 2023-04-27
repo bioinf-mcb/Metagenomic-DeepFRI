@@ -6,9 +6,10 @@ import traceback
 
 import numpy as np
 
-from meta_deepFRI.CPP_lib import libAtomDistanceIO
-from meta_deepFRI.structure_files.parsers import parse_pdb, parse_mmcif
-from meta_deepFRI.config.names import SEQUENCES, ATOMS
+from meta_deepFRI.config.names import ATOMS, SEQUENCES
+from meta_deepFRI.CPP_lib import \
+    libAtomDistanceIO  # type: ignore[attr-defined]
+from meta_deepFRI.structure_files.parsers import parse_mmcif, parse_pdb
 from meta_deepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a file name pattern with a parser in this dict.
@@ -51,12 +52,19 @@ def search_structure_files(input_paths: list):
         elif input_path.is_dir():
             files_inside_input_path = list(input_path.glob("**/*"))
             for pattern in PARSERS:
-                structure_file_paths = list(filter(lambda x: str(x).endswith(pattern), files_inside_input_path))
+                structure_file_paths = list(
+                    filter(lambda x: str(x).endswith(pattern),
+                           files_inside_input_path))
                 if len(structure_file_paths) == 0:
                     continue
-                print(f"\tFound {len(structure_file_paths)} {pattern} files in {input_path}")
-                structure_file_ids = [x.name[:-len(pattern)] for x in structure_file_paths]
-                structure_files_paths.update(zip(structure_file_ids, structure_file_paths))
+                print(
+                    f"\tFound {len(structure_file_paths)} {pattern} files in {input_path}"
+                )
+                structure_file_ids = [
+                    x.name[:-len(pattern)] for x in structure_file_paths
+                ]
+                structure_files_paths.update(
+                    zip(structure_file_ids, structure_file_paths))
         else:
             print(f"\tUnable to find {str(input_path)}")
     return structure_files_paths
@@ -78,10 +86,12 @@ def read_structure_file(file_path: pathlib.Path) -> SeqAtoms:
             f.close()
 
             protein_id = file_path.name.replace(pattern, '')
-            return SeqAtoms(protein_id, atom_amino_group, positions, groups)
+
+    return SeqAtoms(protein_id, atom_amino_group, positions, groups)
 
 
-def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, atoms_path: pathlib.Path,
+def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path,
+                            atoms_path: pathlib.Path,
                             max_target_chain_length: int) -> str:
     """
     Reads the structure file extracting sequence and atom positions.
@@ -90,9 +100,9 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
 
     Saves the extracted data:
         sequence - protein_id.faa file containing single sequence f.write(f">{protein_id}\n{sequence}\n")
-            SEQ_ATOMS_DATASET_PATH / project_name / SEQUENCES / (protein_id + ".faa")
+            SEQ_ATOMS_DATASET_PATH / SEQUENCES / (protein_id + ".faa")
         atom positions - binary file containing positions of all atoms and correlated amino acid chain index
-            SEQ_ATOMS_DATASET_PATH / project_name / ATOMS / (protein_id + ".bin")
+            SEQ_ATOMS_DATASET_PATH / ATOMS / (protein_id + ".bin")
             For more information on how those binary are saved check out source code at CPP_lib/atoms_file_io.h
 
     Args:
@@ -120,15 +130,22 @@ def save_sequence_and_atoms(seq_atoms: SeqAtoms, sequence_path: pathlib.Path, at
         # and rerun this script with --overwrite to process this file again
         truncated = True
         group_indexes = groups_index[:max_target_chain_length]
-        group_indexes = np.append(group_indexes, groups_index[max_target_chain_length]).astype(np.int32)
+        group_indexes = np.append(
+            group_indexes,
+            groups_index[max_target_chain_length]).astype(np.int32)
     else:
-        group_indexes = np.append(groups_index, seq_atoms.positions.shape[0]).astype(np.int32)
+        group_indexes = np.append(
+            groups_index, seq_atoms.positions.shape[0]).astype(np.int32)
 
-    sequence = ''.join([bio_utils.PROTEIN_LETTERS[seq_atoms.atom_amino_group[i]] for i in group_indexes[:-1]])
+    sequence = ''.join([
+        bio_utils.PROTEIN_LETTERS[seq_atoms.atom_amino_group[i]]
+        for i in group_indexes[:-1]
+    ])
     with open(sequence_path, "w", encoding="utf-8") as f:
         f.write(f">{seq_atoms.protein_id}\n{sequence}\n")
 
-    libAtomDistanceIO.save_atoms(seq_atoms.positions, group_indexes, str(atoms_path))
+    libAtomDistanceIO.save_atoms(seq_atoms.positions, group_indexes,
+                                 str(atoms_path))
 
     if truncated:
         return f"SUCCESS, but sequences and contact maps got truncated to {max_target_chain_length}"
@@ -158,11 +175,14 @@ def process_structure_file(structure_file, save_path, max_target_chain_length):
     atoms_path.mkdir(parents=True, exist_ok=True)
 
     # process single protein
-    prot_sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id + ".faa")
+    prot_sequence_path = save_path / SEQUENCES / (seq_atoms.protein_id +
+                                                  ".faa")
     prot_atoms_path = save_path / ATOMS / (seq_atoms.protein_id + ".bin")
 
     try:
-        return save_sequence_and_atoms(seq_atoms, prot_sequence_path, prot_atoms_path, max_target_chain_length)
+        return save_sequence_and_atoms(seq_atoms, prot_sequence_path,
+                                       prot_atoms_path,
+                                       max_target_chain_length)
     except Exception:
         print("EXCEPTION DURING FILE PROCESSING ", str(structure_file))
         logging.error(traceback.format_exc())

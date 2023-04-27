@@ -1,15 +1,15 @@
 import json
-from functools import partial
-import pandas as pd
+import logging
 import pathlib
-import parasail
+from functools import partial
 from multiprocessing.pool import ThreadPool
 
-import logging
+import pandas as pd
+import parasail
 
 from meta_deepFRI.config.names import ALIGNMENTS
-from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
 from meta_deepFRI.utils.bio_utils import substitution_matrices
+from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
 
 
 def alignment_sequences_identity(query: str, target: str) -> float:
@@ -42,8 +42,8 @@ def alignment_sequences_identity(query: str, target: str) -> float:
 
 
 # skipped in tests
-def align(query: str, target: str, matrix: parasail.bindings_v2.Matrix, gap_open: int,
-          gap_extend: int) -> parasail.bindings_v2.Result:
+def align(query: str, target: str, matrix: parasail.bindings_v2.Matrix,
+          gap_open: int, gap_extend: int) -> parasail.bindings_v2.Result:
     """
     Align two protein sequences using biopython pairwise2.align.globalms.
 
@@ -63,8 +63,10 @@ def align(query: str, target: str, matrix: parasail.bindings_v2.Matrix, gap_open
     return alignment
 
 
-def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, target_seqs: SeqFileLoader,
-                      output_path: pathlib.Path, matrix: str, alignment_gap_open: float, alignment_gap_extend: float,
+def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame,
+                      target_seqs: SeqFileLoader, output_path: pathlib.Path,
+                      matrix: str, alignment_gap_open: float,
+                      alignment_gap_extend: float,
                       alignment_min_identity: float, threads: int):
 
     # format of output JSON file:
@@ -79,8 +81,10 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
 
     query_seqs_keys = list(query_seqs.keys())
 
-    filtered = mmseqs_search_output[mmseqs_search_output['query'].isin(query_seqs_keys)]
-    logging.info("Filtered %i mmseqs matches", len(mmseqs_search_output) - len(filtered))
+    filtered = mmseqs_search_output[mmseqs_search_output['query'].isin(
+        query_seqs_keys)]
+    logging.info("Filtered %i mmseqs matches",
+                 len(mmseqs_search_output) - len(filtered))
     logging.info("Total alignments to check %i", len(filtered))
 
     queries = list(map(lambda x: query_seqs[x], filtered["query"]))
@@ -94,7 +98,8 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
 
     # align with parasail
     with ThreadPool(threads) as pool:
-        all_alignments = pool.starmap(parametrized_align, zip(queries, targets))
+        all_alignments = pool.starmap(parametrized_align,
+                                      zip(queries, targets))
 
     alignments_output = dict()
     for i, alignment in enumerate(all_alignments):
@@ -102,7 +107,8 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
         query_sequence = alignment.traceback.query
         target_sequence = alignment.traceback.ref
 
-        sequence_identity = alignment_sequences_identity(query_sequence, target_sequence)
+        sequence_identity = alignment_sequences_identity(
+            query_sequence, target_sequence)
 
         if sequence_identity > alignment_min_identity:
             query_id = filtered["query"].iloc[i]
@@ -128,5 +134,8 @@ def search_alignments(query_seqs: dict, mmseqs_search_output: pd.DataFrame, targ
                     "aln_score": alignment.score
                 }
 
-    json.dump(alignments_output, open(alignment_output_json_path, "w", encoding="utf-8"), indent=4, sort_keys=True)
+    json.dump(alignments_output,
+              open(alignment_output_json_path, "w", encoding="utf-8"),
+              indent=4,
+              sort_keys=True)
     return alignments_output
