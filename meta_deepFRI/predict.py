@@ -12,17 +12,21 @@ class Predictor(object):
     """
     Class for loading trained models and computing GO/EC predictions and class activation maps (CAMs).
     """
-    def __init__(self, model_prefix: str, gcn: bool = True):
+    def __init__(self, model_prefix: str, gcn: bool = True, threads: int = 0):
         self.model_prefix = model_prefix
         self.gcn = gcn
+        self.threads = threads
         self._load_model()
         self.prot2goterms = {}
         self.goidx2chains = {}
 
     def _load_model(self):
+        session_options = rt.SessionOptions()
+        session_options.intra_op_num_threads = self.threads
         self.session = rt.InferenceSession(
             self.model_prefix + '.onnx',
             providers=['CUDAExecutionProvider', 'CPUExecutionProvider'],
+            sess_options=session_options,
         )
 
         # load parameters

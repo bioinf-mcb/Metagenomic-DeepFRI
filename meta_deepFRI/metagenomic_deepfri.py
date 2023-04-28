@@ -235,7 +235,7 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
             output_file_name = output_path / f"results_gcn_{mode}"
 
             gcn_params = deepfri_models_config["gcn"]["models"][mode]
-            gcn = Predictor(gcn_params, gcn=True)
+            gcn = Predictor(gcn_params, gcn=True, threads=threads)
 
             for query_id, alignment in alignments.items():
                 logging.info("Predicting %s", query_id)
@@ -270,7 +270,7 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
             output_file_name = output_path / f"results_cnn_{mode}"
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
-            cnn = Predictor(cnn_params, gcn=False)
+            cnn = Predictor(cnn_params, gcn=False, threads=threads)
             for query_id in unaligned_queries:
                 logging.info("Predicting %s", query_id)
                 cnn.predict_function(seqres=query_seqs[query_id],
