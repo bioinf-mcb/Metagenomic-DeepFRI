@@ -1,6 +1,7 @@
-# copied from Biopython to remove dependency
+import numpy as np
 import parasail
 
+# copied from Biopython to remove dependency
 protein_letters_1to3 = {
     "A": "Ala",
     "C": "Cys",
@@ -45,6 +46,28 @@ for k, v in protein_letters_3to1_extended.items():
     PROTEIN_LETTERS[str.upper(k)] = v
 PROTEIN_LETTERS["UNK"] = "X"
 
+
+def seq2onehot(seq):
+    """Create 26-dim embedding"""
+    chars = [
+        '-', 'D', 'G', 'U', 'L', 'N', 'T', 'K', 'H', 'Y', 'W', 'C', 'P', 'V',
+        'S', 'O', 'I', 'E', 'F', 'X', 'Q', 'A', 'B', 'Z', 'R', 'M'
+    ]
+    vocab_size = len(chars)
+    vocab_embed = dict(zip(chars, range(vocab_size)))
+
+    # Convert vocab to one-hot
+    vocab_one_hot = np.zeros((vocab_size, vocab_size), int)
+    for _, val in vocab_embed.items():
+        vocab_one_hot[val, val] = 1
+
+    embed_x = [vocab_embed[v] for v in seq]
+    seqs_x = np.array([vocab_one_hot[j, :] for j in embed_x])
+
+    return seqs_x
+
+
+# parasail martices
 substitution_matrices = {
     "blosum30": parasail.blosum30,
     "blosum35": parasail.blosum35,

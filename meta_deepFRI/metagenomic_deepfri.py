@@ -250,12 +250,9 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
                     alignment["target_sequence"],  # target alignment
                     generate_contacts)
 
-                # conversion of cmap to an adequate format
-                cmap = generated_query_contact_map.reshape(
-                    1, *generated_query_contact_map.shape) * 1
-
                 # running the actual prediction
-                gcn.predict_with_cmap(query_seq, cmap, query_id)
+                gcn.predict_with_cmap(query_seq, generated_query_contact_map,
+                                      query_id)
 
                 if "tsv" in output_format:
                     gcn.export_tsv(output_file_name.with_suffix('.tsv'))
