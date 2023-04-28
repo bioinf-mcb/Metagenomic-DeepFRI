@@ -10,7 +10,7 @@ from meta_deepFRI.config.names import (ATOMS, SEQ_ATOMS_DATASET_PATH,
                                        TARGET_MMSEQS_DB_NAME)
 from meta_deepFRI.CPP_lib import \
     libAtomDistanceIO  # type: ignore[attr-defined]
-from meta_deepFRI.DeepFRI.deepfrier import Predictor
+from meta_deepFRI.predict import Predictor
 from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
 from meta_deepFRI.utils.mmseqs import run_mmseqs_search
 from meta_deepFRI.utils.search_alignments import search_alignments
@@ -145,7 +145,7 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
 
     for net in ["cnn", "gcn"]:
         for model_type, model_path in models_config[net]["models"].items():
-            model_name = weights / (pathlib.Path(model_path).name + ".hdf5")
+            model_name = weights / (pathlib.Path(model_path).name + ".onnx")
             config_name = weights / (pathlib.Path(model_path).name +
                                      "_model_params.json")
             assert model_name.exists(
@@ -235,7 +235,7 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
             output_file_name = output_path / f"results_gcn_{mode}"
 
             gcn_params = deepfri_models_config["gcn"]["models"][mode]
-            gcn = Predictor.Predictor(gcn_params, gcn=True)
+            gcn = Predictor(gcn_params, gcn=True)
 
             for query_id, alignment in alignments.items():
                 logging.info("Predicting %s", query_id)
@@ -251,8 +251,9 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
                     generate_contacts)
 
                 # running the actual prediction
-                gcn.predict_with_cmap(query_seq, generated_query_contact_map,
-                                      query_id)
+                gcn.predict_function(seqres=query_seq,
+                                     cmap=generated_query_contact_map,
+                                     chain=query_id)
 
                 if "tsv" in output_format:
                     gcn.export_tsv(output_file_name.with_suffix('.tsv'))
@@ -269,10 +270,11 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
             output_file_name = output_path / f"results_cnn_{mode}"
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
-            cnn = Predictor.Predictor(cnn_params, gcn=False)
+            cnn = Predictor(cnn_params, gcn=False)
             for query_id in unaligned_queries:
                 logging.info("Predicting %s", query_id)
-                cnn.predict_from_sequence(query_seqs[query_id], query_id)
+                cnn.predict_function(seqres=query_seqs[query_id],
+                                     chain=query_id)
 
             if "tsv" in output_format:
                 cnn.export_tsv(output_file_name.with_suffix('.tsv'))

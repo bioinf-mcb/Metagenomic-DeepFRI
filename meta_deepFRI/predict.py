@@ -7,6 +7,7 @@ import onnxruntime as rt
 from meta_deepFRI.utils.bio_utils import seq2onehot
 
 
+## TODO: do not accumulate predictions, write them out to csv asap to avoid unneccessary RAM usage
 class Predictor(object):
     """
     Class for loading trained models and computing GO/EC predictions and class activation maps (CAMs).
@@ -35,8 +36,8 @@ class Predictor(object):
     def predict_function(
         self,
         seqres: np.ndarray,
-        chain: str,
         cmap: np.ndarray = None,
+        chain: str = "",
     ):
         """
         Computes GO/EC predictions for a single protein chain from sequence and contact map.
