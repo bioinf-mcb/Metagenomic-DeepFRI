@@ -8,7 +8,7 @@ from typing import List
 
 import numpy as np
 
-from mDeepFRI.config.names import SEQ_ATOMS_DATASET_PATH
+from mDeepFRI import SEQ_ATOMS_DATASET_PATH
 from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
 from mDeepFRI.structure_files.parse_structure_file import (
     process_structure_file, search_structure_files)

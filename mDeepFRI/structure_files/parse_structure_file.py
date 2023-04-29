@@ -6,7 +6,7 @@ import traceback
 
 import numpy as np
 
-from mDeepFRI.config.names import ATOMS, SEQUENCES
+from mDeepFRI import ATOMS, SEQUENCES
 from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
 from mDeepFRI.structure_files.parsers import parse_mmcif, parse_pdb
 from mDeepFRI.utils import bio_utils

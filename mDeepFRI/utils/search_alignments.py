@@ -7,7 +7,7 @@ from multiprocessing.pool import ThreadPool
 import pandas as pd
 import parasail
 
-from mDeepFRI.config.names import ALIGNMENTS
+from mDeepFRI import ALIGNMENTS
 from mDeepFRI.utils.bio_utils import substitution_matrices
 from mDeepFRI.utils.fasta_file_io import SeqFileLoader
 

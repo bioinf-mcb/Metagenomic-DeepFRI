@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from mDeepFRI.config.names import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
-                                   TARGET_MMSEQS_DB_NAME)
+from mDeepFRI import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
+                      TARGET_MMSEQS_DB_NAME)
 from mDeepFRI.utils.utils import merge_files_binary, run_command
 
 MMSEQS_COLUMN_NAMES = [

@@ -21,11 +21,11 @@ config_links = [
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/model_config.json"
 ]
 
-# TARGET_MMSEQS_DB_NAME = "targetDB"
-# SEQUENCES = "seq"
-# ATOMS = "atom"
-# SEQ_ATOMS_DATASET_PATH = "seq_atom_db"
+TARGET_MMSEQS_DB_NAME = "targetDB"
+SEQUENCES = "seq"
+ATOMS = "atom"
+SEQ_ATOMS_DATASET_PATH = "seq_atom_db"
 
-# ALIGNMENTS = "alignments.json"
-# MERGED_SEQUENCES = 'merged_sequences.faa'
-# MMSEQS_SEARCH_RESULTS = 'mmseqs2_search_results.m8'
+ALIGNMENTS = "alignments.json"
+MERGED_SEQUENCES = 'merged_sequences.faa'
+MMSEQS_SEARCH_RESULTS = 'mmseqs2_search_results.m8'
