@@ -1,6 +1,6 @@
 import pytest
 
-from meta_deepFRI.utils import bio_utils, utils
+from mDeepFRI.utils import bio_utils, utils
 
 
 def test_protein_letters():

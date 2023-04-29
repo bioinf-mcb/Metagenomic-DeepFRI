@@ -6,11 +6,10 @@ import traceback
 
 import numpy as np
 
-from meta_deepFRI.config.names import ATOMS, SEQUENCES
-from meta_deepFRI.CPP_lib import \
-    libAtomDistanceIO  # type: ignore[attr-defined]
-from meta_deepFRI.structure_files.parsers import parse_mmcif, parse_pdb
-from meta_deepFRI.utils import bio_utils
+from mDeepFRI.config.names import ATOMS, SEQUENCES
+from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
+from mDeepFRI.structure_files.parsers import parse_mmcif, parse_pdb
+from mDeepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a file name pattern with a parser in this dict.
 # read structure_files_parsers/README.md for more information about how to create new parser.

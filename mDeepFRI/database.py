@@ -1,4 +1,3 @@
-import argparse
 import json
 # Create logger
 import logging
@@ -9,13 +8,12 @@ from typing import List
 
 import numpy as np
 
-from meta_deepFRI.config.names import SEQ_ATOMS_DATASET_PATH
-from meta_deepFRI.CPP_lib import \
-    libAtomDistanceIO  # type: ignore[attr-defined]
-from meta_deepFRI.structure_files.parse_structure_file import (
+from mDeepFRI.config.names import SEQ_ATOMS_DATASET_PATH
+from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
+from mDeepFRI.structure_files.parse_structure_file import (
     process_structure_file, search_structure_files)
-from meta_deepFRI.utils.mmseqs import create_target_database
-from meta_deepFRI.utils.utils import shutdown
+from mDeepFRI.utils.mmseqs import create_target_database
+from mDeepFRI.utils.utils import shutdown
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -23,52 +21,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Read structure files from folders --input" \
-                                                 "to extract sequence and atom positions. "
-                                                 "Create and index new --output MMSEQS2 database",
-                                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    # logic described here is implemented in parse_input_paths
-    parser.add_argument(
-        "-i",
-        "--input",
-        nargs='+',
-        required=True,
-        default=None,
-        help="List of folder or file paths containing structure files.")
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        default=None,
-        help="Path to folder where new MMSeqs2 database will be created.")
-
-    parser.add_argument(
-        "-t",
-        "--threads",
-        required=False,
-        default=1,
-        type=int,
-        help=
-        "Number of threads to use. If not provided, the program will use single core."
-    )
-    parser.add_argument(
-        "-max_len",
-        "--max_protein_length",
-        required=False,
-        default=1_000,
-        type=int,
-        help="If protein chain is longer than this value, it will be truncated"
-    )
-
-    # parser.add_argument("--overwrite", action="store_true",
-    #                     help="Flag to override existing sequences and atom positions")
-    return parser.parse_args()
-    # yapf: enable
 
 
 def build_database(
@@ -171,19 +123,3 @@ def build_database(
               indent=4)
 
     create_target_database(seq_atoms_path, output_path)
-
-
-def main() -> None:
-    args = parse_args()
-    input_seqs = [pathlib.Path(seqs) for seqs in args.input]
-    output_path = pathlib.Path(args.output)
-
-    build_database(input_paths=input_seqs,
-                   output_path=output_path,
-                   overwrite=True,
-                   threads=args.threads,
-                   max_protein_length=args.max_protein_length)
-
-
-if __name__ == '__main__':
-    main()

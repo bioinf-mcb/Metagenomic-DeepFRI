@@ -7,9 +7,9 @@ from multiprocessing.pool import ThreadPool
 import pandas as pd
 import parasail
 
-from meta_deepFRI.config.names import ALIGNMENTS
-from meta_deepFRI.utils.bio_utils import substitution_matrices
-from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
+from mDeepFRI.config.names import ALIGNMENTS
+from mDeepFRI.utils.bio_utils import substitution_matrices
+from mDeepFRI.utils.fasta_file_io import SeqFileLoader
 
 
 def alignment_sequences_identity(query: str, target: str) -> float:

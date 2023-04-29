@@ -6,15 +6,14 @@ from typing import List, Tuple
 
 from pysam.libcfaidx import FastxFile
 
-from meta_deepFRI.config.names import (ATOMS, SEQ_ATOMS_DATASET_PATH,
-                                       TARGET_MMSEQS_DB_NAME)
-from meta_deepFRI.CPP_lib import \
-    libAtomDistanceIO  # type: ignore[attr-defined]
-from meta_deepFRI.predict import Predictor
-from meta_deepFRI.utils.fasta_file_io import SeqFileLoader
-from meta_deepFRI.utils.mmseqs import run_mmseqs_search
-from meta_deepFRI.utils.search_alignments import search_alignments
-from meta_deepFRI.utils.utils import load_deepfri_config
+from mDeepFRI.config.names import (ATOMS, SEQ_ATOMS_DATASET_PATH,
+                                   TARGET_MMSEQS_DB_NAME)
+from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
+from mDeepFRI.predict import Predictor
+from mDeepFRI.utils.fasta_file_io import SeqFileLoader
+from mDeepFRI.utils.mmseqs import run_mmseqs_search
+from mDeepFRI.utils.search_alignments import search_alignments
+from mDeepFRI.utils.utils import load_deepfri_config
 
 logging.basicConfig(
     level=logging.DEBUG,

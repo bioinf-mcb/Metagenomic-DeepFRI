@@ -5,7 +5,7 @@ import sys
 from setuptools import Extension, find_namespace_packages, setup
 from setuptools.command.build_ext import build_ext as build_ext_orig
 
-# TODO: Add __init__.py file to meta_deepFRI/DeepFRI/
+from mDeepFRI import __version__
 
 
 class CMakeExtension(Extension):
@@ -57,8 +57,8 @@ class build_ext(build_ext_orig):
 
 
 setup(
-    name="meta_deepFRI",
-    version="0.2.0",
+    name="mDeepFRI",
+    version=__version__,
     description=
     "Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
     author="Piotr Kucharski, Valentyn Bezshapkin",
@@ -69,11 +69,10 @@ setup(
     include_package_data=True,
     entry_points={
         "console_scripts": [
-            "deepfri = scripts.main_pipeline:main",
-            "deepfri_db_build = scripts.build_database:main",
+            "mDeepFRI = mDeepFRI.cli:main",
         ],
     },
-    ext_modules=[CMakeExtension("meta_deepFRI/CPP_lib/library_definition")],
+    ext_modules=[CMakeExtension("mDeepFRI/CPP_lib/library_definition")],
     cmdclass={
         'build_ext': build_ext,
     },

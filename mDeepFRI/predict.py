@@ -4,7 +4,7 @@ import json
 import numpy as np
 import onnxruntime as rt
 
-from meta_deepFRI.utils.bio_utils import seq2onehot
+from mDeepFRI.utils.bio_utils import seq2onehot
 
 
 ## TODO: do not accumulate predictions, write them out to csv asap to avoid unneccessary RAM usage
@@ -15,7 +15,13 @@ class Predictor(object):
     def __init__(self, model_prefix: str, gcn: bool = True, threads: int = 0):
         self.model_prefix = model_prefix
         self.gcn = gcn
-        self.threads = threads
+
+        # Not clear how parameter influences GPU exec
+        if rt.get_device() == 'CPU':
+            self.threads = threads
+        elif rt.get_device() == 'GPU':
+            self.threads = 0
+
         self._load_model()
         self.prot2goterms = {}
         self.goidx2chains = {}
