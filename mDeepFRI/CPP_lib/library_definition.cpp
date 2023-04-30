@@ -11,7 +11,7 @@
 namespace py = boost::python;
 namespace np = py::numpy;
 
-BOOST_PYTHON_MODULE (libAtomDistanceIO) {
+BOOST_PYTHON_MODULE(libAtomDistanceIO) {
   py::def("initialize", Initialize);
   py::def("save_atoms", SaveAtomsFile);
   py::def("load_contact_map", LoadContactMap);
