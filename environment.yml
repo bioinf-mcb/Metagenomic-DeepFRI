@@ -14,5 +14,5 @@ dependencies:
   - pysam>=0.16.0
   - pytest
   - python
-  - cmake>=3.22.1
+  - cmake>=3.19
   - onnxruntime>=1.10
