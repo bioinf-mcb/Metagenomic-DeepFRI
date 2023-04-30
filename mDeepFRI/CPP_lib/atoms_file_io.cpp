@@ -11,35 +11,40 @@ namespace np = py::numpy;
 static void SaveAtomsFile(const np::ndarray &position_array,
                           const np::ndarray &groups_array,
                           const std::string &save_path) {
-  int chain_length = (int)groups_array.shape(0);
-  int *group_indexes = reinterpret_cast<int *>(groups_array.get_data());
-  int atom_count = group_indexes[chain_length - 1];
+  size_t chain_length = (size_t)groups_array.shape(0);
+  uint32_t *group_indexes =
+      reinterpret_cast<uint32_t *>(groups_array.get_data());
+  size_t atom_count = group_indexes[chain_length - 1];
   float *atom_positions = reinterpret_cast<float *>(position_array.get_data());
 
   std::ofstream writer(save_path, std::ios::out | std::ios::binary);
-  writer.write(reinterpret_cast<const char *>(&chain_length), 4);
-  writer.write(reinterpret_cast<const char *>(group_indexes), 4 * chain_length);
-  writer.write(reinterpret_cast<const char *>(atom_positions),
-               4 * atom_count * 3);
+  writer << chain_length << std::endl;
+  writer << group_indexes << std::endl;
+  writer << atom_positions << std::endl;
+
   writer.close();
 };
 
-static std::tuple<int, int *, float *>
-LoadAtomsFile(const std::string &file_path) {
-  std::ifstream reader(file_path, std::ios::in | std::ios::binary);
+static std::tuple<size_t, std::unique_ptr<size_t[]>, std::unique_ptr<float[]>>
+LoadAtomsFile(const std::string &filepath) {
+  std::ifstream reader(filepath, std::ios::in | std::ios::binary);
 
-  int chain_length;
+  size_t chain_length;
   reader.read(reinterpret_cast<char *>(&chain_length), 4);
 
-  int *group_indexes = new int[chain_length];
-  reader.read(reinterpret_cast<char *>(group_indexes), 4 * chain_length);
+  std::unique_ptr<size_t[]> group_indexes =
+      std::make_unique<size_t[]>(chain_length);
+  reader.read(reinterpret_cast<char *>(group_indexes.get()), 4 * chain_length);
 
   chain_length--;
-  int atom_count = group_indexes[chain_length];
+  size_t atom_count = group_indexes[chain_length];
 
-  float *atoms_positions = new float[atom_count * 3];
-  reader.read(reinterpret_cast<char *>(atoms_positions), 4 * atom_count * 3);
+  std::unique_ptr<float[]> atoms_positions =
+      std::make_unique<float[]>(atom_count * 3);
+  reader.read(reinterpret_cast<char *>(atoms_positions.get()),
+              4 * atom_count * 3);
   reader.close();
 
-  return std::make_tuple(chain_length, group_indexes, atoms_positions);
+  return std::make_tuple(chain_length, std::move(group_indexes),
+                         std::move(atoms_positions));
 };

@@ -12,7 +12,7 @@ static void SaveAtomsFile(const np::ndarray &position_array,
                           const np::ndarray &groups_array,
                           const std::string &save_path);
 
-static std::tuple<int, int *, float *>
+static std::tuple<size_t, std::unique_ptr<size_t[]>, std::unique_ptr<float[]>>
 LoadAtomsFile(const std::string &file_path);
 
 #endif
