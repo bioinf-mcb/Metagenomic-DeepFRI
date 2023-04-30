@@ -9,9 +9,21 @@
 #include "python_utils.h"
 
 static float Distance(std::unique_ptr<float[]> &array, int i, int j) {
-  return sqrtf(powf(array[i * 3] - array[j * 3], 2) +
-               powf(array[i * 3 + 1] - array[j * 3 + 1], 2) +
-               powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
+  int xIndex = i * 3;
+  int yIndex = xIndex + 1;
+  int zIndex = xIndex + 2;
+
+  float xDist = array.get()[xIndex] - array.get()[xIndex + 3 * j];
+  float yDist = array.get()[yIndex] - array.get()[yIndex + 3 * j];
+  float zDist = array.get()[zIndex] - array.get()[zIndex + 3 * j];
+
+  float xSquared = xDist * xDist;
+  float ySquared = yDist * yDist;
+  float zSquared = zDist * zDist;
+
+  float distance = std::hypot(xSquared, ySquared, zSquared);
+
+  return distance;
 }
 
 inline bool exists(const std::string &name) {
