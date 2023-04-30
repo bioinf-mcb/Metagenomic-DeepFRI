@@ -1,8 +1,27 @@
+import filecmp
+import pickle
+import tempfile
 from typing import Callable
+
+import numpy as np
+import pytest
 
 from mDeepFRI.CPP_lib.libAtomDistanceIO import (initialize,
                                                 load_aligned_contact_map,
                                                 load_contact_map, save_atoms)
+from mDeepFRI.structure_files.parsers import parse_pdb
+
+
+@pytest.fixture()
+def reference_binary():
+    return "tests/data/1S3P-A.bin"
+
+
+@pytest.fixture()
+def expected_contact_map():
+    with open("tests/data/1S3P-A.bin.cmap.pkl", "rb") as f:
+        expected_contact_map = pickle.load(f)
+    return expected_contact_map
 
 
 def error_wrapper(func: Callable, *args, error_contains: str = None):
@@ -23,3 +42,25 @@ def test_functions():
                   error_contains="did not match C++ signature")
     error_wrapper(load_aligned_contact_map,
                   error_contains="did not match C++ signature")
+
+
+def test_load_contact_map(reference_binary, expected_contact_map):
+    initialize()
+    contact_map_cpp = load_contact_map(reference_binary, 6)
+    assert np.array_equal(contact_map_cpp, expected_contact_map)
+
+
+def test_save_atoms(expected_contact_map):
+    with open("tests/data/structures/1S3P-A.pdb") as f:
+        _, positions, groups = parse_pdb(f)
+    _, group_index = np.unique(groups, return_index=True)
+    group_index = np.sort(group_index)
+    group_indexes = np.append(group_index, positions.shape[0]).astype(np.int32)
+    initialize()
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        save_atoms(positions, group_indexes, tmpdirname + "/1S3P-A.bin")
+        assert filecmp.cmp(tmpdirname + "/1S3P-A.bin", "tests/data/1S3P-A.bin")
+
+
+def test_load_aligned_contact_map():
+    pass
