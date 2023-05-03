@@ -8,6 +8,7 @@
 #include "load_contact_maps.h"
 #include "python_utils.h"
 
+<<<<<<< HEAD
 static float Distance(std::unique_ptr<float[]> &array, int i, int j) {
   int xIndex = i * 3;
   int yIndex = xIndex + 1;
@@ -24,6 +25,12 @@ static float Distance(std::unique_ptr<float[]> &array, int i, int j) {
   float distance = std::hypot(xSquared, ySquared, zSquared);
 
   return distance;
+=======
+static float Distance(float *array, int i, int j) {
+  return sqrtf(powf(array[i * 3] - array[j * 3], 2) +
+               powf(array[i * 3 + 1] - array[j * 3 + 1], 2) +
+               powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
+>>>>>>> parent of 0fb39b6... refractor: atoms_file_io
 }
 
 inline bool exists(const std::string &name) {
@@ -34,7 +41,10 @@ inline bool exists(const std::string &name) {
 static std::pair<bool *, int>
 LoadDenseContactMap(const std::string &file_path,
                     const float angstrom_contact_threshold) {
-  auto [chain_length, group_indexes, atoms_positions] =
+  int chain_length;
+  int *group_indexes;
+  float *atoms_positions;
+  std::tie(chain_length, group_indexes, atoms_positions) =
       LoadAtomsFile(file_path);
 
   // allocate output array
@@ -67,21 +77,26 @@ LoadDenseContactMap(const std::string &file_path,
     }
   }
 
+  delete[] group_indexes;
+  delete[] atoms_positions;
   return std::make_pair(output_data, chain_length);
 }
 
 static std::vector<std::pair<int, int>> *
 LoadSparseContactMap(const std::string &file_path,
                      const float angstrom_contact_threshold) {
-
-  auto [chain_length, group_indexes, atoms_positions] =
-      LoadAtomsFile(file_path);
+  int chain_length;
+  int *group_indexes;
+  float *atoms_positions;
 
   // verbose error if file_path doesn't exist
   if (!exists(file_path)) {
     std::cout << "Error: file " << file_path << " doesn't exist" << std::endl;
     return nullptr;
   }
+
+  std::tie(chain_length, group_indexes, atoms_positions) =
+      LoadAtomsFile(file_path);
 
   // fill up vector with sparse atom contacts
   auto *sparse_contacts = new std::vector<std::pair<int, int>>();
@@ -109,6 +124,8 @@ LoadSparseContactMap(const std::string &file_path,
     }
   }
 
+  delete[] group_indexes;
+  delete[] atoms_positions;
   return sparse_contacts;
 }
 
