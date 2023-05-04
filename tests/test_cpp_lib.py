@@ -6,10 +6,11 @@ from typing import Callable
 import numpy as np
 import pytest
 
+from mDeepFRI.CPP_lib import atoms_io
 from mDeepFRI.CPP_lib.libAtomDistanceIO import (initialize,
                                                 load_aligned_contact_map,
                                                 load_contact_map, save_atoms)
-from mDeepFRI.structure_files.parsers import parse_pdb
+from mDeepFRI.CPP_lib.parsers import parse_pdb
 
 
 @pytest.fixture()
@@ -55,10 +56,12 @@ def test_save_atoms(expected_contact_map):
         _, positions, groups = parse_pdb(f)
     _, group_index = np.unique(groups, return_index=True)
     group_index = np.sort(group_index)
-    group_indexes = np.append(group_index, positions.shape[0]).astype(np.int32)
-    initialize()
+    group_indexes = np.append(group_index,
+                              positions.shape[0] / 3).astype(np.int32)
+
     with tempfile.TemporaryDirectory() as tmpdirname:
-        save_atoms(positions, group_indexes, tmpdirname + "/1S3P-A.bin")
+        atoms_io.save_atoms_file(positions, group_indexes,
+                                 tmpdirname + "/1S3P-A.bin")
         assert filecmp.cmp(tmpdirname + "/1S3P-A.bin", "tests/data/1S3P-A.bin")
 
 
