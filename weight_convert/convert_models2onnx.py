@@ -4,8 +4,9 @@ import logging
 from pathlib import Path
 
 import tf2onnx
-
-from meta_deepFRI.DeepFRI.deepfrier.Predictor import Predictor
+# Is used to load weigths for the model
+# Can be replaced with tf.keras.models.load_model
+from DeepFRI.deepfrier.Predictor import Predictor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -57,8 +58,9 @@ if __name__ == "__main__":
             config = json.loads(f.read())
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"File {model_path}/model_config.json not found. Download models from https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz"
-        )
+            "File %s/model_config.json not found. Download models from"
+            "https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz",
+            model_path)
 
     output_dir = Path(args.output)
     output_dir.mkdir(exist_ok=True)
@@ -74,5 +76,5 @@ if __name__ == "__main__":
                          out_path)
             convert_model(model_prefix, config[net_type]["gcn"], out_path)
             logging.info(
-                f"Tensorflow to ONNX conversion of {net_type} - {mode} is finished"
-            )
+                "Tensorflow to ONNX conversion of %s - %s is finished",
+                net_type, mode)
