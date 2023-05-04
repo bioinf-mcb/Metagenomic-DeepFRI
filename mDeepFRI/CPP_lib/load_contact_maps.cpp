@@ -8,7 +8,6 @@
 #include "load_contact_maps.h"
 #include "python_utils.h"
 
-<<<<<<< HEAD
 static float Distance(std::unique_ptr<float[]> &array, int i, int j) {
   int xIndex = i * 3;
   int yIndex = xIndex + 1;
@@ -25,12 +24,6 @@ static float Distance(std::unique_ptr<float[]> &array, int i, int j) {
   float distance = std::hypot(xSquared, ySquared, zSquared);
 
   return distance;
-=======
-static float Distance(float *array, int i, int j) {
-  return sqrtf(powf(array[i * 3] - array[j * 3], 2) +
-               powf(array[i * 3 + 1] - array[j * 3 + 1], 2) +
-               powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
->>>>>>> parent of 0fb39b6... refractor: atoms_file_io
 }
 
 inline bool exists(const std::string &name) {
