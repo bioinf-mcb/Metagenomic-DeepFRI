@@ -114,7 +114,10 @@ class Predictor(object):
         with open(output_fn, 'w', encoding="utf-8") as f:
             json.dump(data, f, indent=4)
 
-    def save_file(self, output_fn: str, delimiter: str, quotechar: str = '"'):
+    def __save_file(self,
+                    output_fn: str,
+                    delimiter: str,
+                    quotechar: str = '"'):
         """
         Exports predictions to .csv or .tsv format
 
@@ -140,7 +143,15 @@ class Predictor(object):
                         [prot, row[0], '{:.5f}'.format(row[2]), row[1]])
 
     def export_csv(self, output_fn: str):
-        self.save_file(output_fn, ",")
+        """
+        Exports predictions to .csv format
+        """
+
+        self.__save_file(output_fn, ",")
 
     def export_tsv(self, output_fn: str):
-        self.save_file(output_fn, "\t")
+        """
+        Exports predictions to .tsv format
+        """
+
+        self.__save_file(output_fn, "\t")
