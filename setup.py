@@ -96,6 +96,11 @@ EXTENSIONS = [
               libraries=["stdc++"],
               extra_compile_args=["-std=c++17", "-O3"],
               extra_link_args=["-std=c++17"]),
+    Extension("mDeepFRI.CPP_lib.parsers",
+              sources=[SRC_DIR + "/CPP_lib/parsers.pyx"],
+              language="c++",
+              libraries=["stdc++"],
+              extra_compile_args=["-std=c++17", "-O3"])
 ]
 
 setup(

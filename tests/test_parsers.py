@@ -4,7 +4,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from mDeepFRI.structure_files.parsers import parse_mmcif, parse_pdb
+from mDeepFRI.CPP_lib.parsers import parse_mmcif, parse_pdb
 
 
 @pytest.fixture
@@ -23,8 +23,8 @@ def test_parse_pdb_sequence(pdb_file):
 
 def test_parse_pdb_positions(pdb_file):
     _, positions, _ = parse_pdb(pdb_file)
-    expected = np.array([[-47.025, 49.762, -23.074]], dtype=np.float32)
-    assert np.array_equal(positions[:1], expected)
+    expected = np.array([-47.025, 49.762, -23.074], dtype=np.float32)
+    assert np.array_equal(positions[:3], expected)
 
 
 def test_parse_pdb_groups(pdb_file):
@@ -35,7 +35,7 @@ def test_parse_pdb_groups(pdb_file):
 def test_parse_pdb_lengths(pdb_file):
     sequence, positions, groups = parse_pdb(pdb_file)
     assert len(sequence) > 0
-    assert len(sequence) == len(positions) == len(groups)
+    assert len(sequence) == len(positions) / 3 == len(groups)
 
 
 @pytest.fixture

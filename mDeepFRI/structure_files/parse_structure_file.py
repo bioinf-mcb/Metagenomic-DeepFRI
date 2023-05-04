@@ -8,7 +8,7 @@ import numpy as np
 
 from mDeepFRI import ATOMS, SEQUENCES
 from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
-from mDeepFRI.structure_files.parsers import parse_mmcif, parse_pdb
+from mDeepFRI.CPP_lib.parsers import parse_mmcif, parse_pdb
 from mDeepFRI.utils import bio_utils
 
 # need to parse different type of files? Add a file name pattern with a parser in this dict.

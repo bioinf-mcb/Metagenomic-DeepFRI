@@ -1,8 +1,11 @@
+from libcpp.vector cimport vector
 from io import TextIOWrapper
 from typing import Tuple
 
 import numpy as np
+cimport numpy as cnp
 
+cnp.import_array()
 
 def parse_pdb(
         file: TextIOWrapper) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -14,9 +17,11 @@ def parse_pdb(
     Returns:
         sequence (list): Aminoacid sequence.
     """
-    sequence = []
-    positions = []
-    groups = []
+    cdef list sequence = []
+    cdef list groups = []
+    cdef vector[float] positions = []
+    cdef str line
+
     line = file.readline()
     while line != "":
         if line.startswith("TER"):
@@ -25,15 +30,17 @@ def parse_pdb(
             if len(line) == 81:
                 if line[76] != 'H' and line[17] != ' ':
                     sequence.append(line[17:20])
-                    positions.append([line[30:38], line[38:46], line[46:54]])
+                    positions.push_back(float(line[30:38]))
+                    positions.push_back(float(line[38:46]))
+                    positions.push_back(float(line[46:54]))
                     groups.append(line[21:26])
         line = file.readline()
 
-    sequence = np.array(sequence)
-    positions = np.array(positions, dtype=np.float32)
-    groups = np.array(groups)
+    cdef cnp.ndarray[cnp.float32_t, ndim=1] positions_arr = np.array(positions, dtype=np.float32)
+    sequence_arr = np.array(sequence)
+    groups_arr = np.array(groups)
 
-    return sequence, positions, groups
+    return sequence_arr, positions_arr, groups_arr
 
 
 def parse_mmcif(
