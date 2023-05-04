@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(version=__version__)
 @click.pass_context
-def main(ctx, debug):
+def cli(ctx, debug):
     """mDeepFRI"""
 
     ctx.ensure_object(dict)
@@ -32,7 +32,7 @@ def main(ctx, debug):
         logging.getLogger("requests").setLevel(logging.INFO)
 
 
-@main.command
+@cli.command
 @click.option(
     "-o",
     "--output",
@@ -59,7 +59,7 @@ def get_models(ctx, output):
 
 
 # add subcommand for building database
-@main.command()
+@cli.command()
 @click.option(
     "-i",
     "--input",
@@ -106,7 +106,7 @@ def build_db(ctx, input, output, threads, max_protein_length):
                    max_protein_length=max_protein_length)
 
 
-@main.command()
+@cli.command()
 @click.option(
     "-i",
     "--input",
@@ -238,4 +238,4 @@ def predict_function(ctx, input, db_path, weights, output, output_format,
 
 
 if __name__ == "__main__":
-    main(prog_name="mDeepFRI")
+    cli(prog_name="mDeepFRI")
