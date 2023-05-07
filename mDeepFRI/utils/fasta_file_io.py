@@ -2,7 +2,7 @@ import pathlib
 
 from pysam.libcfaidx import FastxFile
 
-from meta_deepFRI.config.names import ATOMS, SEQUENCES
+from mDeepFRI import ATOMS, SEQUENCES
 
 
 class SeqFileLoader:

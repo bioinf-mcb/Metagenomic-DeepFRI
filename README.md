@@ -5,9 +5,9 @@ Do you have **thousands of protein sequences** with **unknown structures**, but 
 molecular function, biological process, cellular component and enzyme commission **predicted by DeepFRI Graph Convolutional Network?**
 
 This is the right project for this task! Pipeline in a nutshell:
-1. Search for similar target protein sequences using MMseqs2
-2. Align target protein contact map to fit your query protein with unknown structure
-3. Run predictions on query sequence combined with aligned target contact map or sequence alone if no alignment was found
+1. Search for similar target protein sequences using MMseqs2.
+2. Align target protein contact map to fit your query protein with unknown structure.
+3. Run predictions on query sequence combined with aligned target contact map or sequence alone if no alignment was found.
 
 ### Built With
 
@@ -22,7 +22,7 @@ This is the right project for this task! Pipeline in a nutshell:
 
 1. Clone repo locally
 ```{code-block} bash
-git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI --recursive
+git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI
 cd Metagenomic-DeepFRI
 ```
 2. Setup conda environment
@@ -30,40 +30,31 @@ cd Metagenomic-DeepFRI
 conda env create --name deepfri --file environment.yml
 conda activate deepfri
 ```
-3. Install `meta-DeepFRI`
+3. Install `mDeepFRI`
 ```{code-block} bash
 pip install .
 ```
 4. Verify installation
 ```{code-block} bash
 pytest
-deepfri --help
+mDeepFRI --help
 ```
-
-## 2. Retrieve `DeepFRI` model weights
-### CPU weights
-```bash
-wget https://users.flatironinstitute.org/~renfrew/DeepFRI_data/newest_trained_models.tar.gz
-tar -xf newest_trained_models.tar.gz
-```
-
-### GPU weights
-```bash
-wget https://users.flatironinstitute.org/~renfrew/DeepFRI_data/trained_models.tar.gz
-tar -xf trained_models.tar.gz
-```
-
-**Attention:** Using DeepFRI with GPU requires extra installation steps, described in section 4. GPU Setup of [tensorfow installation guide](https://www.tensorflow.org/install/pip).
 
 # Usage
-## 1. Prepare database
+## 1. Download models
+Run command:
+```
+mDeepFRI get-models --output path/to/weights/folder
+```
+
+## 2. Prepare database
 
 1. Upload structure (`.pdb` or `.mmcif`) files to a folder in your system.
 2. Run command:
-   ```
-   deepfri_db_build --input path/to/folder/with/strucures --output path/to/database
-   ```
-**Tip:** building a database from AF20Swissprot (~550k predicted structures) on 32 CPU cores took ~30 min.
+```
+mDeepFRI build-db --input path/to/folder/with/strucures --output path/to/database -t threads
+```
+**Tip:** building a database from AF2Swissprot (~550k predicted structures) on 32 CPU cores took ~30 min.
 
 Use parameter `-max_len` to define maximal length of the protein. Due to initial DeepFRI training set default value is set to `1000`.
 
@@ -82,12 +73,13 @@ Accepted formats are: `.pdb`, `.cif`, `.ent` both raw and compressed with `.gz`
 Protein ID is used as a filename. A new protein whose ID already exists in the database will be skipped.
 Use `--overwrite` flag to overwrite existing sequences and atoms positions.
 
-## 2. Predict protein function
-   ```
-   deepfri -i /path/to/protein/sequences -db /path/to/database/folder/from/previous/step -w /path/to/deepfri/weights/folder -o /output_path
-   ```
+## 3. Predict protein function
+```
+mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/database/folder/from/previous/step -w /path/to/deepfri/weights/folder -o /output_path
+```
 **Attention:** Single instance of DeepFRI on GPU requires 10GB VRAM.
-Other available parameters can be found upon command `deepfri --help`.
+
+Other available parameters can be found upon command `mDeepFRI --help`.
 
 ## Results
 Finished folder will contain:
@@ -95,7 +87,7 @@ Finished folder will contain:
 2. `mmseqs2_search_results.m8`
 3. `alignments.json` - results of alignment search implemented in `utils.search_alignments.py`
 4. `metadata*` - files with some useful info
-5. `results*` - multiple files from DeepFRI. Organized by model type ['GCN' / 'CNN'] and its mode ['mf', 'bp', 'cc', 'ec'] for the total of 8 files.
+5. `results*` - multiple files from DeepFRI. Organized by model type (`GCN` or `CNN`) and its mode (`mf`, `bp`, `cc`, `ec`) for the total of 8 files.
 Sometimes results from one model can be missing which means that all query proteins sequences were aligned correctly or none of them were aligned.
    ```
    mf = molecular_function
@@ -103,16 +95,20 @@ Sometimes results from one model can be missing which means that all query prote
    cc = cellular_component
    ec = enzyme_commission
    ```
+
+## GPU / CPU utilization
+If CUDA is installed on your machine, `metaDeepFRI` will automatically use it for prediction, no additional installations are needed. If not, the model will use CPUs. If argument `threads` is provided, the prediction will run on multiple CPU cores.
+
 ## Citations
 If you use this software please cite:
-    - Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
-    - Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. https://doi.org/10.1038/nbt.3988
-    - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
-    - Daily "Parasail: SIMD C library for global, semi-global, and local pairwise sequence alignments" BMC Bioinform. (2016) https://doi.org/10.1186/s12859-016-0930-z
+- Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
+- Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. (2017) https://doi.org/10.1038/nbt.3988
+- Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
+- Daily "Parasail: SIMD C library for global, semi-global, and local pairwise sequence alignments" BMC Bioinform. (2016) https://doi.org/10.1186/s12859-016-0930-z
 
 ## Contributing
 
-If you have a suggestion that would make this project better, email me or fork the repo and create a pull request.
+If you have a suggestion that would make this project better, please send an e-mail or fork the repo and create a pull request.
 
 ### Contact
 

@@ -1,0 +1,18 @@
+Protein,GO_term/EC_number,Score,GO_term/EC_number name
+test,GO:0044419,0.27301,biological process involved in interspecies interaction between organisms
+test,GO:0016043,0.20897,cellular component organization
+test,GO:0032501,0.17729,multicellular organismal process
+test,GO:0043412,0.16177,macromolecule modification
+test,GO:0051704,0.15849,multi-organism process
+test,GO:0036211,0.15131,protein modification process
+test,GO:0006464,0.15099,cellular protein modification process
+test,GO:0009056,0.14845,catabolic process
+test,GO:1901575,0.13204,organic substance catabolic process
+test,GO:0044403,0.12657,biological process involved in symbiotic interaction
+test,GO:0051716,0.12328,cellular response to stimulus
+test,GO:0006629,0.12220,lipid metabolic process
+test,GO:0032502,0.12044,developmental process
+test,GO:0006950,0.11660,response to stress
+test,GO:0016032,0.11410,viral process
+test,GO:0048856,0.11072,anatomical structure development
+test,GO:0016070,0.10155,RNA metabolic process

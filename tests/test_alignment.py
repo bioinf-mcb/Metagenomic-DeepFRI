@@ -1,6 +1,6 @@
 import pytest
 
-from meta_deepFRI.utils.search_alignments import alignment_sequences_identity
+from mDeepFRI.utils.search_alignments import alignment_sequences_identity
 
 
 @pytest.mark.parametrize('query,target,expected', [('AASDS', 'AASDS', 1),

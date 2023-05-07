@@ -3,8 +3,8 @@ import pathlib
 import numpy as np
 import pytest
 
-from meta_deepFRI.structure_files.parse_structure_file import (
-    SeqAtoms, read_structure_file)
+from mDeepFRI.structure_files.parse_structure_file import (SeqAtoms,
+                                                           read_structure_file)
 
 
 @pytest.mark.parametrize(

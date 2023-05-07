@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from meta_deepFRI.config.names import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
-                                       TARGET_MMSEQS_DB_NAME)
-from meta_deepFRI.utils.utils import merge_files_binary, run_command
+from mDeepFRI import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
+                      TARGET_MMSEQS_DB_NAME)
+from mDeepFRI.utils.utils import merge_files_binary, run_command
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches",

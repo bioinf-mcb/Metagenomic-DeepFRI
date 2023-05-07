@@ -1,4 +1,5 @@
 import json
+import logging
 import pathlib
 import shlex
 import shutil
@@ -6,6 +7,8 @@ import subprocess
 import sys
 
 import requests
+
+from mDeepFRI import config_links, model_links
 
 
 def run_command(command, timeout=-1):
@@ -40,6 +43,19 @@ def download_file(url, path):
     with requests.get(url, stream=True) as r:
         with open(path, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
+
+
+def download_model_weights(output_path: pathlib.Path):
+
+    total_len = len(model_links)
+    for i, model_link in enumerate(model_links):
+        download_file(model_link, output_path / model_link.split("/")[-1])
+        logging.debug("Downloading model weights... %s/%s", i + 1, total_len)
+
+    total_len = len(config_links)
+    for i, config in enumerate(config_links):
+        download_file(config, output_path / config.split("/")[-1])
+        logging.debug("Downloading model configs... %s/%s", i + 1, total_len)
 
 
 def merge_files_binary(file_paths: list, output_path: pathlib.Path) -> None:

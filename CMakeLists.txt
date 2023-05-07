@@ -4,10 +4,12 @@ project(GenomicLibrary)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(AtomDistanceIO SHARED
-        meta_deepFRI/CPP_lib/library_definition.cpp
-        meta_deepFRI/CPP_lib/atoms_file_io.h
-        meta_deepFRI/CPP_lib/python_utils.h
-        meta_deepFRI/CPP_lib/load_contact_maps.h)
+        mDeepFRI/CPP_lib/library_definition.cpp
+        mDeepFRI/CPP_lib/atoms_file_io.h
+        mDeepFRI/CPP_lib/atoms_file_io.cpp
+        mDeepFRI/CPP_lib/python_utils.h
+        mDeepFRI/CPP_lib/load_contact_maps.h
+        mDeepFRI/CPP_lib/load_contact_maps.cpp)
 
 
 target_include_directories(AtomDistanceIO PUBLIC ${PY_INCLUDE_PATH})

@@ -24,7 +24,7 @@ def execute_command(command):
 @pytest.fixture
 def deepfri_database():
     stdout, stderr = execute_command(
-        f'deepfri_db_build -i {INPUT_STRUCTURES} -o {OUTPUT_DATABASE}')
+        f'mDeepFRI build-db -i {INPUT_STRUCTURES} -o {OUTPUT_DATABASE}')
     print(stdout)
 
 
@@ -35,7 +35,7 @@ def test_database(deepfri_database):
 @pytest.fixture
 def deepri_results(deepfri_database):
     stdout, stderr = execute_command(
-        f"deepfri -i {QUERY_FILE} -db {OUTPUT_DATABASE} -o {RESULTS}")
+        f"mDeepFRI -i {QUERY_FILE} -db {OUTPUT_DATABASE} -o {RESULTS}")
     print(stdout)
 
 
