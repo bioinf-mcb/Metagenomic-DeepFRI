@@ -1,50 +1,58 @@
+from libc.stdlib cimport strtof
+from libcpp.string cimport string
 from libcpp.vector cimport vector
+
 from io import TextIOWrapper
 from typing import Tuple
 
 import numpy as np
+
 cimport numpy as cnp
 
 cnp.import_array()
 
+cdef tuple parse_atom_line(char* line):
+    cdef char* seq = &line[17]
+    cdef char* group = &line[21]
+    # assign
+    cdef float x = strtof(&line[30], NULL)
+    cdef float y = strtof(&line[38], NULL)
+    cdef float z = strtof(&line[46], NULL)
+
+    return (seq[0:3], group[0:5], x, y, z)
+
+
 def parse_pdb(
-        file: TextIOWrapper) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Parse a PDB file.
-
-    Args:
-        file (TextIOWrapper): Open file instance.
-
-    Returns:
-        sequence (list): Aminoacid sequence.
-    """
-    cdef list sequence = []
-    cdef list groups = []
+        lines):
+    cdef vector[string] sequence = []
+    cdef vector[string] groups = []
     cdef vector[float] positions = []
-    cdef str line
+    cdef char* line
+    cdef float x, y, z
+    cdef string seq, group
 
-    line = file.readline()
-    while line != "":
-        if line.startswith("TER"):
+    for line in lines:
+        if line == b"":
             break
-        if line.startswith("ATOM"):
-            if len(line) == 81:
-                if line[76] != 'H' and line[17] != ' ':
-                    sequence.append(line[17:20])
-                    positions.push_back(float(line[30:38]))
-                    positions.push_back(float(line[38:46]))
-                    positions.push_back(float(line[46:54]))
-                    groups.append(line[21:26])
-        line = file.readline()
+        if line.startswith(b"TER"):
+            break
+        if line.startswith(b"ATOM"):
+            if len(line) == 80:
+                if line[76] != b'H' and line[17] != b' ':
+                    seq, group, x, y, z = parse_atom_line(line)
 
-    cdef cnp.ndarray[cnp.float32_t, ndim=1] positions_arr = np.array(positions, dtype=np.float32)
-    sequence_arr = np.array(sequence)
-    groups_arr = np.array(groups)
+                    positions.push_back(x)
+                    positions.push_back(y)
+                    positions.push_back(z)
 
-    return sequence_arr, positions_arr, groups_arr
+                    sequence.push_back(seq)
+                    groups.push_back(group)
+
+    return sequence, positions, groups
 
 
 def parse_mmcif(
-        file: TextIOWrapper) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        lines):
     """Parse a mmCIF file.
 
     Args:
@@ -56,77 +64,76 @@ def parse_mmcif(
         groups (np.array): Groups of the atoms.
     """
 
-    n_atoms = -1
+    cdef vector[string] sequence = []
+    cdef vector[string] groups = []
+    cdef vector[float] positions = []
+    cdef int n_atoms = -1
+    cdef int label_counter = -1
+    cdef bytes line
+    cdef int index
 
-    label_counter = -1
-    line = file.readline()
-    while line != "":
-        if line.startswith('_refine_hist.pdbx_number_atoms_protein'):
-            n = line.split()[-1]
-            if n != '?' and n != '0':
+    for line in lines:
+        if line.startswith(b'_refine_hist.pdbx_number_atoms_protein'):
+            n = line.split(b" ")[-1]
+            if n != b'?' and n != b'0':
                 try:
                     n_atoms = int(n)
                 except ValueError:
-                    line = file.readline()
                     continue
-                sequence = np.empty(n_atoms, dtype=np.dtype('<U3'))
-                positions = np.empty((n_atoms, 3), dtype=np.float32)
-                groups = np.empty(n_atoms, dtype=np.dtype('<U10'))
 
-        if line.startswith('_atom_site.'):
+        if line.startswith(b'_atom_site.'):
             label_counter += 1
-            if line.startswith('_atom_site.type_symbol '):
+            if line.startswith(b'_atom_site.type_symbol '):
                 atom_symbol = label_counter
-            if line.startswith('_atom_site.label_asym_id '):
+            if line.startswith(b'_atom_site.label_asym_id '):
                 assembly = label_counter
-            if line.startswith('_atom_site.label_seq_id '):
+            if line.startswith(b'_atom_site.label_seq_id '):
                 sequence_id = label_counter
-            if line.startswith('_atom_site.label_comp_id '):
+            if line.startswith(b'_atom_site.label_comp_id '):
                 residue = label_counter
-            if line.startswith('_atom_site.Cartn_x '):
+            if line.startswith(b'_atom_site.Cartn_x '):
                 x = label_counter
-            if line.startswith('_atom_site.Cartn_y '):
+            if line.startswith(b'_atom_site.Cartn_y '):
                 y = label_counter
-            if line.startswith('_atom_site.Cartn_z '):
+            if line.startswith(b'_atom_site.Cartn_z '):
                 z = label_counter
 
-        line = file.readline()
-        if line.startswith("ATOM"):
+        if line.startswith(b"ATOM"):
             if label_counter > 0:
                 break
 
     if n_atoms > 0:
         index = 0
-        while line != '':
-            if line.startswith('loop_'):
+        for line in lines:
+            if line.startswith(b'loop_'):
                 break
-            if line.startswith('ATOM'):
-                atom = line.split()
-                if len(atom[residue]) == 3 and atom[atom_symbol] != "H":
-                    sequence[index] = atom[residue]
-                    groups[index] = ''.join(
-                        [atom[assembly], atom[sequence_id]])
-                    positions[index][0] = atom[x]
-                    positions[index][1] = atom[y]
-                    positions[index][2] = atom[z]
+            if line.startswith(b'ATOM'):
+                atom = line.split(b" ")
+                if len(atom[residue]) == 3 and atom[atom_symbol] != b"H":
+
+                    group = b''.join([atom[assembly], atom[sequence_id]])
+                    sequence.push_back(atom[residue])
+                    groups.push_back(group)
+                    positions.push_back(float(atom[x]))
+                    positions.push_back(float(atom[y]))
+                    positions.push_back(float(atom[z]))
+
                     index += 1
                     if index == n_atoms:
                         break
-            line = file.readline()
-        sequence.resize(index)
-        positions.resize((index, 3))
-        groups.resize(index)
+
     else:
-        while line != '':
-            if line.startswith('loop_'):
-                break
-            if line.startswith('ATOM'):
+        for line in lines:
+            if line.startswith(b'loop_'):
+                continue
+
+            if line.startswith(b'ATOM'):
                 atom = line.split()
-                if len(atom[residue]) == 3 and atom[atom_symbol] != "H":
-                    sequence.append(atom[residue])
-                    groups.append(''.join([atom[assembly], atom[sequence_id]]))
-                    positions.append([atom[x], atom[y], atom[z]])
-            line = file.readline()
-        positions = np.array(positions, dtype=np.float32)
+                if len(atom[residue]) == 3 and atom[atom_symbol] != b"H":
+                    sequence.push_back(atom[residue])
+                    groups.push_back(b''.join([atom[assembly], atom[sequence_id]]))
+                    positions.push_back(float(atom[x]))
+                    positions.push_back(float(atom[y]))
+                    positions.push_back(float(atom[z]))
 
     return sequence, positions, groups
