@@ -52,11 +52,14 @@ def save_atoms_file(list positions_list,
 
 def load_atoms_file(filepath):
     cdef int chain_length = np.fromfile(filepath, count=1, dtype=np.int32)
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] groups = np.fromfile(filepath, count=chain_length, dtype=np.int32,
-                                                               offset=4, sep='')
+
+    # offset 4 bytes because we read chain_length already
+    cdef int[::1] groups = np.fromfile(filepath, count=chain_length, dtype=np.int32,
+                                       offset=4, sep='')
+
     cdef int positions_offset = 4 * (1 + chain_length)
 
-    cdef cnp.ndarray[cnp.float32_t, ndim=1] positions = np.fromfile(filepath, count=groups[-1] * 3,
-                                                                    dtype=np.float32, offset=positions_offset, sep='')
+    cdef float[::1] positions = np.fromfile(filepath, count=groups[-1] * 3,
+                                            dtype=np.float32, offset=positions_offset, sep='')
 
     return positions, groups, chain_length

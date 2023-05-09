@@ -72,8 +72,9 @@ def test_save_atoms(reference_binary, struct_params):
 def test_load_atoms(reference_binary, struct_params):
     positions_cy, group_indexes_cy, chain_len_cy = load_atoms_file(
         reference_binary)
-    assert np.array_equal(positions_cy, np.array(struct_params[0]))
-    assert np.array_equal(group_indexes_cy, np.array(struct_params[1]))
+    assert np.array_equal(np.asarray(positions_cy), np.array(struct_params[0]))
+    assert np.array_equal(np.asarray(group_indexes_cy),
+                          np.array(struct_params[1]))
     assert chain_len_cy == struct_params[2]
 
 
