@@ -6,7 +6,6 @@ from io import TextIOWrapper
 from typing import Tuple
 
 import numpy as np
-
 cimport numpy as cnp
 
 cnp.import_array()
