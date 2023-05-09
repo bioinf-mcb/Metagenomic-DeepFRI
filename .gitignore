@@ -6,6 +6,9 @@ newest_trained_models.tar.gz
 biopython_test_output
 parasail_test_output
 notebooks
+mDeepFRI/CPP_lib/parsers.cpp
+mDeepFRI/CPP_lib/atoms_io.cpp
+cython_tests.ipynb
 
 docs/build/*
 build/
