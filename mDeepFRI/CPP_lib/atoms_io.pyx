@@ -4,9 +4,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 
 import numpy as np
-
 cimport numpy as cnp
-from libc.math cimport sqrt
 
 cnp.import_array()
 
@@ -72,7 +70,7 @@ cdef inline load_atoms_file(string filepath):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline float distance(float[::1] array, int i, int j, mode="squared") nogil:
+cdef inline float distance(float[::1] array, int i, int j) nogil:
     """
     Calculates the square distance between two atoms.
     Computationally efficient replacement for Euclidian
@@ -83,9 +81,6 @@ cdef inline float distance(float[::1] array, int i, int j, mode="squared") nogil
     cdef float y = array[i * 3 + 1] - array[j * 3 + 1]
     cdef float z = array[i * 3 + 2] - array[j * 3 + 2]
     cdef float distance = x * x + y * y + z * z
-
-    if mode == "euclidean":
-        distance = sqrt(distance)
     return distance
 
 
@@ -96,37 +91,35 @@ def load_contact_map(str filepath,
     cdef int chain_length
     cdef int[::1] groups
     cdef float[::1] positions
+    cdef float threshold_sq = angstrom_contact_threshold * angstrom_contact_threshold
+    cdef float dist
     positions, groups, chain_length = load_atoms_file(filepath.encode())
 
     cdef int i, group_a, group_b, atom_a, atom_b
     cdef bint connected
     # allocate calculations array
-    cdef int[::1] contact_map = np.zeros(chain_length * chain_length, dtype=np.int32)
-    cdef cnp.ndarray[ndim=2, dtype=cnp.int32_t] contact_map_2d
+    cdef cnp.ndarray[ndim=2, dtype=cnp.uint8_t]  contact_map \
+        = np.zeros((chain_length, chain_length), dtype=np.bool_)
 
     # fill the array with false and diagonal with True
     with nogil:
-        for i in range(chain_length):
-            contact_map[i * chain_length + i] = 1
 
         for group_a in range(chain_length):
-            contact_map[group_a * chain_length + group_a] = 1;
+            contact_map[group_a, group_a] = True;
 
             for group_b in range(group_a + 1, chain_length):
-                connected = 0
+                connected = False
                 for atom_a in range(groups[group_a], groups[group_a + 1]):
                     for atom_b in range(groups[group_b], groups[group_b + 1]):
-                        if distance(positions, atom_a, atom_b, mode="euclidean") <= angstrom_contact_threshold:
-                            connected = 1
+                        dist = distance(positions, atom_a, atom_b)
+                        if dist <= threshold_sq:
+                            connected = True
                             # fill the diagonal using symmetry
                             # reduces computational complexity
-                            contact_map[group_a * chain_length + group_b] = 1
-                            contact_map[group_a + group_b * chain_length] = 1
+                            contact_map[group_a, group_b] = True
+                            contact_map[group_b, group_a] = True
                             break
                     if connected:
                         break
 
-    # reshape into 2D array
-    contact_map_2d = np.asarray(contact_map).reshape(chain_length, chain_length)
-
-    return contact_map_2d
+    return contact_map

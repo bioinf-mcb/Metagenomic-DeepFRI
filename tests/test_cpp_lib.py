@@ -29,7 +29,7 @@ def struct_params():
 
 @pytest.fixture()
 def expected_contact_map():
-    cmap = np.load("tests/data/1S3P-A.bin.cmap.npy").astype(int)
+    cmap = np.load("tests/data/1S3P-A.bin.cmap.npy")
     return cmap
 
 
