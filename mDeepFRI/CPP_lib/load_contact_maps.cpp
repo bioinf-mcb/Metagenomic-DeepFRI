@@ -8,63 +8,6 @@
 // #include "load_contact_maps.h"
 // #include "python_utils.h"
 
-// std::vector<std::pair<int, int>> *
-// LoadSparseContactMap(const std::string &file_path,
-//                      const float angstrom_contact_threshold) {
-//   int chain_length;
-//   int *group_indexes;
-//   float *atoms_positions;
-
-//   // verbose error if file_path doesn't exist
-//   if (!exists(file_path)) {
-//     std::cout << "Error: file " << file_path << " doesn't exist" <<
-//     std::endl; return nullptr;
-//   }
-
-//   std::tie(chain_length, group_indexes, atoms_positions) =
-//       LoadAtomsFile(file_path);
-
-//   // fill up vector with sparse atom contacts
-//   auto *sparse_contacts = new std::vector<std::pair<int, int>>();
-//   sparse_contacts->reserve(chain_length * 10);
-
-//   for (int group_a = 0; group_a < chain_length; ++group_a) {
-//     for (int group_b = group_a + 1; group_b < chain_length; ++group_b) {
-//       bool group_connected = false;
-
-//       for (int atom_a = group_indexes[group_a];
-//            atom_a < group_indexes[group_a + 1]; ++atom_a) {
-//         for (int atom_b = group_indexes[group_b];
-//              atom_b < group_indexes[group_b + 1]; ++atom_b) {
-//           if (Distance(atoms_positions, atom_a, atom_b) <=
-//               angstrom_contact_threshold) {
-//             group_connected = true;
-//             sparse_contacts->emplace_back(group_a, group_b);
-//             break;
-//           }
-//         }
-
-//         if (group_connected)
-//           break;
-//       }
-//     }
-//   }
-
-//   delete[] group_indexes;
-//   delete[] atoms_positions;
-//   return sparse_contacts;
-// }
-
-// // static np::ndarray LoadContactMap(const std::string &file_path,
-// //                                   const float angstrom_contact_threshold)
-// {
-// //   bool *contact_map;
-// //   int chain_length;
-// //   std::tie(contact_map, chain_length) =
-// //       LoadDenseContactMap(file_path, angstrom_contact_threshold);
-// //   return CreateNumpyArray(contact_map, chain_length);
-// // }
-
 // // static np::ndarray LoadAlignedContactMap(const std::string &file_path,
 // //                                          float angstrom_contact_threshold,
 // //                                          const std::string

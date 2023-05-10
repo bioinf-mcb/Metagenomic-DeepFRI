@@ -2,6 +2,7 @@ cimport cython
 from libc.stdlib cimport free, malloc
 from libcpp cimport bool
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 
 import numpy as np
 cimport numpy as cnp
@@ -16,6 +17,13 @@ cdef extern from "atoms_file_io.h" nogil:
                        int* groups,
                        size_t chain_length,
                        string save_path)
+
+cdef class Coordinate:
+    cdef readonly int i, j
+
+    def __init__(self, int i, int j):
+        self.i = i
+        self.j = j
 
 
 @cython.wraparound(False)
@@ -81,29 +89,32 @@ cdef inline float distance(float[::1] array, int i, int j) nogil:
     cdef float y = array[i * 3 + 1] - array[j * 3 + 1]
     cdef float z = array[i * 3 + 2] - array[j * 3 + 2]
     cdef float distance = x * x + y * y + z * z
+
     return distance
 
-
+## TODO: modularize the function
 @cython.boundscheck(False)
 def load_contact_map(str filepath,
-                     float angstrom_contact_threshold):
+                     float angstrom_contact_threshold,
+                     str mode = "matrix"):
+
+    cdef float threshold_sq = angstrom_contact_threshold * angstrom_contact_threshold
+    cdef float dist
 
     cdef int chain_length
     cdef int[::1] groups
     cdef float[::1] positions
-    cdef float threshold_sq = angstrom_contact_threshold * angstrom_contact_threshold
-    cdef float dist
     positions, groups, chain_length = load_atoms_file(filepath.encode())
 
     cdef int i, group_a, group_b, atom_a, atom_b
     cdef bint connected
-    # allocate calculations array
     cdef cnp.ndarray[ndim=2, dtype=cnp.uint8_t]  contact_map \
         = np.zeros((chain_length, chain_length), dtype=np.bool_)
 
-    # fill the array with false and diagonal with True
-    with nogil:
+    cdef cnp.ndarray[ndim=2, dtype=cnp.uint32_t] non_empty
 
+    with nogil:
+        # fill diagonal with true
         for group_a in range(chain_length):
             contact_map[group_a, group_a] = True;
 
@@ -114,12 +125,14 @@ def load_contact_map(str filepath,
                         dist = distance(positions, atom_a, atom_b)
                         if dist <= threshold_sq:
                             connected = True
-                            # fill the diagonal using symmetry
+                            # fill the matrix using symmetry
                             # reduces computational complexity
                             contact_map[group_a, group_b] = True
                             contact_map[group_b, group_a] = True
-                            break
                     if connected:
                         break
 
-    return contact_map
+    if mode == "matrix":
+        return contact_map
+    if mode == "sparse":
+        return np.argwhere(contact_map == True)
