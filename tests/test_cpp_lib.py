@@ -1,15 +1,13 @@
 import filecmp
-import pickle
 import tempfile
 from typing import Callable
 
 import numpy as np
 import pytest
 
-from mDeepFRI.CPP_lib.atoms_io import load_atoms_file, save_atoms_file
+from mDeepFRI.CPP_lib.atoms_io import load_contact_map, save_atoms_file
 from mDeepFRI.CPP_lib.libAtomDistanceIO import (initialize,
-                                                load_aligned_contact_map,
-                                                load_contact_map, save_atoms)
+                                                load_aligned_contact_map)
 from mDeepFRI.CPP_lib.parsers import parse_pdb
 
 
@@ -31,9 +29,8 @@ def struct_params():
 
 @pytest.fixture()
 def expected_contact_map():
-    with open("tests/data/1S3P-A.bin.cmap.pkl", "rb") as f:
-        expected_contact_map = pickle.load(f)
-    return expected_contact_map
+    cmap = np.load("tests/data/1S3P-A.bin.cmap.npy").astype(int)
+    return cmap
 
 
 def error_wrapper(func: Callable, *args, error_contains: str = None):
@@ -48,18 +45,14 @@ def error_wrapper(func: Callable, *args, error_contains: str = None):
 
 def test_functions():
     initialize()
-
-    error_wrapper(save_atoms, error_contains="did not match C++ signature")
-    error_wrapper(load_contact_map,
-                  error_contains="did not match C++ signature")
     error_wrapper(load_aligned_contact_map,
                   error_contains="did not match C++ signature")
 
 
 def test_load_contact_map(reference_binary, expected_contact_map):
     initialize()
-    contact_map_cpp = load_contact_map(reference_binary, 6)
-    assert np.array_equal(contact_map_cpp, expected_contact_map)
+    contact_map_cython = load_contact_map(reference_binary, 6)
+    assert np.array_equal(contact_map_cython, expected_contact_map)
 
 
 def test_save_atoms(reference_binary, struct_params):
@@ -69,13 +62,12 @@ def test_save_atoms(reference_binary, struct_params):
         assert filecmp.cmp(tmpdirname + "/1S3P-A.bin", reference_binary)
 
 
-def test_load_atoms(reference_binary, struct_params):
-    positions_cy, group_indexes_cy, chain_len_cy = load_atoms_file(
-        reference_binary)
-    assert np.array_equal(np.asarray(positions_cy), np.array(struct_params[0]))
-    assert np.array_equal(np.asarray(group_indexes_cy),
-                          np.array(struct_params[1]))
-    assert chain_len_cy == struct_params[2]
+# # ported to C only to remove function overhead
+# def test_load_atoms(reference_binary, struct_params):
+#     positions_cy, group_indexes_cy, chain_len_cy = load_atoms_file(reference_binary)
+#     assert np.array_equal(np.asarray(positions_cy), np.array(struct_params[0]))
+#     assert np.array_equal(np.asarray(group_indexes_cy), np.array(struct_params[1]))
+#     assert chain_len_cy == struct_params[2]
 
 
 def test_load_aligned_contact_map():

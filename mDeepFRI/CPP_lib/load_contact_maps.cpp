@@ -8,61 +8,6 @@
 // #include "load_contact_maps.h"
 // #include "python_utils.h"
 
-// float Distance(float *array, int i, int j) {
-//   return sqrtf(powf(array[i * 3] - array[j * 3], 2) +
-//                powf(array[i * 3 + 1] - array[j * 3 + 1], 2) +
-//                powf(array[i * 3 + 2] - array[j * 3 + 2], 2));
-// }
-
-// inline bool exists(const std::string &name) {
-//   struct stat buffer;
-//   return (stat(name.c_str(), &buffer) == 0);
-// }
-
-// std::pair<bool *, int> LoadDenseContactMap(std::string &file_path,
-//                                            float angstrom_contact_threshold)
-//                                            {
-//   int chain_length;
-//   int *group_indexes;
-//   float *atoms_positions;
-//   std::tie(chain_length, group_indexes, atoms_positions) =
-//       LoadAtomsFile(file_path);
-
-//   // allocate output array
-//   bool *const output_data = new bool[(int)pow(chain_length, 2)];
-//   std::memset(output_data, 0, (int)pow(chain_length, 2));
-
-//   // fill up output array with atom contacts
-//   for (int group_a = 0; group_a < chain_length; ++group_a) {
-//     output_data[group_a * chain_length + group_a] = true;
-
-//     for (int group_b = group_a + 1; group_b < chain_length; ++group_b) {
-//       bool group_connected = false;
-
-//       for (int atom_a = group_indexes[group_a];
-//            atom_a < group_indexes[group_a + 1]; ++atom_a) {
-//         for (int atom_b = group_indexes[group_b];
-//              atom_b < group_indexes[group_b + 1]; ++atom_b) {
-//           if (Distance(atoms_positions, atom_a, atom_b) <=
-//               angstrom_contact_threshold) {
-//             group_connected = true;
-//             output_data[group_a * chain_length + group_b] = true;
-//             output_data[group_a + group_b * chain_length] = true;
-//             break;
-//           }
-//         }
-
-//         if (group_connected)
-//           break;
-//       }
-//     }
-//   }
-
-//   delete[] group_indexes;
-//   delete[] atoms_positions;
-//   return std::make_pair(output_data, chain_length);
-// }
-
 // std::vector<std::pair<int, int>> *
 // LoadSparseContactMap(const std::string &file_path,
 //                      const float angstrom_contact_threshold) {
