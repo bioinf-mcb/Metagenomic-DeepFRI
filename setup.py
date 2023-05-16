@@ -1,15 +1,19 @@
 import os
+from distutils.util import convert_path
 
 import numpy as np
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
-from mDeepFRI import __version__
-
 try:
     from Cython.Build import cythonize
 except ImportError as err:
     cythonize = err
+
+main_ns = {}
+ver_path = convert_path('mDeepFRI/__init__.py')
+with open(ver_path) as ver_file:
+    exec(ver_file.read(), main_ns)
 
 
 def read(fname):
@@ -35,8 +39,7 @@ class build_ext(_build_ext):
 SRC_DIR = "mDeepFRI"
 PACKAGES = [SRC_DIR]
 
-setup_requires = ["cython"]
-install_requires = []
+install_requires = ["cython"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.CPP_lib.atoms_io",
@@ -58,7 +61,7 @@ EXTENSIONS = [
 
 setup(
     name="mDeepFRI",
-    version=__version__,
+    version=main_ns['__version__'],
     description=
     "Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
     long_description=read("README.md"),
@@ -77,6 +80,7 @@ setup(
     },
     ext_modules=EXTENSIONS,
     include_dirs=[np.get_include()],
+    install_requires=install_requires,
     cmdclass={
         'build_ext': build_ext,
     },
