@@ -132,7 +132,68 @@ def load_contact_map(str filepath,
                     if connected:
                         break
 
+    # returns a binary contact map
     if mode == "matrix":
         return contact_map
+    # returns non-empty indices
     if mode == "sparse":
-        return np.argwhere(contact_map == True)
+        return np.argwhere(contact_map == True).astype(np.uint32)
+
+
+def load_aligned_contact_map(str filepath,
+                             float angstrom_contact_threshold,
+                             str query_alignment,
+                             str target_alignment,
+                             int generated_contacts):
+
+    cdef cnp.ndarray[ndim=2, dtype=cnp.uint32_t] sparse_target_contacts = load_contact_map(filepath, angstrom_contact_threshold, "sparse")
+    # allocate a 2D array of unknown size
+    cdef cnp.ndarray[ndim=2, dtype=cnp.uint32_t, mode="c"] sparse_query_contacts = np.empty((0, 2), dtype=np.uint32)
+    cdef int query_index = 0
+    cdef int target_index = 0
+    cdef int i, contact_x, contact_y
+
+    cdef int[::1] target_to_query_indexes = np.zeros(len(query_alignment), dtype=np.int32)
+    cdef cnp.uint32_t[::1] row
+
+    for i in range(len(query_alignment)):
+        if query_alignment[i] == "-":
+            target_to_query_indexes[target_index] = -1
+            target_index += 1
+        elif target_alignment[i] == "-":
+            for j in range(generated_contacts):
+                sparse_query_contacts = np.append(sparse_query_contacts,
+                                                  np.array([[query_index - j, query_index]], dtype=np.uint32), axis=0)
+                sparse_query_contacts = np.append(sparse_query_contacts,
+                                                  np.array([[query_index + j, query_index]], dtype=np.uint32), axis=0)
+            query_index += 1
+        else:
+            target_to_query_indexes[target_index] = query_index
+            query_index += 1
+            target_index += 1
+
+    cdef cnp.ndarray[ndim=2, dtype=cnp.uint8_t]  contact_map \
+        = np.zeros((query_index, query_index), dtype=np.bool_)
+
+    sparse_target_contacts = sparse_target_contacts.copy(order="C")
+    for row in sparse_target_contacts:
+        contact_x = target_to_query_indexes[row[0]]
+        contact_y = target_to_query_indexes[row[1]]
+
+        if contact_x != -1 or contact_y != -1:
+            continue
+
+        sparse_query_contacts = np.append(sparse_query_contacts,
+                                          np.array([[contact_x, contact_y]], dtype=np.uint32), axis=0)
+
+
+    for i in range(query_index):
+        contact_map[i, i] = True
+
+    for row in sparse_query_contacts:
+        if row[0] < 0 or row[0] >= query_index:
+            continue
+        contact_map[row[0], row[1]] = True
+        contact_map[row[1], row[0]] = True
+
+    return sparse_target_contacts
