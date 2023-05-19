@@ -56,7 +56,12 @@ EXTENSIONS = [
               sources=[SRC_DIR + "/CPP_lib/parsers.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=["-std=c++17", "-O3"])
+              extra_compile_args=["-std=c++17", "-O3"]),
+    Extension("mDeepFRI.CPP_lib.predict",
+              sources=[SRC_DIR + "/CPP_lib/predict.pyx"],
+              language="c++",
+              libraries=["stdc++"],
+              extra_compile_args=["-std=c++17", "-O3"]),
 ]
 
 setup(

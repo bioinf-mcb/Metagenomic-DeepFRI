@@ -8,7 +8,7 @@ from pysam.libcfaidx import FastxFile
 
 from mDeepFRI import ATOMS, SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
-from mDeepFRI.predict import Predictor
+from mDeepFRI.CPP_lib.predict import Predictor
 from mDeepFRI.utils.fasta_file_io import SeqFileLoader
 from mDeepFRI.utils.mmseqs import run_mmseqs_search
 from mDeepFRI.utils.search_alignments import search_alignments

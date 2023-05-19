@@ -2,16 +2,34 @@ import csv
 import json
 
 import numpy as np
+
+cimport numpy as np
+
+np.import_array()
 import onnxruntime as rt
 
 from mDeepFRI.utils.bio_utils import seq2onehot
 
 
 ## TODO: do not accumulate predictions, write them out to csv asap to avoid unneccessary RAM usage
-class Predictor(object):
+cdef class Predictor(object):
     """
     Class for loading trained models and computing GO/EC predictions and class activation maps (CAMs).
     """
+
+    cdef public bint gcn
+    cdef public str model_prefix
+    cdef public int threads
+    cdef public dict prot2goterms
+    cdef public dict goidx2chains
+    cdef public np.ndarray gonames
+    cdef public np.ndarray goterms
+    cdef public np.ndarray thresh
+    cdef public session
+    cdef public np.ndarray Y_hat
+    cdef public dict data
+    cdef public list test_prot_list
+
     def __init__(self, model_prefix: str, gcn: bool = True, threads: int = 0):
         self.model_prefix = model_prefix
         self.gcn = gcn
@@ -45,8 +63,8 @@ class Predictor(object):
 
     def predict_function(
         self,
-        seqres: np.ndarray,
-        cmap: np.ndarray = None,
+        seqres: str,
+        cmap = None,
         chain: str = "",
     ):
         """
@@ -60,6 +78,12 @@ class Predictor(object):
         Returns:
             None
         """
+
+        cdef np.ndarray A
+        cdef np.ndarray prediction
+        cdef np.ndarray y
+
+
         self.Y_hat = np.zeros((1, len(self.goterms)), dtype=float)
         self.data = {}
         self.test_prot_list = [chain]
@@ -100,16 +124,20 @@ class Predictor(object):
         Returns:
             None
         """
-        data = []
+
+        cdef list data = []
+        cdef dict entry = {}
+
         for prot, goterms in self.prot2goterms.items():
             sorted_rows = sorted(goterms, key=lambda x: x[2], reverse=True)
             for row in sorted_rows:
-                data.append({
+                entry = {
                     'Protein': prot,
                     'GO_term/EC_number': row[0],
                     'Score': '{:.5f}'.format(row[2]),
                     'GO_term/EC_number name': row[1]
-                })
+                }
+                data.append(entry)
 
         with open(output_fn, 'w', encoding="utf-8") as f:
             json.dump(data, f, indent=4)
