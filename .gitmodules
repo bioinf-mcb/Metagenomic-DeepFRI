@@ -1,0 +1,3 @@
+[submodule "vendor/parasail"]
+	path = vendor/parasail
+	url = https://github.com/jeffdaily/parasail
