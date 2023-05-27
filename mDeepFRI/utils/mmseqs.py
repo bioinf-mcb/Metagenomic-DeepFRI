@@ -1,17 +1,25 @@
+import logging
 import tempfile
 from pathlib import Path
 
 import pandas as pd
 
-from mDeepFRI import (MERGED_SEQUENCES, MMSEQS_SEARCH_RESULTS,
-                      TARGET_MMSEQS_DB_NAME)
-from mDeepFRI.utils.utils import merge_files_binary, run_command
+import mDeepFRI
+from mDeepFRI import MMSEQS_SEARCH_RESULTS
+from mDeepFRI.utils.utils import run_command
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches",
     "gap_openings", "query_start", "query_end", "target_start", "target_end",
     "e_value", "bit_score"
 ]
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger(__name__)
 
 
 def createdb(sequences_file, db_path):
@@ -46,24 +54,36 @@ def convertalis(query_db, target_db, result_db, output_file):
         f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
 
 
-def create_target_database(seq_atoms_path: Path, new_db_path: Path) -> None:
+def extract_fasta_foldcomp(foldcomp_db: str,
+                           output_file: str,
+                           threads: int = 1):
     """
-
-    :param seq_atoms_path:
-    :param new_db_path:
-    :param freshly_added_ids:
-    :return:
+    Extracts FASTA from database
     """
-    sequence_files = list((seq_atoms_path).glob("**/*.faa"))
-    print("\nMerging " + str(len(sequence_files)) +
-          " sequence files for mmseqs2")
-    merge_files_binary(sequence_files, seq_atoms_path / MERGED_SEQUENCES)
+    foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp"
 
-    print("Creating new target mmseqs2 database " + str(new_db_path))
-    createdb(seq_atoms_path / MERGED_SEQUENCES,
-             new_db_path / TARGET_MMSEQS_DB_NAME)
-    print("Indexing new target mmseqs2 database " + str(new_db_path))
-    createindex(new_db_path / TARGET_MMSEQS_DB_NAME)
+    # run command
+    run_command(
+        f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
+    )
+
+
+def create_target_database(foldcomp_fasta_path: Path,
+                           mmseqs_db_path: Path) -> None:
+    """
+    Extracts sequences from compressed FoldComp database.
+
+    Args:
+        foldcomp_db_path (pathlib.Path): Path to FoldComp database.
+        new_db_path (pathlib.Path): Path to new MMSeqs database.
+
+    Returns:
+        None
+    """
+    createdb(foldcomp_fasta_path, mmseqs_db_path)
+    logging.info("Indexing new target mmseqs2 database %s",
+                 str(mmseqs_db_path))
+    createindex(mmseqs_db_path)
 
 
 def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path,

@@ -1,7 +1,12 @@
 import os
+import platform
+import shutil
+import tarfile
 from distutils.util import convert_path
+from pathlib import Path
 
 import numpy as np
+import requests
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
@@ -9,6 +14,13 @@ try:
     from Cython.Build import cythonize
 except ImportError as err:
     cythonize = err
+
+FOLDCOMP_BINARIES = {
+    "LINUX": "https://mmseqs.com/foldcomp/foldcomp-linux-x86_64.tar.gz",
+    "LINUX_ARM64 ": "https://mmseqs.com/foldcomp/foldcomp-linux-arm64.tar.gz",
+    "MAC": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz",
+    "WIN": "https://mmseqs.com/foldcomp/foldcomp-windows-x64.zip"
+}
 
 main_ns = {}
 ver_path = convert_path('mDeepFRI/__init__.py')
@@ -18,6 +30,40 @@ with open(ver_path) as ver_file:
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
+def download_file(url, path):
+    with requests.get(url, stream=True) as r:
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+
+
+def download_foldcomp(output_path):
+    output_path = Path(output_path)
+    foldcomp_tar = output_path / "foldcomp.tar.gz"
+    foldcomp_bin = output_path / "foldcomp"
+    # check if foldcomp is downloaded
+    if not foldcomp_bin.exists():
+        # get OS
+        info = platform.uname()
+        system = info[0]
+        arch = info[4]
+
+        if system == "Linux":
+            if arch == "ARM64":
+                url = FOLDCOMP_BINARIES["LINUX_ARM64"]
+            else:
+                url = FOLDCOMP_BINARIES["LINUX"]
+        elif system == "Windows":
+            url = FOLDCOMP_BINARIES["WINDOWS"]
+        elif system == "Darwin":
+            url = FOLDCOMP_BINARIES["MACOS"]
+        download_file(url, foldcomp_tar)
+        # untar file
+        with tarfile.open(foldcomp_tar, "r:gz") as archive:
+            archive.extract("foldcomp", output_path)
+        # remove tar file
+        foldcomp_tar.unlink()
 
 
 class build_ext(_build_ext):
@@ -32,14 +78,15 @@ class build_ext(_build_ext):
                                     })
         for ext in self.extensions:  # this fixes a bug with setuptools
             ext._needs_stub = False
-
         _build_ext.run(self)
+        download_foldcomp(self.build_lib)
 
 
 SRC_DIR = "mDeepFRI"
 PACKAGES = [SRC_DIR]
 
-install_requires = ["cython"]
+install_requires = ["cython", "numpy"]
+setup_requires = ["cython"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.atoms_io",
@@ -87,9 +134,7 @@ setup(
     ext_modules=EXTENSIONS,
     include_dirs=[np.get_include()],
     install_requires=install_requires,
-    cmdclass={
-        'build_ext': build_ext,
-    },
+    cmdclass={'build_ext': build_ext},
     license="GNU GPLv3",
     packages=find_packages(),
     classifiers=[
