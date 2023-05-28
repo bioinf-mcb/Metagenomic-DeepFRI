@@ -99,7 +99,7 @@ def build_db(ctx, input_db, output, threads):
         threads=threads,
     )
 
-    logger.info("Database path: %s", output_path.absolute)
+    logger.info("Database path: %s", output_path.absolute())
     logger.info("Database was built successfully. Exiting.")
 
 

@@ -164,7 +164,7 @@ def filter_mmseqs_results(results_file: Path,
 
     final_database = np.concatenate(top_k_chunks)
 
-    logging.info("%i candidate structures after filtering.",
-                 final_database.shape[0])
+    logging.info("%i pairs after filtering with k=%i best hits.",
+                 final_database.shape[0], k_best_hits)
 
     return final_database
