@@ -2,7 +2,7 @@ import logging
 import tempfile
 from pathlib import Path
 
-import pandas as pd
+import numpy as np
 
 import mDeepFRI
 from mDeepFRI import MMSEQS_SEARCH_RESULTS
@@ -86,18 +86,49 @@ def create_target_database(foldcomp_fasta_path: Path,
     createindex(mmseqs_db_path)
 
 
-def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path,
-                      min_bit_score: float, max_evalue: float,
-                      min_identity: float) -> pd.DataFrame:
+def filter_mmseqs_search(results_file: Path, min_bit_score: float,
+                         max_evalue: float,
+                         min_identity: float) -> np.recarray:
+    """
+    Filters MMSeqs2 search results.
+
+    Args:
+        results_file (pathlib.Path): Path to MMSeqs2 search results.
+        min_bit_score (float): Minimum bit score.
+        max_evalue (float): Maximum e-value.
+        min_identity (float): Minimum identity.
+
+    Returns:
+        output (numpy.recarray): Filtered results.
+    """
+
+    output = np.recfromcsv(results_file,
+                           delimiter="\t",
+                           encoding="utf-8",
+                           names=True)
+
+    # MMSeqs2 alginment filters
+    if min_identity:
+        output = output[output['identity'] >= min_identity]
+    if min_bit_score:
+        output = output[output['bit_score'] >= min_bit_score]
+    if max_evalue:
+        output = output[output['e_value'] <= max_evalue]
+
+    return output
+
+
+def run_mmseqs_search(query_file: Path, target_db: Path,
+                      output_path: Path) -> Path:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 
     Args:
         query_file (pathlib.Path): Path to query FASTA file.
         target_db (pathlib.Path): Path to target MMSeqs2 database.
-        output_path (pathlib.Path):
+        output_path (pathlib.Path): Path to output folder.
 
     Returns:
-        pd.DataFrame: Pandas DataFrame with MMSeqs2 search results.
+        output_file (pathlib.Path): Path to MMSeqs2 search results.
     """
     output_file = output_path / MMSEQS_SEARCH_RESULTS
 
@@ -112,16 +143,4 @@ def run_mmseqs_search(query_file: Path, target_db: Path, output_path: Path,
         # Convert results to tabular format
         convertalis(query_db, target_db, result_db, output_file)
 
-    output = pd.read_csv(output_file, sep="\t", names=MMSEQS_COLUMN_NAMES)
-
-    # MMSeqs2 alginment filters
-    if min_identity:
-        output = output.query(f"identity >= {min_identity}")
-    if min_bit_score:
-        output = output.query(f"bitscore >= {min_bit_score}")
-    if max_evalue:
-        output = output.query(f"e_value <= {max_evalue}")
-
-    output.to_csv(output_file, sep="\t", index=False)
-
-    return output
+    return output_file
