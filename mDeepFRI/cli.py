@@ -5,7 +5,7 @@ import click
 
 from mDeepFRI import __version__
 from mDeepFRI.database import build_database
-# from mDeepFRI.pipeline import metagenomic_deepfri
+from mDeepFRI.pipeline import predict_protein_function
 from mDeepFRI.utils.utils import download_model_weights
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ def get_models(ctx, output):
         logging.getLogger("requests").setLevel(logging.INFO)
         logging.getLogger("urllib3").setLevel(logging.INFO)
 
+    logger.info("Downloading DeepFRI models.")
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
     download_model_weights(output_path)
@@ -102,135 +103,136 @@ def build_db(ctx, input_db, output, threads):
     logger.info("Database was built successfully. Exiting.")
 
 
-# @main.command()
-# @click.option(
-#     "-i",
-#     "--input",
-#     required=True,
-#     type=click.Path(exists=True),
-#     help="Path to an input protein sequences (FASTA file, may be gzipped).",
-# )
-# @click.option(
-#     "-d",
-#     "--db-path",
-#     required=True,
-#     type=click.Path(exists=True),
-#     help="Path to a structures database folder.",
-# )
-# @click.option(
-#     "-w",
-#     "--weights",
-#     required=True,
-#     type=click.Path(exists=True),
-#     help="Path to a folder containing model weights.",
-# )
-# @click.option(
-#     "-o",
-#     "--output",
-#     required=True,
-#     type=click.Path(exists=False),
-#     help="Path to output file.",
-# )
-# @click.option(
-#     "-f",
-#     "--output-format",
-#     default="tsv",
-#     type=click.Choice(["tsv", "csv", "json"]),
-#     help="Output format. Default is TSV.",
-# )
-# @click.option(
-#     "-p",
-#     "--processing-modes",
-#     default=["bp", "cc", "ec", "mf"],
-#     type=click.Choice(["bp", "cc", "ec", "mf"]),
-#     multiple=True,
-#     help="Processing modes. Default is all "
-#     "(biological process, cellular component, enzyme comission, molecular function).",
-# )
-# @click.option(
-#     "-a",
-#     "--angstrom-contact-thresh",
-#     default=6,
-#     type=float,
-#     help="Angstrom contact threshold. Default is 6.",
-# )
-# @click.option(
-#     "--generate-contacts",
-#     default=2,
-#     type=int,
-#     help="Gap fill threshold during contact map alignment.",
-# )
-# @click.option(
-#     "--mmseqs-min-bit-score",
-#     default=None,
-#     type=float,
-#     help="Minimum bit score for MMseqs2 alignment.",
-# )
-# @click.option(
-#     "--mmseqs-max-evalue",
-#     default=0.001,
-#     type=float,
-#     help="Maximum e-value for MMseqs2 alignment.",
-# )
-# @click.option(
-#     "--mmseqs-min-identity",
-#     default=0.5,
-#     type=float,
-#     help="Minimum identity for MMseqs2 alignment.",
-# )
-# @click.option(
-#     "--alignment-matrix",
-#     default="blosum62",
-#     type=click.Choice(
-#         ["blosum62", "pam250", "blosum80", "blosum45", "pam120", "pam160"]),
-#     help="Alignment matrix for contact map alignment.",
-# )
-# @click.option(
-#     "--alignment-gap-open",
-#     default=10,
-#     type=int,
-#     help="Gap open penalty for contact map alignment.",
-# )
-# @click.option(
-#     "--alignment-gap-extend",
-#     default=1,
-#     type=int,
-#     help="Gap extend penalty for contact map alignment.",
-# )
-# @click.option(
-#     "--alignment-min-identity",
-#     default=0.5,
-#     type=float,
-#     help="Minimum identity for contact map alignment.",
-# )
-# @click.option(
-#     "-t",
-#     "--threads",
-#     default=1,
-#     type=int,
-#     help="Number of threads to use. Default is 1.",
-# )
-# @click.pass_context
-# def predict_function(ctx, input, db_path, weights, output, output_format,
-#                      processing_modes, angstrom_contact_thresh,
-#                      generate_contacts, mmseqs_min_bit_score,
-#                      mmseqs_max_evalue, mmseqs_min_identity, alignment_matrix,
-#                      alignment_gap_open, alignment_gap_extend,
-#                      alignment_min_identity, threads):
-#     """Predict protein function from sequence."""
-#     if ctx.obj["debug"] is True:
-#         logger.setLevel(logging.DEBUG)
+@main.command()
+@click.option(
+    "-i",
+    "--input",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to an input protein sequences (FASTA file, may be gzipped).",
+)
+@click.option(
+    "-d",
+    "--db-path",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to a structures database folder.",
+)
+@click.option(
+    "-w",
+    "--weights",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to a folder containing model weights.",
+)
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    type=click.Path(exists=False),
+    help="Path to output file.",
+)
+@click.option(
+    "-f",
+    "--output-format",
+    default="tsv",
+    type=click.Choice(["tsv", "csv", "json"]),
+    help="Output format. Default is TSV.",
+)
+@click.option(
+    "-p",
+    "--processing-modes",
+    default=["bp", "cc", "ec", "mf"],
+    type=click.Choice(["bp", "cc", "ec", "mf"]),
+    multiple=True,
+    help="Processing modes. Default is all "
+    "(biological process, cellular component, enzyme comission, molecular function).",
+)
+@click.option(
+    "-a",
+    "--angstrom-contact-thresh",
+    default=6,
+    type=float,
+    help="Angstrom contact threshold. Default is 6.",
+)
+@click.option(
+    "--generate-contacts",
+    default=2,
+    type=int,
+    help="Gap fill threshold during contact map alignment.",
+)
+@click.option(
+    "--mmseqs-min-bit-score",
+    default=None,
+    type=float,
+    help="Minimum bit score for MMseqs2 alignment.",
+)
+@click.option(
+    "--mmseqs-max-evalue",
+    default=0.001,
+    type=float,
+    help="Maximum e-value for MMseqs2 alignment.",
+)
+@click.option(
+    "--mmseqs-min-identity",
+    default=0.5,
+    type=float,
+    help="Minimum identity for MMseqs2 alignment.",
+)
+@click.option(
+    "--alignment-matrix",
+    default="blosum62",
+    type=click.Choice(
+        ["blosum62", "pam250", "blosum80", "blosum45", "pam120", "pam160"]),
+    help="Alignment matrix for contact map alignment.",
+)
+@click.option(
+    "--alignment-gap-open",
+    default=10,
+    type=int,
+    help="Gap open penalty for contact map alignment.",
+)
+@click.option(
+    "--alignment-gap-extend",
+    default=1,
+    type=int,
+    help="Gap extend penalty for contact map alignment.",
+)
+@click.option(
+    "--alignment-min-identity",
+    default=0.5,
+    type=float,
+    help="Minimum identity for contact map alignment.",
+)
+@click.option(
+    "-t",
+    "--threads",
+    default=1,
+    type=int,
+    help="Number of threads to use. Default is 1.",
+)
+@click.pass_context
+def predict_function(ctx, input, db_path, weights, output, output_format,
+                     processing_modes, angstrom_contact_thresh,
+                     generate_contacts, mmseqs_min_bit_score,
+                     mmseqs_max_evalue, mmseqs_min_identity, alignment_matrix,
+                     alignment_gap_open, alignment_gap_extend,
+                     alignment_min_identity, threads):
+    """Predict protein function from sequence."""
+    if ctx.obj["debug"] is True:
+        logger.setLevel(logging.DEBUG)
 
-#     output_path = Path(output)
-#     output_path.mkdir(parents=True, exist_ok=True)
+    output_path = Path(output)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-#     metagenomic_deepfri(Path(input), Path(db_path), Path(weights), output_path,
-#                         output_format, processing_modes,
-#                         angstrom_contact_thresh, generate_contacts,
-#                         mmseqs_min_bit_score, mmseqs_max_evalue,
-#                         mmseqs_min_identity, alignment_matrix,
-#                         alignment_gap_open, alignment_gap_extend,
-#                         alignment_min_identity, threads)
+    predict_protein_function(Path(input), Path(db_path), Path(weights),
+                             output_path, output_format, processing_modes,
+                             angstrom_contact_thresh, generate_contacts,
+                             mmseqs_min_bit_score, mmseqs_max_evalue,
+                             mmseqs_min_identity, alignment_matrix,
+                             alignment_gap_open, alignment_gap_extend,
+                             alignment_min_identity, threads)
+
 
 if __name__ == "__main__":
     main(prog_name="mDeepFRI")
