@@ -2,12 +2,12 @@ import json
 import logging
 import os.path
 import pathlib
-from typing import List, Tuple
+from typing import Dict, List
 
 from pysam.libcfaidx import FastxFile
 
 from mDeepFRI import TARGET_MMSEQS_DB_NAME
-from mDeepFRI.utils.fasta_file_io import SeqFileLoader
+from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,32 +17,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def check_inputs(
-    query_file: pathlib.Path, database: pathlib.Path, output_path: pathlib.Path
-) -> Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]:
+def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     """
-    Check if input files and directories exist and are valid. Filters out proteins that are too long
-    or too short.
+    Loads query protein sequences from FASTA file. Filters
+    out sequences that are too short or too long.
 
     Args:
-        query_file (pathlib.Path): Path to a query file with protein sequences.
-        database (pathlib.Path): Path to a directory with a pre-built database.
-        output_path (pathlib.Path): Path to a directory where results will be saved.
-
-    Raises:
-        ValueError: Query file does not contain parsable protein sequences.
-        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+        query_file (str): Path to FASTA file with query protein sequences.
+        output_path (str): Path to output folder.
 
     Returns:
-        Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]: Tuple of query file path, query sequences,
-            path to target MMSeqs2 database and target sequences.
+        query_seqs (dict): Dictionary with query protein headers to sequences.
     """
 
     # By DeepFRI design
     MIN_PROTEIN_LENGTH = 60
     MAX_PROTEIN_LENGTH = 1_000
-
-    output_path.mkdir(parents=True, exist_ok=True)
 
     with FastxFile(query_file) as fasta:
         query_seqs = {record.name: record.sequence for record in fasta}
@@ -76,9 +66,27 @@ def check_inputs(
                   indent=4,
                   sort_keys=True)
 
-        assert len(
-            query_seqs
-        ) > 0, "All proteins were filtered out due to sequence length."
+    assert len(query_seqs
+               ) > 0, "All proteins were filtered out due to sequence length."
+
+    return query_seqs
+
+
+def check_mmseqs_database(database: pathlib.Path):
+    """
+    Check if MMSeqs2 database is intact.
+
+    Args:
+        query_file (pathlib.Path): Path to a query file with protein sequences.
+        database (pathlib.Path): Path to a directory with a pre-built database.
+        output_path (pathlib.Path): Path to a directory where results will be saved.
+
+    Raises:
+        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+
+    Returns:
+        target_db (pathlib.Path): Path to MMSeqs2 database.
+    """
 
     # Verify all the files for MMSeqs2 database
     mmseqs2_ext = [
@@ -94,7 +102,7 @@ def check_inputs(
         raise FileNotFoundError(
             "MMSeqs2 database appears to be corrupted. Please, rebuild it.")
 
-    return query_file, query_seqs, target_db
+    return target_db
 
 
 def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
@@ -144,6 +152,7 @@ def predict_protein_function(
         mmseqs_min_bit_score: float = None,
         mmseqs_max_eval: float = 10e-5,
         mmseqs_min_identity: float = 0.3,
+        top_k: int = 30,
         alignment_matrix: str = "blosum62",
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
@@ -177,24 +186,21 @@ def predict_protein_function(
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
 
-    model_config_json = check_deepfri_weights(weights)
-
-    query_file, query_seqs, target_db = check_inputs(query_file, database,
-                                                     output_path)
-
+    check_deepfri_weights(weights)
+    query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Running metagenomic-DeepFRI for %i sequences",
                  len(query_seqs))
+    target_db = check_mmseqs_database(database)
 
-    return query_file, query_seqs, target_db, model_config_json
+    logging.info("Running MMSeqs2 search for the query against database")
+    mmseqs_results = run_mmseqs_search(query_file, target_db, output_path)
+    filter_mmseqs_results(mmseqs_results,
+                          mmseqs_min_bit_score,
+                          mmseqs_max_eval,
+                          mmseqs_min_identity,
+                          k_best_hits=top_k,
+                          threads=threads)
 
-
-#     logging.info("Running MMSeqs2 search for the query against database")
-#     mmseqs_search_output = run_mmseqs_search(query_file, target_db,
-#                                              output_path, mmseqs_min_bit_score, mmseqs_max_eval,
-#                                              mmseqs_min_identity)
-
-#     mmseqs2_found_proteins = mmseqs_search_output.shape[0]
-#     logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
 
 #     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, alignment_matrix,
 #                                    alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
