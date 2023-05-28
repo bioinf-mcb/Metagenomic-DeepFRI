@@ -1,8 +1,10 @@
 import logging
 import tempfile
+from functools import partial
 from pathlib import Path
 
 import numpy as np
+from multiprocess.pool import ThreadPool
 
 import mDeepFRI
 from mDeepFRI import MMSEQS_SEARCH_RESULTS
@@ -86,38 +88,6 @@ def create_target_database(foldcomp_fasta_path: Path,
     createindex(mmseqs_db_path)
 
 
-def filter_mmseqs_search(results_file: Path, min_bit_score: float,
-                         max_evalue: float,
-                         min_identity: float) -> np.recarray:
-    """
-    Filters MMSeqs2 search results.
-
-    Args:
-        results_file (pathlib.Path): Path to MMSeqs2 search results.
-        min_bit_score (float): Minimum bit score.
-        max_evalue (float): Maximum e-value.
-        min_identity (float): Minimum identity.
-
-    Returns:
-        output (numpy.recarray): Filtered results.
-    """
-
-    output = np.recfromcsv(results_file,
-                           delimiter="\t",
-                           encoding="utf-8",
-                           names=True)
-
-    # MMSeqs2 alginment filters
-    if min_identity:
-        output = output[output['identity'] >= min_identity]
-    if min_bit_score:
-        output = output[output['bit_score'] >= min_bit_score]
-    if max_evalue:
-        output = output[output['e_value'] <= max_evalue]
-
-    return output
-
-
 def run_mmseqs_search(query_file: Path, target_db: Path,
                       output_path: Path) -> Path:
     """Creates a database from query sequences and runs mmseqs2 search against database.
@@ -130,8 +100,8 @@ def run_mmseqs_search(query_file: Path, target_db: Path,
     Returns:
         output_file (pathlib.Path): Path to MMSeqs2 search results.
     """
+    output_path.mkdir(parents=True, exist_ok=True)
     output_file = output_path / MMSEQS_SEARCH_RESULTS
-
     query_db = output_path / 'queryDB'
     createdb(query_file, query_db)
 
@@ -144,3 +114,52 @@ def run_mmseqs_search(query_file: Path, target_db: Path,
         convertalis(query_db, target_db, result_db, output_file)
 
     return output_file
+
+
+def filter_mmseqs_results(results_file: Path,
+                          min_bit_score: float = None,
+                          max_evalue: float = None,
+                          min_identity: float = None,
+                          k_best_hits: int = 30,
+                          threads: int = 1) -> np.recarray:
+    """
+    Filters MMSeqs results retrieving only k best hits based on identity
+    above specified thresholds. Allows number of paiwise alignments
+    in the next step of pipeline.
+
+    Args:
+        results_file (pathlib.Path): Path to MMSeqs2 search results.
+        min_bit_score (float): Minimum bit score.
+        max_evalue (float): Maximum e-value.
+        min_identity (float): Minimum identity.
+        k_best_hits (int): Number of best hits to keep.
+        threads (int): Number of threads to use.
+
+    Returns:
+        output (numpy.recarray): Filtered results.
+    """
+    def select_top_k(query, db, k=30):
+        return db[db["query"] == query][-k:]
+
+    output = np.recfromcsv(results_file,
+                           delimiter="\t",
+                           encoding="utf-8",
+                           names=MMSEQS_COLUMN_NAMES)
+
+    # MMSeqs2 alginment filters
+    if min_identity:
+        filtered = output[output['identity'] >= min_identity]
+    if min_bit_score:
+        filtered = output[output['bit_score'] >= min_bit_score]
+    if max_evalue:
+        filtered = output[output['e_value'] <= max_evalue]
+
+    # Get k best hits
+    filtered.sort(order=["query", "identity", "e_value"], kind="quciksort")
+    top_k_db = partial(select_top_k, db=filtered, k=k_best_hits)
+    with ThreadPool(threads) as pool:
+        top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
+
+    final_database = np.concatenate(top_k_chunks)
+
+    return final_database
