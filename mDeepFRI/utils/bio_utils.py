@@ -1,5 +1,25 @@
 import numpy as np
 import parasail
+from pysam import FastaFile, FastxFile
+
+
+def load_fasta_as_dict(fasta_file):
+    """Load FASTA file as dict"""
+    fasta_dict = dict()
+    with FastxFile(fasta_file) as fasta:
+        for entry in fasta:
+            fasta_dict[entry.name] = entry.sequence
+    return fasta_dict
+
+
+def retrieve_fasta_entries_as_dict(fasta_file, entries):
+    """Retrieve selected FASTA entries as dict"""
+    fasta_dict = dict()
+    with FastaFile(fasta_file) as fasta:
+        for name in entries:
+            fasta_dict[name] = fasta.fetch(name)
+    return fasta_dict
+
 
 # copied from Biopython to remove dependency
 protein_letters_1to3 = {
