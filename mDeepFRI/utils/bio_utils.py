@@ -5,10 +5,8 @@ from pysam import FastaFile, FastxFile
 
 def load_fasta_as_dict(fasta_file):
     """Load FASTA file as dict"""
-    fasta_dict = dict()
     with FastxFile(fasta_file) as fasta:
-        for entry in fasta:
-            fasta_dict[entry.name] = entry.sequence
+        fasta_dict = {entry.name: entry.sequence for entry in fasta}
     return fasta_dict
 
 
