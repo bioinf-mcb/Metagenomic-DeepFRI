@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 
-from mDeepFRI import TARGET_MMSEQS_DB_NAME
+from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.mmseqs import create_target_database, extract_fasta_foldcomp
 
 logging.basicConfig(
@@ -32,7 +32,7 @@ def build_database(
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
-    output_sequences = output_path / (input_path.stem + ".fasta")
+    output_sequences = output_path / MERGED_SEQUENCES
     extract_fasta_foldcomp(input_path, output_sequences, threads)
     create_target_database(output_sequences,
                            output_path / TARGET_MMSEQS_DB_NAME)
