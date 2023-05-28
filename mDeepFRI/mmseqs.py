@@ -146,6 +146,8 @@ def filter_mmseqs_results(results_file: Path,
                            encoding="utf-8",
                            names=MMSEQS_COLUMN_NAMES)
 
+    logging.info("%i MMSeqs2 hits in the database.", output.shape[0])
+
     # MMSeqs2 alginment filters
     if min_identity:
         filtered = output[output['identity'] >= min_identity]
@@ -161,5 +163,8 @@ def filter_mmseqs_results(results_file: Path,
         top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
 
     final_database = np.concatenate(top_k_chunks)
+
+    logging.info("%i candidate structures after filtering.",
+                 final_database.shape[0])
 
     return final_database
