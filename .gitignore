@@ -3,6 +3,7 @@ test_database/
 notebooks
 mDeepFRI/*.cpp
 cython_tests.ipynb
+foldcomp
 
 docs/build/*
 build/
@@ -22,7 +23,6 @@ __pycache__/
 
 # C extensions
 *.so
-!mDeepFRI/CPP_lib/libAtomDistanceIO.so
 
 # Distribution / packaging
 .Python
