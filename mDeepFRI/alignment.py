@@ -5,7 +5,7 @@ from multiprocessing.pool import ThreadPool
 
 import pyopal
 
-from mDeepFRI.alignment_utils import alignment_sequences_identity
+from mDeepFRI.alignment_utils import alignment_identity
 
 
 @dataclass
@@ -33,7 +33,7 @@ def align_best_score(query_item, database, target_names, gap_open, gap_extend):
                                   algorithm="nw",
                                   gap_open=gap_open,
                                   gap_extend=gap_extend)[0].alignment
-    identity = alignment_sequences_identity(alignment.encode())
+    identity = alignment_identity(alignment)
 
     if identity < 0.3:
         aln_results = None
@@ -66,3 +66,16 @@ def align_query(query_seqs: dict, target_seqs: dict, alignment_gap_open: float,
     logging.info("Pairwise alignment finished.")
 
     return all_alignments
+
+
+def insert_gaps(sequence, reference, alignment_string):
+    sequence = list(sequence)
+    reference = list(reference)
+    alignment_string = list(alignment_string)
+
+    for i, a in enumerate(alignment_string):
+        if a == "I":
+            sequence.insert(i, "-")
+        elif a == "D":
+            reference.insert(i, "-")
+    return "".join(sequence), "".join(reference)
