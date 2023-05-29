@@ -4,10 +4,13 @@ import os.path
 import pathlib
 from typing import Dict, List
 
-from pysam.libcfaidx import FastxFile
+import numpy as np
 
-from mDeepFRI import TARGET_MMSEQS_DB_NAME
+from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
+from mDeepFRI.alignment import align_query
 from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
+from mDeepFRI.utils.bio_utils import (load_fasta_as_dict,
+                                      retrieve_fasta_entries_as_dict)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -34,8 +37,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     MIN_PROTEIN_LENGTH = 60
     MAX_PROTEIN_LENGTH = 1_000
 
-    with FastxFile(query_file) as fasta:
-        query_seqs = {record.name: record.sequence for record in fasta}
+    query_seqs = load_fasta_as_dict(query_file)
 
     if len(query_seqs) == 0:
         raise ValueError(
@@ -58,7 +60,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
             "Skipping %i proteins due to sequence length outside range %i-%i aa.",
             len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
-                     "metadata_skipped_ids_length.json")
+                     "metadata_skipped_ids_length.json.")
         json.dump(prot_len_outliers,
                   open(output_path / 'metadata_skipped_ids_due_to_length.json',
                        "w",
@@ -153,7 +155,6 @@ def predict_protein_function(
         mmseqs_max_eval: float = 10e-5,
         mmseqs_min_identity: float = 0.3,
         top_k: int = 30,
-        alignment_matrix: str = "blosum62",
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         threads: int = 1):
@@ -188,22 +189,26 @@ def predict_protein_function(
 
     check_deepfri_weights(weights)
     query_seqs = load_query_sequences(query_file, output_path)
-    logging.info("Running metagenomic-DeepFRI for %i sequences",
-                 len(query_seqs))
+    logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
     target_db = check_mmseqs_database(database)
 
-    logging.info("Running MMSeqs2 search for the query against database")
     mmseqs_results = run_mmseqs_search(query_file, target_db, output_path)
-    filter_mmseqs_results(mmseqs_results,
-                          mmseqs_min_bit_score,
-                          mmseqs_max_eval,
-                          mmseqs_min_identity,
-                          k_best_hits=top_k,
-                          threads=threads)
+    filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
+                                                    mmseqs_min_bit_score,
+                                                    mmseqs_max_eval,
+                                                    mmseqs_min_identity,
+                                                    k_best_hits=top_k,
+                                                    threads=threads)
 
+    target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
+    target_seqs = retrieve_fasta_entries_as_dict(database / MERGED_SEQUENCES,
+                                                 target_ids)
 
-#     alignments = search_alignments(query_seqs, mmseqs_search_output, target_seqs, output_path, alignment_matrix,
-#                                    alignment_gap_open, alignment_gap_continuation, alignment_min_identity, threads)
+    alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
+                             alignment_gap_continuation, threads)
+
+    return alignments
+
 
 #     unaligned_queries = query_seqs.keys() - alignments.keys()
 #     deepfri_models_config = load_deepfri_config(model_config_json)
