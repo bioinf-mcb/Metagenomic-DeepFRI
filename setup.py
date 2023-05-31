@@ -1,5 +1,5 @@
 import os
-import platform
+import re
 import shutil
 import tarfile
 from distutils.util import convert_path
@@ -15,11 +15,48 @@ try:
 except ImportError as err:
     cythonize = err
 
+# --- Utils -----------------------------------------------------------------
+
+
+def _detect_target_machine(platform):
+    if platform == "win32":
+        return "x86"
+    return platform.rsplit("-", 1)[-1]
+
+
+def _detect_target_cpu(platform):
+    machine = _detect_target_machine(platform)
+    if re.match("^mips", machine):
+        return "mips"
+    elif re.match("^(aarch64|arm64)$", machine):
+        return "aarch64"
+    elif re.match("^arm", machine):
+        return "arm"
+    elif re.match("(x86_64)|(x86)|(AMD64|amd64)|(^i.86$)", machine):
+        return "x86"
+    elif re.match("^(powerpc|ppc)", machine):
+        return "ppc"
+    return None
+
+
+def _detect_target_system(platform):
+    if platform.startswith("win"):
+        return "windows"
+    elif platform.startswith("macos"):
+        return "macos"
+    elif platform.startswith("linux"):
+        return "linux_or_android"
+    elif platform.startswith("freebsd"):
+        return "freebsd"
+    return None
+
+
 FOLDCOMP_BINARIES = {
-    "LINUX": "https://mmseqs.com/foldcomp/foldcomp-linux-x86_64.tar.gz",
-    "LINUX_ARM64 ": "https://mmseqs.com/foldcomp/foldcomp-linux-arm64.tar.gz",
-    "MAC": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz",
-    "WIN": "https://mmseqs.com/foldcomp/foldcomp-windows-x64.zip"
+    "linux_or_android":
+    "https://mmseqs.com/foldcomp/foldcomp-linux-x86_64.tar.gz",
+    "aarch64": "https://mmseqs.com/foldcomp/foldcomp-linux-arm64.tar.gz",
+    "macos": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz",
+    "windows": "https://mmseqs.com/foldcomp/foldcomp-windows-x64.zip"
 }
 
 main_ns = {}
@@ -32,41 +69,38 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-def download_file(url, path):
+def _download_file(url, path):
     with requests.get(url, stream=True) as r:
         with open(path, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
 
 
-def download_foldcomp(output_path):
+def _download_foldcomp(system, cpu, output_path):
+    # select appropriate binary
+    if cpu == "aarch64" and system == "linux":
+        build = "aarch64"
+    else:
+        build = system
+    url = FOLDCOMP_BINARIES[build]
+
     output_path = Path(output_path)
     foldcomp_tar = output_path / "foldcomp.tar.gz"
-    foldcomp_bin = output_path / "foldcomp"
-    # check if foldcomp is downloaded
-    if not foldcomp_bin.exists():
-        # get OS
-        info = platform.uname()
-        system = info[0]
-        arch = info[4]
 
-        if system == "Linux":
-            if arch == "ARM64":
-                url = FOLDCOMP_BINARIES["LINUX_ARM64"]
-            else:
-                url = FOLDCOMP_BINARIES["LINUX"]
-        elif system == "Windows":
-            url = FOLDCOMP_BINARIES["WINDOWS"]
-        elif system == "Darwin":
-            url = FOLDCOMP_BINARIES["MACOS"]
-        download_file(url, foldcomp_tar)
-        # untar file
-        with tarfile.open(foldcomp_tar, "r:gz") as archive:
-            archive.extract("foldcomp", output_path)
-        # remove tar file
-        foldcomp_tar.unlink()
+    _download_file(url, foldcomp_tar)
+    # untar file
+    with tarfile.open(foldcomp_tar, "r:gz") as archive:
+        archive.extract("foldcomp", output_path)
+    # remove tar file
+    foldcomp_tar.unlink()
 
 
 class build_ext(_build_ext):
+    def initialize_options(self) -> None:
+        _build_ext.initialize_options(self)
+        self.target_machine = None
+        self.target_cpu = None
+        self.target_system = None
+
     def run(self):
         if isinstance(cythonize, ImportError):
             raise RuntimeError("Failed to import Cython") from cythonize
@@ -79,7 +113,10 @@ class build_ext(_build_ext):
         for ext in self.extensions:  # this fixes a bug with setuptools
             ext._needs_stub = False
         _build_ext.run(self)
-        download_foldcomp(self.build_lib)
+        self.target_machine = _detect_target_machine(self.plat_name)
+        self.target_cpu = _detect_target_cpu(self.plat_name)
+        self.target_system = _detect_target_system(self.plat_name)
+        _download_foldcomp(self.target_system, self.target_cpu, self.build_lib)
 
 
 SRC_DIR = "mDeepFRI"
