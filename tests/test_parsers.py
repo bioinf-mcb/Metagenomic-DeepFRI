@@ -4,7 +4,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from mDeepFRI.CPP_lib.parsers import parse_mmcif, parse_pdb
+from mDeepFRI.parsers import parse_mmcif, parse_pdb
 
 
 @pytest.fixture
