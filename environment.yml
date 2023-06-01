@@ -7,9 +7,9 @@ dependencies:
   - numpy>=1.19
   - mmseqs2=14.7e284
   - pip
-  - pysam>=0.16.0
   - pytest
-  - python
+  - python>=3.11
   - onnxruntime>=1.10
   - pip:
     - pyopal
+    - pysam>=0.21.0
