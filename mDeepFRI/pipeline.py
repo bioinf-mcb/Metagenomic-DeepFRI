@@ -107,9 +107,9 @@ def check_mmseqs_database(database: pathlib.Path):
     return target_db
 
 
-def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
+def load_deepfri_config(weights: pathlib.Path) -> pathlib.Path:
     """
-    Check if DeepFRI weights are valid.
+    Check if DeepFRI weights are valid and load config.
     Args:
         weights :
 
@@ -157,6 +157,7 @@ def predict_protein_function(
         top_k: int = 30,
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
+        identity_threshold: float = 0.3,
         threads: int = 1):
     """
     Run metagenomic-DeepFRI.
@@ -186,8 +187,8 @@ def predict_protein_function(
     database = pathlib.Path(database)
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    check_deepfri_weights(weights)
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
     target_db = check_mmseqs_database(database)
@@ -205,36 +206,35 @@ def predict_protein_function(
                                                  target_ids)
 
     alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
-                             alignment_gap_continuation, threads)
+                             alignment_gap_continuation, identity_threshold,
+                             threads)
 
-    return alignments
+    aligned_queries = [aln.query_name for aln in alignments]
+    {k: v for k, v in query_seqs.items() if k not in aligned_queries}
+    load_deepfri_config(weights)
 
+    # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
+    # mf = molecular_function
+    # bp = biological_process
+    # cc = cellular_component
+    # ec = enzyme_commission
 
-#     unaligned_queries = query_seqs.keys() - alignments.keys()
-#     deepfri_models_config = load_deepfri_config(model_config_json)
+    # for mode in deepfri_processing_modes:
+    #     logging.info("Processing mode: %s", mode)
+    #     # GCN for queries with aligned contact map
+    #     gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
 
-#     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
-#     # mf = molecular_function
-#     # bp = biological_process
-#     # cc = cellular_component
-#     # ec = enzyme_commission
+    #     if gcn_prots > 0:
+    #         logging.info("Predicting with GCN: %i proteins", gcn_prots)
+    #         output_path / f"results_gcn_{mode}"
 
-#     for mode in deepfri_processing_modes:
-#         logging.info("Processing mode: %s", mode)
-#         # GCN for queries with aligned contact map
-#         gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
+    #         gcn_params = deepfri_models_config["gcn"]["models"][mode]
+    #         Predictor(gcn_params, gcn=True, threads=threads)
 
-#         if gcn_prots > 0:
-#             logging.info("Predicting with GCN: %i proteins", gcn_prots)
-#             output_file_name = output_path / f"results_gcn_{mode}"
+    #         for aln in alignments:
+    #             query_id = aln.query_name
+    #             logging.info("Predicting %s", query_id)
 
-#             gcn_params = deepfri_models_config["gcn"]["models"][mode]
-#             gcn = Predictor(gcn_params, gcn=True, threads=threads)
-
-#             for query_id, alignment in alignments.items():
-#                 logging.info("Predicting %s", query_id)
-#                 query_seq = query_seqs[query_id]
-#                 target_id = alignment["target_id"]
 
 #                 generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
 #                     str(database / SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
