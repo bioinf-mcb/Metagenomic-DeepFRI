@@ -13,3 +13,4 @@ dependencies:
   - pip:
     - pyopal
     - pysam>=0.21.0
+    - foldcomp
