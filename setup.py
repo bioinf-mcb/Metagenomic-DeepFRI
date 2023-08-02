@@ -90,6 +90,9 @@ def _download_foldcomp(system, cpu, output_path):
     # untar file
     with tarfile.open(foldcomp_tar, "r:gz") as archive:
         archive.extract("foldcomp", output_path)
+    # rename binary after extraction to foldcomp_bin
+    (output_path / "foldcomp").rename(output_path / "foldcomp_bin")
+
     # remove tar file
     foldcomp_tar.unlink()
 
