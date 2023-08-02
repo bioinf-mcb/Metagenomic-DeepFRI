@@ -1,4 +1,3 @@
-import json
 import logging
 import pathlib
 import shlex
@@ -91,26 +90,3 @@ def shutdown(message):
         message (str): Reason for termination.
     """
     sys.exit(message)
-
-
-def load_deepfri_config(filepath_model_config_json: str) -> dict:
-    """Loads model_config.json with paths to different models.
-
-    Args:
-        filepath_model_config_json (str): path to a file within trained_models folder.
-        Distributed with original DeepFRI repo.
-
-    Returns:
-        dict: a dict of different models and paths to their weights.
-    """
-    json_filepath = pathlib.Path(filepath_model_config_json)
-    if not json_filepath.exists():
-        raise FileNotFoundError(f"Config file not found at {json_filepath}.")
-
-    # load and replace local paths to files with absolute paths
-    with open(filepath_model_config_json, "r") as json_file:
-        json_string = json_file.read().replace("./trained_models",
-                                               f"{json_filepath.parent}")
-    deepfri_config = json.loads(json_string)
-
-    return deepfri_config
