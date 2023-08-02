@@ -8,7 +8,7 @@ from multiprocess.pool import ThreadPool
 
 import mDeepFRI
 from mDeepFRI import MMSEQS_SEARCH_RESULTS
-from mDeepFRI.utils.utils import run_command
+from mDeepFRI.utils import run_command
 
 MMSEQS_COLUMN_NAMES = [
     "query", "target", "identity", "alignment_length", "mismatches",
@@ -62,7 +62,7 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     """
     Extracts FASTA from database
     """
-    foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp"
+    foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
 
     # run command
     run_command(
