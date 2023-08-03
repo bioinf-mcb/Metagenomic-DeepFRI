@@ -12,8 +12,9 @@ dependencies:
   - pytest
   - python>=3.11
   - onnxruntime>=1.10
-  - onnxruntime-gpu
+  - libdeflate
   - pip:
     - pyopal
     - pysam>=0.21.0
     - foldcomp
+    - onnxruntime-gpu

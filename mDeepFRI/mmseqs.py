@@ -1,10 +1,10 @@
 import logging
 import tempfile
 from functools import partial
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import numpy as np
-from multiprocess.pool import ThreadPool
 
 import mDeepFRI
 from mDeepFRI import MMSEQS_SEARCH_RESULTS
