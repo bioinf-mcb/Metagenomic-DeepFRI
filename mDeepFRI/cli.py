@@ -20,8 +20,6 @@ def main(ctx, debug):
 
     ctx.ensure_object(dict)
     ctx.obj["debug"] = debug
-
-    logger.info("Starting Metagenomic-DeepFRI.")
     if debug:
         logger.setLevel(logging.DEBUG)
         logger.debug("Debug mode is on.")
@@ -43,7 +41,6 @@ def main(ctx, debug):
 @click.pass_context
 def get_models(ctx, output):
     """Download model weights for mDeepFRI."""
-
     if ctx.obj["debug"] is True:
         logger.setLevel(logging.DEBUG)
         logging.getLogger("requests").setLevel(logging.DEBUG)
@@ -72,7 +69,7 @@ def get_models(ctx, output):
     "--db-path",
     required=True,
     type=click.Path(exists=True),
-    help="Path to a structures database folder.",
+    help="Path to a structures database compessed with FoldComp.",
 )
 @click.option(
     "-w",
@@ -89,19 +86,12 @@ def get_models(ctx, output):
     help="Path to output file.",
 )
 @click.option(
-    "-f",
-    "--output-format",
-    default="tsv",
-    type=click.Choice(["tsv", "csv", "json"]),
-    help="Output format. Default is TSV.",
-)
-@click.option(
     "-p",
     "--processing-modes",
     default=["bp", "cc", "ec", "mf"],
     type=click.Choice(["bp", "cc", "ec", "mf"]),
     multiple=True,
-    help="Processing modes. Default is all "
+    help="Processing modes. Default is all"
     "(biological process, cellular component, enzyme comission, molecular function).",
 )
 @click.option(
@@ -136,11 +126,11 @@ def get_models(ctx, output):
     help="Minimum identity for MMseqs2 alignment.",
 )
 @click.option(
-    "--alignment-matrix",
-    default="blosum62",
-    type=click.Choice(
-        ["blosum62", "pam250", "blosum80", "blosum45", "pam120", "pam160"]),
-    help="Alignment matrix for contact map alignment.",
+    "--top-k",
+    default=30,
+    type=int,
+    help="Number of top MMSeqs2 alignment for"
+    "precise pairwise alignment check. Default is 30.",
 )
 @click.option(
     "--alignment-gap-open",
@@ -161,6 +151,11 @@ def get_models(ctx, output):
     help="Minimum identity for contact map alignment.",
 )
 @click.option(
+    "--keep-intermediate/--no-keep-intermediate",
+    default=True,
+    help="Keep intermediate files. Default is True.",
+)
+@click.option(
     "-t",
     "--threads",
     default=1,
@@ -168,27 +163,38 @@ def get_models(ctx, output):
     help="Number of threads to use. Default is 1.",
 )
 @click.pass_context
-def predict_function(ctx, input, db_path, weights, output, output_format,
-                     processing_modes, angstrom_contact_thresh,
-                     generate_contacts, mmseqs_min_bit_score,
-                     mmseqs_max_evalue, mmseqs_min_identity, alignment_matrix,
-                     alignment_gap_open, alignment_gap_extend,
-                     alignment_min_identity, threads):
+def predict_function(ctx, input, db_path, weights, output, processing_modes,
+                     angstrom_contact_thresh, generate_contacts,
+                     mmseqs_min_bit_score, mmseqs_max_evalue,
+                     mmseqs_min_identity, top_k, alignment_gap_open,
+                     alignment_gap_extend, alignment_min_identity,
+                     keep_intermediate, threads):
     """Predict protein function from sequence."""
+    logger.info("Starting Metagenomic-DeepFRI.")
     if ctx.obj["debug"] is True:
         logger.setLevel(logging.DEBUG)
 
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    predict_protein_function(Path(input), Path(db_path), Path(weights),
-                             output_path, processing_modes,
-                             angstrom_contact_thresh, generate_contacts,
-                             mmseqs_min_bit_score, mmseqs_max_evalue,
-                             mmseqs_min_identity, alignment_matrix,
-                             alignment_gap_open, alignment_gap_extend,
-                             alignment_min_identity, threads)
+    predict_protein_function(
+        query_file=Path(input),
+        database=Path(db_path),
+        weights=Path(weights),
+        output_path=output_path,
+        deepfri_processing_modes=processing_modes,
+        angstrom_contact_threshold=angstrom_contact_thresh,
+        generate_contacts=generate_contacts,
+        mmseqs_min_bit_score=mmseqs_min_bit_score,
+        mmseqs_max_eval=mmseqs_max_evalue,
+        mmseqs_min_identity=mmseqs_min_identity,
+        top_k=top_k,
+        alignment_gap_open=alignment_gap_open,
+        alignment_gap_continuation=alignment_gap_extend,
+        identity_threshold=alignment_min_identity,
+        keep_intermediate=keep_intermediate,
+        threads=threads)
 
 
 if __name__ == "__main__":
-    main(prog_name="mDeepFRI")
+    main()

@@ -232,7 +232,7 @@ def predict_protein_function(
                 query_id = aln.query_name
                 logging.info("Predicting %s", query_id)
                 string_structure = retrieve_structure(
-                    aln.target_name.split(".")[0], database)
+                    aln.target_name.rsplit(".", 1)[0], database)
 
                 sparse_contact_map = calculate_cmap(
                     string_structure,
