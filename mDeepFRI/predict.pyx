@@ -38,7 +38,7 @@ cdef class Predictor(object):
         if rt.get_device() == 'CPU':
             self.threads = threads
         elif rt.get_device() == 'GPU':
-            self.threads = 0
+            self.threads = 1
 
         self._load_model()
         self.prot2goterms = {}
