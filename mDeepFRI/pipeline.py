@@ -2,16 +2,16 @@ import json
 import logging
 import os.path
 import pathlib
+from functools import partial
+from multiprocessing import Pool
 from typing import Dict, List
 
 import numpy as np
 
 from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.alignment import align_query
-from mDeepFRI.bio_utils import (align_contact_map, calculate_cmap,
-                                load_fasta_as_dict,
-                                retrieve_fasta_entries_as_dict,
-                                retrieve_structure)
+from mDeepFRI.bio_utils import (load_fasta_as_dict, retrieve_align_contact_map,
+                                retrieve_fasta_entries_as_dict)
 from mDeepFRI.database import build_database
 from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
 from mDeepFRI.predict import Predictor
@@ -170,6 +170,7 @@ def predict_protein_function(
 
 
     """
+    MAX_SEQ_LEN = 1000
     query_file = pathlib.Path(query_file)
     database = pathlib.Path(database)
     intermediate = build_database(
@@ -217,42 +218,37 @@ def predict_protein_function(
 
     gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
 
+    if gcn_prots > 0:
+        partial_align = partial(retrieve_align_contact_map,
+                                database=database,
+                                max_seq_len=MAX_SEQ_LEN,
+                                threshold=angstrom_contact_threshold,
+                                generated_contacts=generate_contacts)
+        logging.info("Aligning contact maps for %i proteins", gcn_prots)
+        with Pool(threads) as p:
+            aligned_cmaps = p.map(partial_align, alignments)
+
+        logging.info("Aligned %i contact maps", len(aligned_cmaps))
+
     for mode in deepfri_processing_modes:
         logging.info("Processing mode: %s", mode)
         # GCN for queries with aligned contact map
 
-        if gcn_prots > 0:
-            logging.info("Predicting with GCN: %i proteins", gcn_prots)
-            output_file_name = output_path / f"results_gcn_{mode}"
+        logging.info("Predicting with GCN: %i proteins", gcn_prots)
+        output_file_name = output_path / f"results_gcn_{mode}"
+        gcn_params = deepfri_models_config["gcn"]["models"][mode]
 
-            gcn_params = deepfri_models_config["gcn"]["models"][mode]
-            gcn = Predictor(gcn_params, threads=threads)
+        gcn = Predictor(gcn_params, threads=threads)
 
-            for aln in alignments:
-                query_id = aln.query_name
-                logging.info("Predicting %s", query_id)
-                string_structure = retrieve_structure(
-                    aln.target_name.rsplit(".", 1)[0], database)
+        for aln, aligned_cmap in aligned_cmaps:
+            logging.info("Predicting %s", aln.query_name)
+            # running the actual prediction
+            gcn.predict_function(seqres=aln.query_sequence,
+                                 cmap=aligned_cmap,
+                                 chain=aln.query_name)
 
-                sparse_contact_map = calculate_cmap(
-                    string_structure,
-                    max_seq_len=1000,
-                    threshold=angstrom_contact_threshold,
-                    mode="sparse")
-
-                aligned_cmap = align_contact_map(
-                    aln.gapped_sequence,
-                    aln.gapped_target,
-                    sparse_contact_map,
-                    generated_contacts=generate_contacts)
-
-                # running the actual prediction
-                gcn.predict_function(seqres=aln.query_sequence,
-                                     cmap=aligned_cmap,
-                                     chain=query_id)
-
-            gcn.export_tsv(str(output_file_name.with_suffix('.tsv')))
-            del gcn
+        gcn.export_tsv(str(output_file_name.with_suffix('.tsv')))
+        del gcn
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:

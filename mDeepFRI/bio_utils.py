@@ -226,3 +226,17 @@ def align_contact_map(query_alignment: str,
         output_contact_map[j, i] = 1
 
     return output_contact_map
+
+
+def retrieve_align_contact_map(alignment, database: str, max_seq_len: int,
+                               threshold: float, generated_contacts: int):
+    idx = alignment.target_name.rsplit(".", 1)[0]
+    pdb_string = retrieve_structure(idx, database)
+    cmap = calculate_cmap(pdb_string,
+                          max_seq_len=max_seq_len,
+                          threshold=threshold,
+                          mode="sparse")
+    aligned_cmap = align_contact_map(alignment.gapped_sequence,
+                                     alignment.gapped_target, cmap,
+                                     generated_contacts)
+    return (alignment, aligned_cmap)

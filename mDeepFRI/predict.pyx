@@ -8,6 +8,7 @@ cimport numpy as np
 np.import_array()
 
 import onnxruntime as rt
+import torch
 
 from mDeepFRI.bio_utils import seq2onehot
 
