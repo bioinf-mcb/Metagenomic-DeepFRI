@@ -6,7 +6,7 @@ import click
 from mDeepFRI import __version__
 from mDeepFRI.database import build_database
 from mDeepFRI.pipeline import predict_protein_function
-from mDeepFRI.utils.utils import download_model_weights
+from mDeepFRI.utils import download_model_weights
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -226,7 +226,7 @@ def predict_function(ctx, input, db_path, weights, output, output_format,
     output_path.mkdir(parents=True, exist_ok=True)
 
     predict_protein_function(Path(input), Path(db_path), Path(weights),
-                             output_path, output_format, processing_modes,
+                             output_path, processing_modes,
                              angstrom_contact_thresh, generate_contacts,
                              mmseqs_min_bit_score, mmseqs_max_evalue,
                              mmseqs_min_identity, alignment_matrix,
