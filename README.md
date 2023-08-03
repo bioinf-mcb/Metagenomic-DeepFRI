@@ -43,7 +43,7 @@ mDeepFRI --help
 
 # Usage
 ## Prepare structural database
-Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially because of pairwise alignment and the format of protein names might differ.
+Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and app will crash.
 ## 1. Download models
 Run command:
 ```
@@ -75,9 +75,10 @@ Sometimes results from one model can be missing which means that all query prote
 The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run use
 flag `--no-keep-temporary`.
 
-## GPU / CPU utilization
-**Attention:** Single instance of DeepFRI on GPU requires 10GB VRAM.
-If CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction If not, the model will use CPUs. If argument `threads` is provided, the prediction will run on multiple CPU cores.
+## CPU / GPU utilization
+If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, inference).
+If CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
+**Attention:** Single instance of DeepFRI on GPU requires 2GB VRAM.
 
 ## Citations
 If you use this software please cite:
