@@ -29,10 +29,27 @@ def build_database(
     Returns:
         None
     """
+
+    logging.info("Building MMSeqs2 database from %s", input_path)
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
     output_sequences = output_path / MERGED_SEQUENCES
-    extract_fasta_foldcomp(input_path, output_sequences, threads)
-    create_target_database(output_sequences,
-                           output_path / TARGET_MMSEQS_DB_NAME)
+    # check if files exist in output directory
+    if output_sequences.exists():
+        logging.info("Found %s in %s", MERGED_SEQUENCES, output_path)
+        logging.info(
+            "Skipping extraction of FASTA file from FoldComp database.")
+    else:
+        logging.info("Extracting FASTA file from FoldComp database.")
+        extract_fasta_foldcomp(input_path, output_sequences, threads)
+        logging.info("FASTA file extracted to %s", output_sequences)
+
+    if (output_path / TARGET_MMSEQS_DB_NAME).exists():
+        logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
+        logging.info("Skipping creation of MMSeqs2 database.")
+    else:
+        logging.info("Creating MMSeqs2 database.")
+        create_target_database(output_sequences,
+                               output_path / TARGET_MMSEQS_DB_NAME)
+        logging.info("Database created at %s", output_path)

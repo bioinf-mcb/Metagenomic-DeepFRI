@@ -12,6 +12,7 @@ from mDeepFRI.bio_utils import (align_contact_map, calculate_cmap,
                                 load_fasta_as_dict,
                                 retrieve_fasta_entries_as_dict,
                                 retrieve_structure)
+from mDeepFRI.database import build_database
 from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
 from mDeepFRI.predict import Predictor
 
@@ -164,38 +165,24 @@ def predict_protein_function(
         identity_threshold: float = 0.3,
         threads: int = 1):
     """
-    Run metagenomic-DeepFRI.
-    Args:
-        query_file:
-        database:
-        weights:
-        output_path:
-        output_format:
-        deepfri_processing_modes:
-        angstrom_contact_threshold:
-        generate_contacts:
-        mmseqs_min_bit_score:
-        mmseqs_max_eval:
-        mmseqs_min_identity:
-        alignment_match:
-        alignment_missmatch:
-        alignment_gap_open:
-        alignment_gap_continuation:
-        alignment_min_identity:
-        threads:
 
-    Returns:
 
     """
     query_file = pathlib.Path(query_file)
     database = pathlib.Path(database)
+    build_database(
+        input_path=database,
+        output_path=database.parent,
+        threads=threads,
+    )
+
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
 
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
-    target_db = check_mmseqs_database(database)
+    target_db = check_mmseqs_database(database.parent)
 
     mmseqs_results = run_mmseqs_search(query_file, target_db, output_path)
     filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
@@ -206,8 +193,8 @@ def predict_protein_function(
                                                     threads=threads)
 
     target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
-    target_seqs = retrieve_fasta_entries_as_dict(database / MERGED_SEQUENCES,
-                                                 target_ids)
+    target_seqs = retrieve_fasta_entries_as_dict(
+        database.parent / MERGED_SEQUENCES, target_ids)
 
     alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
                              alignment_gap_continuation, identity_threshold,
@@ -227,7 +214,7 @@ def predict_protein_function(
     # ec = enzyme_commission
 
     gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
-    afdb = "/nfs/nas22/fs2202/biol_micro_sunagawa/Projects/EAN/PROPHAGE_REFSEQ_EAN/scratch/databases/afdb_swissprot_v4"
+
     for mode in deepfri_processing_modes:
         logging.info("Processing mode: %s", mode)
         # GCN for queries with aligned contact map
@@ -243,7 +230,7 @@ def predict_protein_function(
                 query_id = aln.query_name
                 logging.info("Predicting %s", query_id)
                 string_structure = retrieve_structure(
-                    aln.target_name.split(".")[0], afdb)
+                    aln.target_name.split(".")[0], database)
 
                 sparse_contact_map = calculate_cmap(
                     string_structure,

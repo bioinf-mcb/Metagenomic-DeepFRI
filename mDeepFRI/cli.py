@@ -4,7 +4,6 @@ from pathlib import Path
 import click
 
 from mDeepFRI import __version__
-from mDeepFRI.database import build_database
 from mDeepFRI.pipeline import predict_protein_function
 from mDeepFRI.utils import download_model_weights
 
@@ -58,49 +57,6 @@ def get_models(ctx, output):
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
     download_model_weights(output_path)
-
-
-# add subcommand for building database
-@main.command()
-@click.option(
-    "-i",
-    "--input_db",
-    required=True,
-    type=click.Path(exists=True),
-    help="Path to structure files or folders containing structure files.",
-)
-@click.option(
-    "-o",
-    "--output",
-    required=True,
-    type=click.Path(exists=False),
-    help="Path to folder where the database will be created.",
-)
-@click.option(
-    "-t",
-    "--threads",
-    default=1,
-    type=int,
-    help="Number of threads to use. Default is 1.",
-)
-@click.pass_context
-def build_db(ctx, input_db, output, threads):
-    """Build a database for meta_deepFRI."""
-
-    if ctx.obj["debug"] is True:
-        logger.setLevel(logging.DEBUG)
-
-    logger.info("Building database with %s threads.", threads)
-    input_db = Path(input_db)
-    output_path = Path(output)
-    build_database(
-        input_path=input_db,
-        output_path=output_path,
-        threads=threads,
-    )
-
-    logger.info("Database path: %s", output_path.absolute())
-    logger.info("Database was built successfully. Exiting.")
 
 
 @main.command()
