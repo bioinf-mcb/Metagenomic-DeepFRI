@@ -103,7 +103,7 @@ def calculate_cmap(pdb_string, max_seq_len=1000, threshold=6.0, mode="matrix"):
     cmap = (distances < threshold).astype(np.int32)
 
     if mode == "sparse":
-        cmap = np.argwhere(cmap is True).astype(np.uint32)
+        cmap = np.argwhere(cmap == 1).astype(np.uint32)
     else:
         pass
 
