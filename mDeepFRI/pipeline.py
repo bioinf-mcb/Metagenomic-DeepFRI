@@ -8,9 +8,12 @@ import numpy as np
 
 from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.alignment import align_query
+from mDeepFRI.bio_utils import (align_contact_map, calculate_cmap,
+                                load_fasta_as_dict,
+                                retrieve_fasta_entries_as_dict,
+                                retrieve_structure)
 from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
-from mDeepFRI.utils.bio_utils import (load_fasta_as_dict,
-                                      retrieve_fasta_entries_as_dict)
+from mDeepFRI.predict import Predictor
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -137,8 +140,10 @@ def load_deepfri_config(weights: pathlib.Path) -> pathlib.Path:
             ), f"DeepFRI weights are missing {model_type} model at {model_name}"
             assert config_name.exists(
             ), f"DeepFRI weights are missing {model_type} model config at {config_name}"
-
-    return config_path
+            # correct config
+            models_config[net]["models"][model_type] = str(
+                model_name.absolute())
+    return models_config
 
 
 ## TODO: structure output folder
@@ -147,7 +152,6 @@ def predict_protein_function(
         database: str,
         weights: str,
         output_path: str,
-        output_format: List[str] = ["tsv"],
         deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
         angstrom_contact_threshold: float = 6,
         generate_contacts: int = 2,
@@ -210,8 +214,11 @@ def predict_protein_function(
                              threads)
 
     aligned_queries = [aln.query_name for aln in alignments]
-    {k: v for k, v in query_seqs.items() if k not in aligned_queries}
-    load_deepfri_config(weights)
+    unaligned_queries = {
+        k: v
+        for k, v in query_seqs.items() if k not in aligned_queries
+    }
+    deepfri_models_config = load_deepfri_config(weights)
 
     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
@@ -219,60 +226,58 @@ def predict_protein_function(
     # cc = cellular_component
     # ec = enzyme_commission
 
-    # for mode in deepfri_processing_modes:
-    #     logging.info("Processing mode: %s", mode)
-    #     # GCN for queries with aligned contact map
-    #     gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
+    gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
+    afdb = "/nfs/nas22/fs2202/biol_micro_sunagawa/Projects/EAN/PROPHAGE_REFSEQ_EAN/scratch/databases/afdb_swissprot_v4"
+    for mode in deepfri_processing_modes:
+        logging.info("Processing mode: %s", mode)
+        # GCN for queries with aligned contact map
 
-    #     if gcn_prots > 0:
-    #         logging.info("Predicting with GCN: %i proteins", gcn_prots)
-    #         output_path / f"results_gcn_{mode}"
+        if gcn_prots > 0:
+            logging.info("Predicting with GCN: %i proteins", gcn_prots)
+            output_file_name = output_path / f"results_gcn_{mode}"
 
-    #         gcn_params = deepfri_models_config["gcn"]["models"][mode]
-    #         Predictor(gcn_params, gcn=True, threads=threads)
+            gcn_params = deepfri_models_config["gcn"]["models"][mode]
+            gcn = Predictor(gcn_params, threads=threads)
 
-    #         for aln in alignments:
-    #             query_id = aln.query_name
-    #             logging.info("Predicting %s", query_id)
+            for aln in alignments:
+                query_id = aln.query_name
+                logging.info("Predicting %s", query_id)
+                string_structure = retrieve_structure(
+                    aln.target_name.split(".")[0], afdb)
 
+                sparse_contact_map = calculate_cmap(
+                    string_structure,
+                    max_seq_len=1000,
+                    threshold=angstrom_contact_threshold,
+                    mode="sparse")
 
-#                 generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
-#                     str(database / SEQ_ATOMS_DATASET_PATH / ATOMS / (target_id + ".bin")),
-#                     angstrom_contact_threshold,
-#                     alignment["query_sequence"],  # query alignment
-#                     alignment["target_sequence"],  # target alignment
-#                     generate_contacts)
+                aligned_cmap = align_contact_map(
+                    aln.gapped_sequence,
+                    aln.gapped_target,
+                    sparse_contact_map,
+                    generated_contacts=generate_contacts)
 
-#                 # running the actual prediction
-#                 gcn.predict_function(seqres=query_seq, cmap=generated_query_contact_map, chain=query_id)
+                # running the actual prediction
+                gcn.predict_function(seqres=aln.query_sequence,
+                                     cmap=aligned_cmap,
+                                     chain=query_id)
 
-#                 if "tsv" in output_format:
-#                     gcn.export_tsv(output_file_name.with_suffix('.tsv'))
-#                 if "csv" in output_format:
-#                     gcn.export_csv(output_file_name.with_suffix('.csv'))
-#                 if "json" in output_format:
-#                     gcn.export_json(output_file_name.with_suffix('.json'))
+            gcn.export_tsv(str(output_file_name.with_suffix('.tsv')))
+            del gcn
 
-#             del gcn
+        # CNN for queries without satisfying alignments
+        if cnn_prots > 0:
+            logging.info("Predicting with CNN: %i proteins", cnn_prots)
+            output_file_name = output_path / f"results_cnn_{mode}"
 
-#         # CNN for queries without satisfying alignments
-#         if cnn_prots > 0:
-#             logging.info("Predicting with CNN: %i proteins", cnn_prots)
-#             output_file_name = output_path / f"results_cnn_{mode}"
+            cnn_params = deepfri_models_config["cnn"]["models"][mode]
+            cnn = Predictor(cnn_params, threads=threads)
+            for query_id in unaligned_queries:
+                logging.info("Predicting %s", query_id)
+                cnn.predict_function(seqres=query_seqs[query_id],
+                                     chain=query_id)
 
-#             cnn_params = deepfri_models_config["cnn"]["models"][mode]
-#             cnn = Predictor(cnn_params, gcn=False, threads=threads)
-#             for query_id in unaligned_queries:
-#                 logging.info("Predicting %s", query_id)
-#                 cnn.predict_function(seqres=query_seqs[query_id], chain=query_id)
+            cnn.export_tsv(str(output_file_name.with_suffix('.tsv')))
+            del cnn
 
-#             if "tsv" in output_format:
-#                 cnn.export_tsv(output_file_name.with_suffix('.tsv'))
-#             if "csv" in output_format:
-#                 cnn.export_csv(output_file_name.with_suffix('.csv'))
-#             if "json" in output_format:
-#                 cnn.export_json(output_file_name.with_suffix('.json'))
-
-#             del cnn
-
-#     logging.info("meta-DeepFRI finished successfully")
+    logging.info("meta-DeepFRI finished successfully")

@@ -6,9 +6,10 @@ import numpy as np
 cimport numpy as np
 
 np.import_array()
+
 import onnxruntime as rt
 
-from mDeepFRI.utils.bio_utils import seq2onehot
+from mDeepFRI.bio_utils import seq2onehot
 
 
 ## TODO: do not accumulate predictions, write them out to csv asap to avoid unneccessary RAM usage
@@ -18,7 +19,7 @@ cdef class Predictor(object):
     """
 
     cdef public bint gcn
-    cdef public str model_prefix
+    cdef public str model_path
     cdef public int threads
     cdef public dict prot2goterms
     cdef public dict goidx2chains
@@ -30,9 +31,8 @@ cdef class Predictor(object):
     cdef public dict data
     cdef public list test_prot_list
 
-    def __init__(self, model_prefix: str, gcn: bool = True, threads: int = 0):
-        self.model_prefix = model_prefix
-        self.gcn = gcn
+    def __init__(self, model_path: str, threads: int = 0):
+        self.model_path = model_path
 
         # Not clear how parameter influences GPU exec
         if rt.get_device() == 'CPU':
@@ -48,13 +48,13 @@ cdef class Predictor(object):
         session_options = rt.SessionOptions()
         session_options.intra_op_num_threads = self.threads
         self.session = rt.InferenceSession(
-            self.model_prefix + '.onnx',
+            self.model_path,
             providers=['CUDAExecutionProvider', 'CPUExecutionProvider'],
             sess_options=session_options,
         )
 
         # load parameters
-        with open(self.model_prefix + "_model_params.json") as json_file:
+        with open(self.model_path.rsplit(".", 1)[0] + "_model_params.json") as json_file:
             metadata = json.load(json_file)
 
         self.gonames = np.asarray(metadata['gonames'])
@@ -90,7 +90,8 @@ cdef class Predictor(object):
         S = seq2onehot(seqres)
         S = S.reshape(1, *S.shape)
         inputDetails = self.session.get_inputs()
-        if self.gcn:
+        # if cmap present use GCN with 2 inputs - sequence + cmap
+        if cmap is not None:
             A = cmap.reshape(1, *cmap.shape)
             prediction = self.session.run(
                 None, {
@@ -98,6 +99,8 @@ cdef class Predictor(object):
                     inputDetails[1].name: S.astype(np.float32)
                 })[0]
             self.data[chain] = [[A, S], seqres]
+
+        # if no cmap use CNN with 1 input
         else:
             prediction = self.session.run(
                 None, {inputDetails[0].name: S.astype(np.float32)})[0]
@@ -114,33 +117,6 @@ cdef class Predictor(object):
             self.prot2goterms[chain].append(
                 (self.goterms[idx], self.gonames[idx], float(y[idx])))
 
-    def export_json(self, output_fn: str):
-        """
-        Exports predictions to .json format
-
-        Args:
-            output_fn (str): output file name
-
-        Returns:
-            None
-        """
-
-        cdef list data = []
-        cdef dict entry = {}
-
-        for prot, goterms in self.prot2goterms.items():
-            sorted_rows = sorted(goterms, key=lambda x: x[2], reverse=True)
-            for row in sorted_rows:
-                entry = {
-                    'Protein': prot,
-                    'GO_term/EC_number': row[0],
-                    'Score': '{:.5f}'.format(row[2]),
-                    'GO_term/EC_number name': row[1]
-                }
-                data.append(entry)
-
-        with open(output_fn, 'w', encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
 
     def save_file(self, output_fn: str, delimiter: str, quotechar: str = '"'):
         """
@@ -166,9 +142,6 @@ cdef class Predictor(object):
                 for row in sorted_rows:
                     writer.writerow(
                         [prot, row[0], '{:.5f}'.format(row[2]), row[1]])
-
-    def export_csv(self, output_fn: str):
-        self.save_file(output_fn, ",")
 
     def export_tsv(self, output_fn: str):
         self.save_file(output_fn, "\t")
