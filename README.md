@@ -50,11 +50,12 @@ Run command:
 mDeepFRI get-models --output path/to/weights/folder
 ```
 
-## 2. Predict protein function
+## 2. Predict protein function & capture log
 ```
-mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path
+mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path 2> log.txt
 ```
 
+Logging module writes output into `stderr`, so use `2>` to redirect it to file.
 Other available parameters can be found upon command `mDeepFRI --help`.
 ## Results
 Finished folder will contain:
