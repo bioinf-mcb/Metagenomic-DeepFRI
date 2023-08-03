@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(version=__version__)
 @click.pass_context
-def main(ctx, debug):
+def cli(ctx, debug):
     """mDeepFRI"""
 
     ctx.ensure_object(dict)
@@ -30,7 +30,7 @@ def main(ctx, debug):
         logging.getLogger("requests").setLevel(logging.INFO)
 
 
-@main.command
+@cli.command
 @click.option(
     "-o",
     "--output",
@@ -56,7 +56,7 @@ def get_models(ctx, output):
     download_model_weights(output_path)
 
 
-@main.command()
+@cli.command()
 @click.option(
     "-i",
     "--input",
@@ -194,7 +194,3 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         identity_threshold=alignment_min_identity,
         keep_intermediate=keep_intermediate,
         threads=threads)
-
-
-if __name__ == "__main__":
-    main()

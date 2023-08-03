@@ -118,7 +118,10 @@ cdef class Predictor(object):
                 (self.goterms[idx], self.gonames[idx], float(y[idx])))
 
 
-    def save_file(self, output_fn: str, delimiter: str, quotechar: str = '"'):
+    def __save_file(self,
+                    output_fn: str,
+                    delimiter: str,
+                    quotechar: str = '"'):
         """
         Exports predictions to .csv or .tsv format
 
@@ -144,4 +147,8 @@ cdef class Predictor(object):
                         [prot, row[0], '{:.5f}'.format(row[2]), row[1]])
 
     def export_tsv(self, output_fn: str):
-        self.save_file(output_fn, "\t")
+        """
+        Exports predictions to .tsv format
+        """
+
+        self.__save_file(output_fn, "\t")
