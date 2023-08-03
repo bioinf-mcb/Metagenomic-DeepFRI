@@ -129,17 +129,6 @@ install_requires = ["cython", "numpy"]
 setup_requires = ["cython"]
 
 EXTENSIONS = [
-    Extension("mDeepFRI.atoms_io",
-              sources=[SRC_DIR + "/atoms_io.pyx"],
-              language="c++",
-              libraries=["stdc++"],
-              extra_compile_args=["-std=c++17", "-O3"],
-              extra_link_args=["-std=c++17"]),
-    Extension("mDeepFRI.parsers",
-              sources=[SRC_DIR + "/parsers.pyx"],
-              language="c++",
-              libraries=["stdc++"],
-              extra_compile_args=["-std=c++17", "-O3"]),
     Extension("mDeepFRI.predict",
               sources=[SRC_DIR + "/predict.pyx"],
               language="c++",
