@@ -7,7 +7,7 @@ import sys
 
 import requests
 
-from mDeepFRI import config_links, model_links
+from mDeepFRI import cnn_model_links, config_links, gcn_model_links
 
 
 def run_command(command, timeout=-1):
@@ -46,6 +46,7 @@ def download_file(url, path):
 
 def download_model_weights(output_path: pathlib.Path):
 
+    model_links = list(cnn_model_links.items()) + list(gcn_model_links.items())
     total_len = len(model_links)
     for i, model_link in enumerate(model_links):
         download_file(model_link, output_path / model_link.split("/")[-1])

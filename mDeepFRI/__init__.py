@@ -1,14 +1,26 @@
 __version__ = "2.0.0"
-model_links = [
+cnn_model_links = {
+    "bp":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_bp.onnx",
+    "cc":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_cc.onnx",
+    "mf":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_mf.onnx",
+    "ec":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_ec.onnx",
+}
+
+gcn_model_links = {
+    "bp":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_bp.onnx",
+    "cc":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_cc.onnx",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec.onnx",
+    "mf":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_mf.onnx",
-]
+    "ec":
+    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec.onnx",
+}
+
 config_links = [
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_bp_model_params.json",
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_cc_model_params.json",
