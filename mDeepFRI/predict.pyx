@@ -33,12 +33,9 @@ cdef class Predictor(object):
 
     def __init__(self, model_path: str, threads: int = 0):
         self.model_path = model_path
+        self.threads = threads
 
         # Not clear how parameter influences GPU exec
-        if rt.get_device() == 'CPU':
-            self.threads = threads
-        elif rt.get_device() == 'GPU':
-            self.threads = 1
 
         self._load_model()
         self.prot2goterms = {}
@@ -46,7 +43,12 @@ cdef class Predictor(object):
 
     def _load_model(self):
         session_options = rt.SessionOptions()
-        session_options.intra_op_num_threads = self.threads
+
+        if rt.get_device() == 'CPU':
+            session_options.intra_op_num_threads = self.threads
+        elif rt.get_device() == 'GPU':
+            pass
+
         self.session = rt.InferenceSession(
             self.model_path,
             providers=['CUDAExecutionProvider', 'CPUExecutionProvider'],
