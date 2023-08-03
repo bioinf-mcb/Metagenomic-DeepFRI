@@ -11,10 +11,11 @@ dependencies:
   - pip
   - pytest
   - python>=3.11
-  - onnxruntime>=1.10
   - libdeflate
   - pip:
     - pyopal
     - pysam>=0.21.0
     - foldcomp
     - onnxruntime-gpu
+    - torch
+    - pre-commit
