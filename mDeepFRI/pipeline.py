@@ -15,6 +15,7 @@ from mDeepFRI.bio_utils import (align_contact_map, calculate_cmap,
 from mDeepFRI.database import build_database
 from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
 from mDeepFRI.predict import Predictor
+from mDeepFRI.utils import remove_temporary
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -163,6 +164,7 @@ def predict_protein_function(
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.3,
+        keep_intermediate=True,
         threads: int = 1):
     """
 
@@ -170,7 +172,7 @@ def predict_protein_function(
     """
     query_file = pathlib.Path(query_file)
     database = pathlib.Path(database)
-    build_database(
+    intermediate = build_database(
         input_path=database,
         output_path=database.parent,
         threads=threads,
@@ -266,5 +268,8 @@ def predict_protein_function(
 
             cnn.export_tsv(str(output_file_name.with_suffix('.tsv')))
             del cnn
+
+    if not keep_intermediate:
+        remove_temporary(intermediate)
 
     logging.info("meta-DeepFRI finished successfully")

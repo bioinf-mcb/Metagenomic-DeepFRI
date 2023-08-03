@@ -53,3 +53,5 @@ def build_database(
         create_target_database(output_sequences,
                                output_path / TARGET_MMSEQS_DB_NAME)
         logging.info("Database created at %s", output_path)
+
+    return (output_sequences, output_path / TARGET_MMSEQS_DB_NAME)

@@ -4,6 +4,9 @@ import shlex
 import shutil
 import subprocess
 import sys
+from glob import glob
+from pathlib import Path
+from typing import Iterable
 
 import requests
 
@@ -91,3 +94,11 @@ def shutdown(message):
         message (str): Reason for termination.
     """
     sys.exit(message)
+
+
+def remove_temporary(temporary_files: Iterable):
+    for file in temporary_files:
+        extensions = glob(str(file) + "*")
+        for ext in extensions:
+            logging.info(f"Removing temporary file {ext}.")
+            Path(ext).unlink()
