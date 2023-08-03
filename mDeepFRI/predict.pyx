@@ -47,11 +47,12 @@ cdef class Predictor(object):
         if rt.get_device() == 'CPU':
             session_options.intra_op_num_threads = self.threads
         elif rt.get_device() == 'GPU':
-            pass
+            session_options.intra_op_num_threads = 1
 
         self.session = rt.InferenceSession(
             self.model_path,
-            providers=['CUDAExecutionProvider', 'CPUExecutionProvider'],
+            providers=[('CUDAExecutionProvider', {"cudnn_conv_algo_search": "DEFAULT"}),
+                        'CPUExecutionProvider'],
             sess_options=session_options,
         )
 
