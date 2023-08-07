@@ -20,7 +20,6 @@ def test_cli_build_db(runner):
     result = runner.invoke(cli.main, ["build-db", "--help"])
     assert result.exit_code == 0
     assert "--help" in result.output
-    assert "-m" in result.output
     assert "-t" in result.output
 
 

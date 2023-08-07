@@ -1,14 +1,16 @@
-import json
 import logging
 import pathlib
 import shlex
 import shutil
 import subprocess
 import sys
+from glob import glob
+from pathlib import Path
+from typing import Iterable
 
 import requests
 
-from mDeepFRI import config_links, model_links
+from mDeepFRI import cnn_model_links, config_links, gcn_model_links
 
 
 def run_command(command, timeout=-1):
@@ -47,6 +49,7 @@ def download_file(url, path):
 
 def download_model_weights(output_path: pathlib.Path):
 
+    model_links = list(cnn_model_links.items()) + list(gcn_model_links.items())
     total_len = len(model_links)
     for i, model_link in enumerate(model_links):
         download_file(model_link, output_path / model_link.split("/")[-1])
@@ -93,24 +96,9 @@ def shutdown(message):
     sys.exit(message)
 
 
-def load_deepfri_config(filepath_model_config_json: str) -> dict:
-    """Loads model_config.json with paths to different models.
-
-    Args:
-        filepath_model_config_json (str): path to a file within trained_models folder.
-        Distributed with original DeepFRI repo.
-
-    Returns:
-        dict: a dict of different models and paths to their weights.
-    """
-    json_filepath = pathlib.Path(filepath_model_config_json)
-    if not json_filepath.exists():
-        raise FileNotFoundError(f"Config file not found at {json_filepath}.")
-
-    # load and replace local paths to files with absolute paths
-    with open(filepath_model_config_json, "r") as json_file:
-        json_string = json_file.read().replace("./trained_models",
-                                               f"{json_filepath.parent}")
-    deepfri_config = json.loads(json_string)
-
-    return deepfri_config
+def remove_temporary(temporary_files: Iterable):
+    for file in temporary_files:
+        extensions = glob(str(file) + "*")
+        for ext in extensions:
+            logging.info(f"Removing temporary file {ext}.")
+            Path(ext).unlink()

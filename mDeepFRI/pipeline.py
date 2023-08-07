@@ -2,17 +2,20 @@ import json
 import logging
 import os.path
 import pathlib
-from typing import List, Tuple
+from functools import partial
+from multiprocessing import Pool
+from typing import Dict, List
 
-from pysam.libcfaidx import FastxFile
+import numpy as np
 
-from mDeepFRI import ATOMS, SEQ_ATOMS_DATASET_PATH, TARGET_MMSEQS_DB_NAME
-from mDeepFRI.CPP_lib import libAtomDistanceIO  # type: ignore[attr-defined]
+from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
+from mDeepFRI.alignment import align_query
+from mDeepFRI.bio_utils import (load_fasta_as_dict, retrieve_align_contact_map,
+                                retrieve_fasta_entries_as_dict)
+from mDeepFRI.database import build_database
+from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
 from mDeepFRI.predict import Predictor
-from mDeepFRI.utils.fasta_file_io import SeqFileLoader
-from mDeepFRI.utils.mmseqs import run_mmseqs_search
-from mDeepFRI.utils.search_alignments import search_alignments
-from mDeepFRI.utils.utils import load_deepfri_config
+from mDeepFRI.utils import remove_temporary
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -21,49 +24,25 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-###########################################################################
-# in a nutshell:
-#
-#   load_and_verify_job_data
-#   1.  select first .faa file inside task_path
-#   2.  filter out proteins that are too long
-#   3.  find target database
-#
-#   metagenomic_deepfri
-#   4.  run mmseqs2 search on query and target database
-#   5.  find the best alignment for pairs found by mmseqs2 search.
-#   6.  If alignment for query exists:
-#           DeepFRI GCN for query sequence with aligned target contact map
-#       else:
-#           DeepFRI CNN for query sequence alone
-###########################################################################
 
-
-def check_inputs(
-    query_file: pathlib.Path, database: pathlib.Path, output_path: pathlib.Path
-) -> Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]:
+def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     """
-    Check if input files and directories exist and are valid. Filters out proteins that are too long
-    or too short.
+    Loads query protein sequences from FASTA file. Filters
+    out sequences that are too short or too long.
 
     Args:
-        query_file (pathlib.Path): Path to a query file with protein sequences.
-        database (pathlib.Path): Path to a directory with a pre-built database.
-        output_path (pathlib.Path): Path to a directory where results will be saved.
-
-    Raises:
-        ValueError: Query file does not contain parsable protein sequences.
-        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+        query_file (str): Path to FASTA file with query protein sequences.
+        output_path (str): Path to output folder.
 
     Returns:
-        Tuple[pathlib.Path, dict, pathlib.Path, SeqFileLoader]: Tuple of query file path, query sequences,
-            path to target MMSeqs2 database and target sequences.
+        query_seqs (dict): Dictionary with query protein headers to sequences.
     """
 
+    # By DeepFRI design
     MIN_PROTEIN_LENGTH = 60
+    MAX_PROTEIN_LENGTH = 1_000
 
-    with FastxFile(query_file) as fasta:
-        query_seqs = {record.name: record.sequence for record in fasta}
+    query_seqs = load_fasta_as_dict(query_file)
 
     if len(query_seqs) == 0:
         raise ValueError(
@@ -71,9 +50,6 @@ def check_inputs(
 
     logging.info("Found total of %i protein sequences in %s", len(query_seqs),
                  query_file)
-
-    with open(database / "db_params.json", "r", encoding="utf-8") as f:
-        MAX_PROTEIN_LENGTH = json.load(f)["MAX_PROTEIN_LENGTH"]
 
     prot_len_outliers = {}
     for prot_id, sequence in query_seqs.items():
@@ -89,17 +65,35 @@ def check_inputs(
             "Skipping %i proteins due to sequence length outside range %i-%i aa.",
             len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
         logging.info("Skipped protein ids will be saved in " \
-                     "metadata_skipped_ids_length.json")
+                     "metadata_skipped_ids_length.json.")
         json.dump(prot_len_outliers,
                   open(output_path / 'metadata_skipped_ids_due_to_length.json',
                        "w",
                        encoding="utf-8"),
                   indent=4,
                   sort_keys=True)
-        if len(query_seqs) == 0:
-            logging.info(
-                "All sequences in %s were too long. No sequences will be processed.",
-                query_file)
+
+    assert len(query_seqs
+               ) > 0, "All proteins were filtered out due to sequence length."
+
+    return query_seqs
+
+
+def check_mmseqs_database(database: pathlib.Path):
+    """
+    Check if MMSeqs2 database is intact.
+
+    Args:
+        query_file (pathlib.Path): Path to a query file with protein sequences.
+        database (pathlib.Path): Path to a directory with a pre-built database.
+        output_path (pathlib.Path): Path to a directory where results will be saved.
+
+    Raises:
+        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+
+    Returns:
+        target_db (pathlib.Path): Path to MMSeqs2 database.
+    """
 
     # Verify all the files for MMSeqs2 database
     mmseqs2_ext = [
@@ -115,14 +109,12 @@ def check_inputs(
         raise FileNotFoundError(
             "MMSeqs2 database appears to be corrupted. Please, rebuild it.")
 
-    target_seqs = SeqFileLoader(database / SEQ_ATOMS_DATASET_PATH)
-
-    return query_file, query_seqs, target_db, target_seqs
+    return target_db
 
 
-def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
+def load_deepfri_config(weights: pathlib.Path) -> pathlib.Path:
     """
-    Check if DeepFRI weights are valid.
+    Check if DeepFRI weights are valid and load config.
     Args:
         weights :
 
@@ -150,72 +142,73 @@ def check_deepfri_weights(weights: pathlib.Path) -> pathlib.Path:
             ), f"DeepFRI weights are missing {model_type} model at {model_name}"
             assert config_name.exists(
             ), f"DeepFRI weights are missing {model_type} model config at {config_name}"
-
-    return config_path
+            # correct config
+            models_config[net]["models"][model_type] = str(
+                model_name.absolute())
+    return models_config
 
 
 ## TODO: structure output folder
-def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
-                        weights: pathlib.Path, output_path: pathlib.Path,
-                        output_format: List[str],
-                        deepfri_processing_modes: List[str],
-                        angstrom_contact_threshold: float,
-                        generate_contacts: int, mmseqs_min_bit_score: float,
-                        mmseqs_max_eval: float, mmseqs_min_identity: float,
-                        alignment_matrix: str, alignment_gap_open: float,
-                        alignment_gap_continuation: float,
-                        alignment_min_identity: float, threads: int):
+def predict_protein_function(
+        query_file: str,
+        database: str,
+        weights: str,
+        output_path: str,
+        deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
+        angstrom_contact_threshold: float = 6,
+        generate_contacts: int = 2,
+        mmseqs_min_bit_score: float = None,
+        mmseqs_max_eval: float = 10e-5,
+        mmseqs_min_identity: float = 0.3,
+        top_k: int = 30,
+        alignment_gap_open: float = 10,
+        alignment_gap_continuation: float = 1,
+        identity_threshold: float = 0.3,
+        keep_intermediate=True,
+        threads: int = 1):
     """
-    Run metagenomic-DeepFRI.
-    Args:
-        query_file:
-        database:
-        weights:
-        output_path:
-        output_format:
-        deepfri_processing_modes:
-        angstrom_contact_threshold:
-        generate_contacts:
-        mmseqs_min_bit_score:
-        mmseqs_max_eval:
-        mmseqs_min_identity:
-        alignment_match:
-        alignment_missmatch:
-        alignment_gap_open:
-        alignment_gap_continuation:
-        alignment_min_identity:
-        threads:
 
-    Returns:
 
     """
-    logging.info("Starting metagenomic-DeepFRI.")
-    model_config_json = check_deepfri_weights(weights)
+    MAX_SEQ_LEN = 1000
+    query_file = pathlib.Path(query_file)
+    database = pathlib.Path(database)
+    intermediate = build_database(
+        input_path=database,
+        output_path=database.parent,
+        threads=threads,
+    )
 
-    query_file, query_seqs, target_db, target_seqs = check_inputs(
-        query_file, database, output_path)
+    weights = pathlib.Path(weights)
+    output_path = pathlib.Path(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-    logging.info("Running metagenomic-DeepFRI for %i sequences",
-                 len(query_seqs))
-    logging.info("Running MMSeqs2 search for the query against database")
-    mmseqs_search_output = run_mmseqs_search(query_file, target_db,
-                                             output_path, mmseqs_min_bit_score,
-                                             mmseqs_max_eval,
-                                             mmseqs_min_identity)
+    query_seqs = load_query_sequences(query_file, output_path)
+    logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
+    target_db = check_mmseqs_database(database.parent)
 
-    mmseqs2_found_proteins = mmseqs_search_output.shape[0]
-    logging.info("Found %i proteins in the database", mmseqs2_found_proteins)
+    mmseqs_results = run_mmseqs_search(query_file, target_db, output_path)
+    filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
+                                                    mmseqs_min_bit_score,
+                                                    mmseqs_max_eval,
+                                                    mmseqs_min_identity,
+                                                    k_best_hits=top_k,
+                                                    threads=threads)
 
-    alignments = search_alignments(query_seqs, mmseqs_search_output,
-                                   target_seqs, output_path, alignment_matrix,
-                                   alignment_gap_open,
-                                   alignment_gap_continuation,
-                                   alignment_min_identity, threads)
+    target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
+    target_seqs = retrieve_fasta_entries_as_dict(
+        database.parent / MERGED_SEQUENCES, target_ids)
 
-    unaligned_queries = query_seqs.keys() - alignments.keys()
+    alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
+                             alignment_gap_continuation, identity_threshold,
+                             threads)
 
-    libAtomDistanceIO.initialize()
-    deepfri_models_config = load_deepfri_config(model_config_json)
+    aligned_queries = [aln.query_name for aln in alignments]
+    unaligned_queries = {
+        k: v
+        for k, v in query_seqs.items() if k not in aligned_queries
+    }
+    deepfri_models_config = load_deepfri_config(weights)
 
     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
@@ -223,44 +216,39 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
     # cc = cellular_component
     # ec = enzyme_commission
 
+    gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
+
+    if gcn_prots > 0:
+        partial_align = partial(retrieve_align_contact_map,
+                                database=database,
+                                max_seq_len=MAX_SEQ_LEN,
+                                threshold=angstrom_contact_threshold,
+                                generated_contacts=generate_contacts)
+        logging.info("Aligning contact maps for %i proteins", gcn_prots)
+        with Pool(threads) as p:
+            aligned_cmaps = p.map(partial_align, alignments)
+
+        logging.info("Aligned %i contact maps", len(aligned_cmaps))
+
     for mode in deepfri_processing_modes:
         logging.info("Processing mode: %s", mode)
         # GCN for queries with aligned contact map
-        gcn_prots, cnn_prots = len(alignments), len(unaligned_queries)
 
-        if gcn_prots > 0:
-            logging.info("Predicting with GCN: %i proteins", gcn_prots)
-            output_file_name = output_path / f"results_gcn_{mode}"
+        logging.info("Predicting with GCN: %i proteins", gcn_prots)
+        output_file_name = output_path / f"results_gcn_{mode}"
+        gcn_params = deepfri_models_config["gcn"]["models"][mode]
 
-            gcn_params = deepfri_models_config["gcn"]["models"][mode]
-            gcn = Predictor(gcn_params, gcn=True, threads=threads)
+        gcn = Predictor(gcn_params, threads=threads)
 
-            for query_id, alignment in alignments.items():
-                logging.info("Predicting %s", query_id)
-                query_seq = query_seqs[query_id]
-                target_id = alignment["target_id"]
+        for aln, aligned_cmap in aligned_cmaps:
+            logging.info("Predicting %s", aln.query_name)
+            # running the actual prediction
+            gcn.predict_function(seqres=aln.query_sequence,
+                                 cmap=aligned_cmap,
+                                 chain=aln.query_name)
 
-                generated_query_contact_map = libAtomDistanceIO.load_aligned_contact_map(
-                    str(database / SEQ_ATOMS_DATASET_PATH / ATOMS /
-                        (target_id + ".bin")),
-                    angstrom_contact_threshold,
-                    alignment["query_sequence"],  # query alignment
-                    alignment["target_sequence"],  # target alignment
-                    generate_contacts)
-
-                # running the actual prediction
-                gcn.predict_function(seqres=query_seq,
-                                     cmap=generated_query_contact_map,
-                                     chain=query_id)
-
-                if "tsv" in output_format:
-                    gcn.export_tsv(output_file_name.with_suffix('.tsv'))
-                if "csv" in output_format:
-                    gcn.export_csv(output_file_name.with_suffix('.csv'))
-                if "json" in output_format:
-                    gcn.export_json(output_file_name.with_suffix('.json'))
-
-            del gcn
+        gcn.export_tsv(str(output_file_name.with_suffix('.tsv')))
+        del gcn
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
@@ -268,19 +256,16 @@ def metagenomic_deepfri(query_file: pathlib.Path, database: pathlib.Path,
             output_file_name = output_path / f"results_cnn_{mode}"
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
-            cnn = Predictor(cnn_params, gcn=False, threads=threads)
+            cnn = Predictor(cnn_params, threads=threads)
             for query_id in unaligned_queries:
                 logging.info("Predicting %s", query_id)
                 cnn.predict_function(seqres=query_seqs[query_id],
                                      chain=query_id)
 
-            if "tsv" in output_format:
-                cnn.export_tsv(output_file_name.with_suffix('.tsv'))
-            if "csv" in output_format:
-                cnn.export_csv(output_file_name.with_suffix('.csv'))
-            if "json" in output_format:
-                cnn.export_json(output_file_name.with_suffix('.json'))
-
+            cnn.export_tsv(str(output_file_name.with_suffix('.tsv')))
             del cnn
+
+    if not keep_intermediate:
+        remove_temporary(intermediate)
 
     logging.info("meta-DeepFRI finished successfully")
