@@ -49,7 +49,8 @@ def download_file(url, path):
 
 def download_model_weights(output_path: pathlib.Path):
 
-    model_links = list(cnn_model_links.items()) + list(gcn_model_links.items())
+    model_links = list(cnn_model_links.values()) + list(
+        gcn_model_links.values())
     total_len = len(model_links)
     for i, model_link in enumerate(model_links):
         download_file(model_link, output_path / model_link.split("/")[-1])
