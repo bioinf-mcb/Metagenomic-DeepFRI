@@ -70,6 +70,15 @@ Sometimes results from one model can be missing which means that all query prote
    cc = cellular_component
    ec = enzyme_commission
    ```
+## Prediction modes
+The GO ontology contains three subontologies, defined by their root nodes:
+- Molecular Function (MF)
+- Biological Process (BP)
+- Cellular Component (CC)
+Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC). By default, the tool makes prediction in all 4 categories. To select only few pass the parameter `-p` or `--processing-modes` few times, i.e.:
+```
+mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
+```
 
 ## Temporary files
 The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run use
