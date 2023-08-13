@@ -36,8 +36,6 @@ cdef class Predictor(object):
         self.model_path = model_path
         self.threads = threads
 
-        # Not clear how parameter influences GPU exec
-
         self._load_model()
         self.prot2goterms = {}
         self.goidx2chains = {}
@@ -45,10 +43,10 @@ cdef class Predictor(object):
     def _load_model(self):
         session_options = rt.SessionOptions()
 
-        if rt.get_device() == 'CPU':
-            session_options.intra_op_num_threads = self.threads
-        elif rt.get_device() == 'GPU':
+        if torch.cuda.is_available():
             session_options.intra_op_num_threads = 1
+        else:
+            session_options.intra_op_num_threads = self.threads
 
         self.session = rt.InferenceSession(
             self.model_path,
