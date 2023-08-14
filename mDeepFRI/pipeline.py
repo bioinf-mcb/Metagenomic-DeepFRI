@@ -38,7 +38,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
         query_seqs (dict): Dictionary with query protein headers to sequences.
     """
 
-    # By DeepFRI design
+    # By DeepFRI design (60, 1000)
     MIN_PROTEIN_LENGTH = 60
     MAX_PROTEIN_LENGTH = 1_000
 
@@ -230,8 +230,9 @@ def predict_protein_function(
 
         logging.info("Aligned %i contact maps", len(aligned_cmaps))
 
-    for mode in deepfri_processing_modes:
-        logging.info("Processing mode: %s", mode)
+    for i, mode in enumerate(deepfri_processing_modes):
+        logging.info("Processing mode: %s; %i/%i", mode, i + 1,
+                     len(deepfri_processing_modes))
         # GCN for queries with aligned contact map
 
         logging.info("Predicting with GCN: %i proteins", gcn_prots)
@@ -240,8 +241,9 @@ def predict_protein_function(
 
         gcn = Predictor(gcn_params, threads=threads)
 
-        for aln, aligned_cmap in aligned_cmaps:
-            logging.info("Predicting %s", aln.query_name)
+        for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
+            logging.info("Predicting %s; %i/%i", aln.query_name, i + 1,
+                         gcn_prots)
             # running the actual prediction
             gcn.predict_function(seqres=aln.query_sequence,
                                  cmap=aligned_cmap,
@@ -257,8 +259,9 @@ def predict_protein_function(
 
             cnn_params = deepfri_models_config["cnn"]["models"][mode]
             cnn = Predictor(cnn_params, threads=threads)
-            for query_id in unaligned_queries:
-                logging.info("Predicting %s", query_id)
+            for i, query_id in enumerate(unaligned_queries):
+                logging.info("Predicting %s; %i/%i", query_id, i + 1,
+                             cnn_prots)
                 cnn.predict_function(seqres=query_seqs[query_id],
                                      chain=query_id)
 
