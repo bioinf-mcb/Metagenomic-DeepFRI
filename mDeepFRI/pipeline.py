@@ -1,6 +1,7 @@
+import csv
 import json
 import logging
-import os.path
+import os
 import pathlib
 from functools import partial
 from multiprocessing import Pool
@@ -208,6 +209,7 @@ def predict_protein_function(
         k: v
         for k, v in query_seqs.items() if k not in aligned_queries
     }
+
     deepfri_models_config = load_deepfri_config(weights)
 
     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
@@ -217,6 +219,13 @@ def predict_protein_function(
     # ec = enzyme_commission
 
     gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
+    output_file_name = output_path / "results.tsv"
+    output_buffer = open(output_file_name, "w", encoding="utf-8")
+    csv_writer = csv.writer(output_buffer, delimiter="\t")
+    csv_writer.writerow([
+        'Protein', 'GO_term/EC_number', 'Score', 'Annotation', 'Neural_net',
+        'DeepFRI_mode'
+    ])
 
     if gcn_prots > 0:
         partial_align = partial(retrieve_align_contact_map,
@@ -225,19 +234,19 @@ def predict_protein_function(
                                 threshold=angstrom_contact_threshold,
                                 generated_contacts=generate_contacts)
         logging.info("Aligning contact maps for %i proteins", gcn_prots)
+
         with Pool(threads) as p:
             aligned_cmaps = p.map(partial_align, alignments)
 
         logging.info("Aligned %i contact maps", len(aligned_cmaps))
 
     for i, mode in enumerate(deepfri_processing_modes):
+        net_type = "gcn"
         logging.info("Processing mode: %s; %i/%i", mode, i + 1,
                      len(deepfri_processing_modes))
         # GCN for queries with aligned contact map
-
         logging.info("Predicting with GCN: %i proteins", gcn_prots)
-        output_file_name = output_path / f"results_gcn_{mode}"
-        gcn_params = deepfri_models_config["gcn"]["models"][mode]
+        gcn_params = deepfri_models_config[net_type]["models"][mode]
 
         gcn = Predictor(gcn_params, threads=threads)
 
@@ -245,30 +254,36 @@ def predict_protein_function(
             logging.info("Predicting %s; %i/%i", aln.query_name, i + 1,
                          gcn_prots)
             # running the actual prediction
-            gcn.predict_function(seqres=aln.query_sequence,
-                                 cmap=aligned_cmap,
-                                 chain=aln.query_name)
+            prediction_rows = gcn.predict_function(seqres=aln.query_sequence,
+                                                   cmap=aligned_cmap,
+                                                   chain=aln.query_name)
+            # writing the results to the output file
+            for row in prediction_rows:
+                row.extend([net_type, mode])
+                csv_writer.writerow(row)
 
-        gcn.export_tsv(str(output_file_name.with_suffix('.tsv')))
         del gcn
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
+            net_type = "cnn"
             logging.info("Predicting with CNN: %i proteins", cnn_prots)
-            output_file_name = output_path / f"results_cnn_{mode}"
-
-            cnn_params = deepfri_models_config["cnn"]["models"][mode]
+            cnn_params = deepfri_models_config[net_type]["models"][mode]
             cnn = Predictor(cnn_params, threads=threads)
             for i, query_id in enumerate(unaligned_queries):
                 logging.info("Predicting %s; %i/%i", query_id, i + 1,
                              cnn_prots)
-                cnn.predict_function(seqres=query_seqs[query_id],
-                                     chain=query_id)
+                prediction_rows = cnn.predict_function(
+                    seqres=query_seqs[query_id], chain=query_id)
+                for row in prediction_rows:
+                    row.extend([net_type, mode])
+                    csv_writer.writerow(row)
 
-            cnn.export_tsv(str(output_file_name.with_suffix('.tsv')))
             del cnn
+
+    output_buffer.close()
 
     if not keep_intermediate:
         remove_temporary(intermediate)
 
-    logging.info("meta-DeepFRI finished successfully")
+    logging.info("meta-DeepFRI finished successfully.")
