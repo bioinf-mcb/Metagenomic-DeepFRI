@@ -114,7 +114,7 @@ cdef class Predictor(object):
         go_idx = np.where(y >= self.thresh)[0]
         for idx in go_idx:
             if idx not in self.goidx2chains:
-                self.goidx2chains[idx] = set()
+                self.goidx2chains.setdefault(idx, set())
             self.goidx2chains[idx].add(chain)
             self.prot2goterms[chain].append(
                 (self.goterms[idx], self.gonames[idx], float(y[idx])))
