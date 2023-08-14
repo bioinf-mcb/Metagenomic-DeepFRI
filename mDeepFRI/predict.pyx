@@ -37,8 +37,6 @@ cdef class Predictor(object):
         self.threads = threads
 
         self._load_model()
-        self.prot2goterms = {}
-        self.goidx2chains = {}
 
     def _load_model(self):
         session_options = rt.SessionOptions()
@@ -84,7 +82,10 @@ cdef class Predictor(object):
         cdef np.ndarray A
         cdef np.ndarray prediction
         cdef np.ndarray y
-
+        cdef list output_rows = []
+        cdef str go_term
+        cdef float score
+        cdef str annotation
 
         self.Y_hat = np.zeros((1, len(self.goterms)), dtype=float)
         self.data = {}
@@ -110,47 +111,11 @@ cdef class Predictor(object):
 
         y = prediction[:, :, 0].reshape(-1)
         self.Y_hat[0] = y
-        self.prot2goterms[chain] = []
         go_idx = np.where(y >= self.thresh)[0]
         for idx in go_idx:
-            if idx not in self.goidx2chains:
-                self.goidx2chains.setdefault(idx, set())
-            self.goidx2chains[idx].add(chain)
-            self.prot2goterms[chain].append(
-                (self.goterms[idx], self.gonames[idx], float(y[idx])))
+            go_term = self.goterms[idx].item()
+            score = float(y[idx])
+            annotation = self.gonames[idx].item()
+            output_rows.append([chain, go_term, score, annotation])
 
-
-    def __save_file(self,
-                    output_fn: str,
-                    delimiter: str,
-                    quotechar: str = '"'):
-        """
-        Exports predictions to .csv or .tsv format
-
-        Args:
-            output_fn (str): output file name
-            delimiter (str): delimiter for .csv or .tsv file
-            quotechar (str): quotechar for .csv file
-
-        Returns:
-            None
-        """
-
-        with open(output_fn, 'w', encoding="utf-8") as f:
-            writer = csv.writer(f, delimiter=delimiter, quotechar=quotechar)
-            writer.writerow([
-                'Protein', 'GO_term/EC_number', 'Score',
-                'GO_term/EC_number name'
-            ])
-            for prot, goterms in self.prot2goterms.items():
-                sorted_rows = sorted(goterms, key=lambda x: x[2], reverse=True)
-                for row in sorted_rows:
-                    writer.writerow(
-                        [prot, row[0], '{:.5f}'.format(row[2]), row[1]])
-
-    def export_tsv(self, output_fn: str):
-        """
-        Exports predictions to .tsv format
-        """
-
-        self.__save_file(output_fn, "\t")
+        return output_rows
