@@ -88,8 +88,8 @@ def create_target_database(foldcomp_fasta_path: Path,
     createindex(mmseqs_db_path)
 
 
-def run_mmseqs_search(query_file: Path, target_db: Path,
-                      output_path: Path) -> Path:
+def run_mmseqs_search(query_file: str, target_db: str,
+                      output_path: str) -> Path:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 
     Args:
@@ -100,6 +100,8 @@ def run_mmseqs_search(query_file: Path, target_db: Path,
     Returns:
         output_file (pathlib.Path): Path to MMSeqs2 search results.
     """
+    output_path = Path(output_path)
+
     output_path.mkdir(parents=True, exist_ok=True)
     output_file = output_path / MMSEQS_SEARCH_RESULTS
     query_db = output_path / 'queryDB'
@@ -116,7 +118,7 @@ def run_mmseqs_search(query_file: Path, target_db: Path,
     return output_file
 
 
-def filter_mmseqs_results(results_file: Path,
+def filter_mmseqs_results(results_file: str,
                           min_bit_score: float = None,
                           max_evalue: float = None,
                           min_identity: float = None,

@@ -74,30 +74,42 @@ def align_best_score(query_item: str, database: pyopal.Database,
                      identity_threshold: float):
 
     query_name, query_sequence = query_item
-    results = database.search(query_sequence,
-                              mode="score",
-                              algorithm="nw",
-                              gap_open=gap_open,
-                              gap_extend=gap_extend)
 
-    best = max(results, key=lambda x: x.score)
-    best_sequence = database[best.target_index]
-    best_name = target_names[best.target_index]
-    single_seq = pyopal.Database([best_sequence])
-    alignment = single_seq.search(query_sequence,
-                                  mode="full",
+    logging.debug("Aligning %s", query_name)
+    # current bug in pyOpal
+    # https://github.com/althonos/pyopal/issues/3
+    try:
+        results = database.search(query_sequence,
+                                  mode="score",
                                   algorithm="nw",
                                   gap_open=gap_open,
-                                  gap_extend=gap_extend)[0].alignment
+                                  gap_extend=gap_extend)
 
-    result = AlignmentResult(query_name, query_sequence, best_name,
-                             best_sequence, alignment)
-    result.insert_gaps().calculate_identity()
+        best = max(results, key=lambda x: x.score)
+        best_sequence = database[best.target_index]
+        best_name = target_names[best.target_index]
+        single_seq = pyopal.Database([best_sequence])
+        alignment = single_seq.search(query_sequence,
+                                      mode="full",
+                                      algorithm="nw",
+                                      gap_open=gap_open,
+                                      gap_extend=gap_extend)[0].alignment
 
-    if result.identity >= identity_threshold:
-        return result
+        result = AlignmentResult(query_name, query_sequence, best_name,
+                                 best_sequence, alignment)
+        result.insert_gaps().calculate_identity()
+        logging.debug("Alignment of %s finished.", query_name)
+        if result.identity >= identity_threshold:
+            pass
+        else:
+            logging.debug("No alignment for  %s.", query_name)
+            result = None
 
-    return None
+    except RuntimeError:
+        logging.debug("Alignment of %s failed.", query_name)
+        result = None
+
+    return result
 
 
 def align_query(query_seqs: dict,
