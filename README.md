@@ -57,14 +57,28 @@ mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/dat
 
 Logging module writes output into `stderr`, so use `2>` to redirect it to file.
 Other available parameters can be found upon command `mDeepFRI --help`.
-**Attention:** currently predictions are accumulated in memory, so to preserve original DeepFRI code. Therefore the amount of memory needed for the execution of pipeline grows with input size. We advise to split input into 10k protein chunks, thus memory usage is roughly 40GB RAM per chunk.
 ## Results
 Finished folder will contain:
 1. `mmseqs2_search_results.m8`
-2. `metadata_skipped_ids_due_to_length` - too long or too short queries
+2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict function of proteins in the range of 60-1000 aa).
 3. `queryDB` + index from MMSeqs2 search.
-4. `results*.tsv` - multiple files from DeepFRI. Organized by model type (`GCN` or `CNN`) and its mode (`mf`, `bp`, `cc`, `ec`).
-Sometimes results from one model can be missing which means that all query proteins sequences were aligned correctly or none of them were aligned.
+4. `results.tsv` - an output from DeepFRI model.
+
+## Example output (results.tsv)
+|  Protein  | GO_term/EC_numer | Score | Annotation                     | Neural_net | DeepFRI_mode |
+|:---------:|:----------------:|:-----:|--------------------------------|------------|--------------|
+| 1AAM_1    | 2.6.1.1          | 1     | 2.6.1.1                        | gcn        | ec           |
+| unaligned | 3.2.1.-          | 0.22  | 3.2.1.-                        | cnn        | ec           |
+| 1AAM_1    | GO:0006082       | 0.93  | organic acid metabolic process | gcn        | bp           |
+| unaligned | GO:0006810       | 0.17  | transport                      | cnn        | bp           |
+
+This is an example of protein annotation with AlphaFold database.
+- Protein - name of the protein from Fasta file.
+- GO_term/EC_numer - predicted GO term or EC number (dependent on mode)
+- Score - DeepFRI score, translates to model confidence in prediction. Details in [publication](https://www.nature.com/articles/s41467-021-23303-9).
+- Annotation - annotation from ontology
+- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN is used if there is a structure in the database, that allows for prediction. Thus, usually GCN outputs more confident predictions, as it has structural information. If one model is missing, it means that either all proteins were aligned to a database (GCN only scenario) or none of them were aligned (CNN only scenario).
+- DeepFRI_mode:
    ```
    mf = molecular_function
    bp = biological_process
@@ -88,7 +102,7 @@ flag `--no-keep-temporary`.
 ## CPU / GPU utilization
 If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, inference).
 If CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
-**Attention:** Single instance of DeepFRI on GPU requires 2GB VRAM.
+**Technical tip:** Single instance of DeepFRI on GPU requires 2GB VRAM. Every currently available GPU with CUDA support should be able to run the model.
 
 ## Citations
 If you use this software please cite:
