@@ -57,6 +57,7 @@ mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/dat
 
 Logging module writes output into `stderr`, so use `2>` to redirect it to file.
 Other available parameters can be found upon command `mDeepFRI --help`.
+**Attention:** currently predictions are accumulated in memory, so to preserve original DeepFRI code. Therefore the amount of memory needed for the execution of pipeline grows with input size. We advise to split input into 10k protein chunks, thus memory usage is roughly 40GB RAM per chunk.
 ## Results
 Finished folder will contain:
 1. `mmseqs2_search_results.m8`
