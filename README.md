@@ -35,11 +35,6 @@ conda activate deepfri
 ```{code-block} bash
 pip install .
 ```
-4. Verify installation
-```{code-block} bash
-pytest
-mDeepFRI --help
-```
 
 # Usage
 ## Prepare structural database
