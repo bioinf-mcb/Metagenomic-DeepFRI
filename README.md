@@ -43,7 +43,7 @@ mDeepFRI --help
 
 # Usage
 ## Prepare structural database
-Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and app will crash.
+Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and the app will crash.
 ## 1. Download models
 Run command:
 ```
@@ -55,16 +55,16 @@ mDeepFRI get-models --output path/to/weights/folder
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path 2> log.txt
 ```
 
-Logging module writes output into `stderr`, so use `2>` to redirect it to file.
+The `logging` module writes output into `stderr`, so use `2>` to redirect it to the file.
 Other available parameters can be found upon command `mDeepFRI --help`.
 ## Results
-Finished folder will contain:
+The output folder will contain:
 1. `mmseqs2_search_results.m8`
-2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict function of proteins in the range of 60-1000 aa).
+2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict the function of proteins in the range of 60-1000 aa).
 3. `queryDB` + index from MMSeqs2 search.
-4. `results.tsv` - an output from DeepFRI model.
+4. `results.tsv` - an output from the DeepFRI model.
 
-## Example output (results.tsv)
+## Example output (`results.tsv`)
 |  Protein  | GO_term/EC_numer | Score | Annotation                     | Neural_net | DeepFRI_mode |
 |:---------:|:----------------:|:-----:|--------------------------------|------------|--------------|
 | 1AAM_1    | 2.6.1.1          | 1     | 2.6.1.1                        | gcn        | ec           |
@@ -72,12 +72,12 @@ Finished folder will contain:
 | 1AAM_1    | GO:0006082       | 0.93  | organic acid metabolic process | gcn        | bp           |
 | unaligned | GO:0006810       | 0.17  | transport                      | cnn        | bp           |
 
-This is an example of protein annotation with AlphaFold database.
-- Protein - name of the protein from Fasta file.
+This is an example of protein annotation with the AlphaFold database.
+- Protein - the name of the protein from the FASTA file.
 - GO_term/EC_numer - predicted GO term or EC number (dependent on mode)
 - Score - DeepFRI score, translates to model confidence in prediction. Details in [publication](https://www.nature.com/articles/s41467-021-23303-9).
 - Annotation - annotation from ontology
-- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN is used if there is a structure in the database, that allows for prediction. Thus, usually GCN outputs more confident predictions, as it has structural information. If one model is missing, it means that either all proteins were aligned to a database (GCN only scenario) or none of them were aligned (CNN only scenario).
+- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is employed when structural information is available in the database, allowing for generally more confident predictions. 
 - DeepFRI_mode:
    ```
    mf = molecular_function
@@ -85,12 +85,14 @@ This is an example of protein annotation with AlphaFold database.
    cc = cellular_component
    ec = enzyme_commission
    ```
+   
 ## Prediction modes
 The GO ontology contains three subontologies, defined by their root nodes:
 - Molecular Function (MF)
 - Biological Process (BP)
 - Cellular Component (CC)
-Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC). By default, the tool makes prediction in all 4 categories. To select only few pass the parameter `-p` or `--processing-modes` few times, i.e.:
+- Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC).  
+By default, the tool makes predictions in all 4 categories. To select only a few pass the parameter `-p` or `--processing-modes` few times, i.e.:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
 ```
