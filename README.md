@@ -61,7 +61,7 @@ The output folder will contain:
 
 ## Example output (`results.tsv`)
 |  Protein  | GO_term/EC_numer | Score | Annotation                     | Neural_net | DeepFRI_mode |
-|:---------:|:----------------:|:-----:|--------------------------------|------------|--------------|
+|-----------|------------------|-------|--------------------------------|------------|--------------|
 | 1AAM_1    | 2.6.1.1          | 1     | 2.6.1.1                        | gcn        | ec           |
 | unaligned | 3.2.1.-          | 0.22  | 3.2.1.-                        | cnn        | ec           |
 | 1AAM_1    | GO:0006082       | 0.93  | organic acid metabolic process | gcn        | bp           |
