@@ -2,6 +2,7 @@ import logging
 import pathlib
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 from glob import glob
@@ -17,28 +18,36 @@ def run_command(command, timeout=None):
     if isinstance(command, str):
         command = shlex.split(command, ' ')
 
+    process = subprocess.Popen(command,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True,
+                               shell=True)
+
     try:
-        completed_process = subprocess.run(command,
-                                           capture_output=True,
-                                           timeout=timeout,
-                                           check=True,
-                                           universal_newlines=True)
+        stdout, stderr = process.communicate(timeout=timeout)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
 
     except subprocess.CalledProcessError as err:
+        stderr = process.stderr.read()
         raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}"
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}:\n{stderr}"
         ) from err
 
-    return completed_process.stdout
+    except KeyboardInterrupt:
+        process.send_signal(signal.SIGINT)
+        raise KeyboardInterrupt(
+            f"Command {' '.join(command)} interrupted by user") from None
+
+    return stdout
 
 
 def download_file(url, path):
-    with requests.get(url, stream=True) as r:
-        with open(path, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
+    with requests.get(url, stream=True, timeout=10) as req:
+        with open(path, 'wb') as file:
+            shutil.copyfileobj(req.raw, file)
 
 
 def download_model_weights(output_path: pathlib.Path):
