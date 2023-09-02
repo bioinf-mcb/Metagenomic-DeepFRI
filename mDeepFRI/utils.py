@@ -13,22 +13,16 @@ import requests
 from mDeepFRI import cnn_model_links, config_links, gcn_model_links
 
 
-def run_command(command, timeout=-1):
+def run_command(command, timeout=None):
     if isinstance(command, str):
         command = shlex.split(command, ' ')
 
     try:
-        if timeout > 0:
-            completed_process = subprocess.run(command,
-                                               capture_output=True,
-                                               timeout=timeout,
-                                               check=True,
-                                               universal_newlines=True)
-        else:
-            completed_process = subprocess.run(command,
-                                               capture_output=True,
-                                               check=True,
-                                               universal_newlines=True)
+        completed_process = subprocess.run(command,
+                                           capture_output=True,
+                                           timeout=timeout,
+                                           check=True,
+                                           universal_newlines=True)
 
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"command {' '.join(command)} timed out") from None
