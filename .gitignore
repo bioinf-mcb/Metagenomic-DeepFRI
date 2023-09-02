@@ -1,9 +1,11 @@
-# project specific folder
+# project specific files
 test_database/
 notebooks
 mDeepFRI/*.cpp
 cython_tests.ipynb
-foldcomp
+foldcomp_bin
+correct_pdb.py
+
 
 docs/build/*
 build/
