@@ -48,7 +48,7 @@ def createindex(db_path):
 def search(query_db: str, target_db: str, result_db: str, threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
-            f"mmseqs search =-threads {threads} {query_db} {target_db} {result_db} {tmp_path}"
+            f"mmseqs search --threads {threads} {query_db} {target_db} {result_db} {tmp_path}"
         )
 
 
