@@ -5,6 +5,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import time
 from glob import glob
 from pathlib import Path
 from typing import Iterable
@@ -25,21 +26,18 @@ def run_command(command, timeout=None):
                                shell=True)
 
     try:
-        stdout, stderr = process.communicate(timeout=timeout)
-
-    except subprocess.TimeoutExpired:
-        raise TimeoutError(f"command {' '.join(command)} timed out") from None
-
-    except subprocess.CalledProcessError as err:
-        stderr = process.stderr.read()
-        raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}:\n{stderr}"
-        ) from err
-
+        while process.poll() is None:
+            time.sleep(0.1)
     except KeyboardInterrupt:
         process.send_signal(signal.SIGINT)
         raise KeyboardInterrupt(
             f"Command {' '.join(command)} interrupted by user") from None
+
+    stdout, stderr = process.communicate(timeout=timeout)
+
+    if stderr:
+        error_code = process.returncode
+        raise subprocess.CalledProcessError(error_code, command, stderr)
 
     return stdout
 
