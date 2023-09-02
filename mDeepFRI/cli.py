@@ -20,14 +20,15 @@ def main(ctx, debug):
 
     ctx.ensure_object(dict)
     ctx.obj["debug"] = debug
-    if debug:
-        logger.setLevel(logging.DEBUG)
-        logger.debug("Debug mode is on.")
-        logging.getLogger("requests").setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-        logger.info("Debug mode is off.")
-        logging.getLogger("requests").setLevel(logging.INFO)
+
+    loggers = [
+        logging.getLogger(name) for name in logging.root.manager.loggerDict
+    ]
+    for logger in loggers:
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
 
 @main.command
@@ -39,16 +40,8 @@ def main(ctx, debug):
     help="Path to folder where the database will be created.",
 )
 @click.pass_context
-def get_models(ctx, output):
+def get_models(output):
     """Download model weights for mDeepFRI."""
-    if ctx.obj["debug"] is True:
-        logger.setLevel(logging.DEBUG)
-        logging.getLogger("requests").setLevel(logging.DEBUG)
-        logging.getLogger("urllib3").setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-        logging.getLogger("requests").setLevel(logging.INFO)
-        logging.getLogger("urllib3").setLevel(logging.INFO)
 
     logger.info("Downloading DeepFRI models.")
     output_path = Path(output)
@@ -163,7 +156,7 @@ def get_models(ctx, output):
     help="Number of threads to use. Default is 1.",
 )
 @click.pass_context
-def predict_function(ctx, input, db_path, weights, output, processing_modes,
+def predict_function(input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
                      mmseqs_min_bit_score, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
@@ -171,8 +164,6 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      keep_intermediate, threads):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
-    if ctx.obj["debug"] is True:
-        logger.setLevel(logging.DEBUG)
 
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
