@@ -45,13 +45,15 @@ def createindex(db_path):
         run_command(f"mmseqs createindex {db_path} {tmp_path}")
 
 
-def search(query_db, target_db, result_db):
+def search(query_db: str, target_db: str, result_db: str, threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
-            f"mmseqs search {query_db} {target_db} {result_db} {tmp_path}")
+            f"mmseqs search =-threads {threads} {query_db} {target_db} {result_db} {tmp_path}"
+        )
 
 
-def convertalis(query_db, target_db, result_db, output_file):
+def convertalis(query_db: str, target_db: str, result_db: str,
+                output_file: str):
     run_command(
         f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file}")
 
@@ -70,32 +72,34 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     )
 
 
-def create_target_database(foldcomp_fasta_path: Path,
-                           mmseqs_db_path: Path) -> None:
+def create_target_database(foldcomp_fasta_path: str,
+                           mmseqs_db_path: str) -> None:
     """
     Extracts sequences from compressed FoldComp database.
 
     Args:
-        foldcomp_db_path (pathlib.Path): Path to FoldComp database.
-        new_db_path (pathlib.Path): Path to new MMSeqs database.
+        foldcomp_db_path (str): Path to FoldComp database.
+        new_db_path (str): Path to new MMSeqs database.
 
     Returns:
         None
     """
     createdb(foldcomp_fasta_path, mmseqs_db_path)
-    logging.info("Indexing new target mmseqs2 database %s",
-                 str(mmseqs_db_path))
+    logging.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
     createindex(mmseqs_db_path)
 
 
-def run_mmseqs_search(query_file: str, target_db: str,
-                      output_path: str) -> Path:
+def run_mmseqs_search(query_file: str,
+                      target_db: str,
+                      output_path: str,
+                      threads: int = 1) -> Path:
     """Creates a database from query sequences and runs mmseqs2 search against database.
 
     Args:
-        query_file (pathlib.Path): Path to query FASTA file.
-        target_db (pathlib.Path): Path to target MMSeqs2 database.
-        output_path (pathlib.Path): Path to output folder.
+        query_file (str): Path to query FASTA file.
+        target_db (str): Path to target MMSeqs2 database.
+        output_path (str): Path to output folder.
+        threads (int): Number of threads to use.
 
     Returns:
         output_file (pathlib.Path): Path to MMSeqs2 search results.
@@ -104,13 +108,13 @@ def run_mmseqs_search(query_file: str, target_db: str,
 
     output_path.mkdir(parents=True, exist_ok=True)
     output_file = output_path / MMSEQS_SEARCH_RESULTS
-    query_db = output_path / 'queryDB'
+    query_db = str(output_path / 'queryDB')
     createdb(query_file, query_db)
 
     with tempfile.TemporaryDirectory() as tmp_path:
 
-        result_db = Path(tmp_path) / 'search_resultDB'
-        search(query_db, target_db, result_db)
+        result_db = str(Path(tmp_path) / 'search_resultDB')
+        search(query_db, target_db, result_db, threads=threads)
 
         # Convert results to tabular format
         convertalis(query_db, target_db, result_db, output_file)
