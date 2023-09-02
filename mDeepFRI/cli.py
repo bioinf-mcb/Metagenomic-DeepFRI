@@ -18,17 +18,14 @@ logger.setLevel(logging.INFO)
 def main(ctx, debug):
     """mDeepFRI"""
 
-    ctx.ensure_object(dict)
-    ctx.obj["debug"] = debug
-
     loggers = [
         logging.getLogger(name) for name in logging.root.manager.loggerDict
     ]
-    for logger in loggers:
+    for log in loggers:
         if debug:
-            logger.setLevel(logging.DEBUG)
+            log.setLevel(logging.DEBUG)
         else:
-            logger.setLevel(logging.INFO)
+            log.setLevel(logging.INFO)
 
 
 @main.command
@@ -40,7 +37,7 @@ def main(ctx, debug):
     help="Path to folder where the database will be created.",
 )
 @click.pass_context
-def get_models(output):
+def get_models(ctx, output):
     """Download model weights for mDeepFRI."""
 
     logger.info("Downloading DeepFRI models.")
@@ -156,7 +153,7 @@ def get_models(output):
     help="Number of threads to use. Default is 1.",
 )
 @click.pass_context
-def predict_function(input, db_path, weights, output, processing_modes,
+def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
                      mmseqs_min_bit_score, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
