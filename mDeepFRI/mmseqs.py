@@ -85,7 +85,7 @@ def create_target_database(foldcomp_fasta_path: str,
         None
     """
     createdb(foldcomp_fasta_path, mmseqs_db_path)
-    logging.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
+    logger.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
     createindex(mmseqs_db_path)
 
 
@@ -152,7 +152,7 @@ def filter_mmseqs_results(results_file: str,
                            encoding="utf-8",
                            names=MMSEQS_COLUMN_NAMES)
 
-    logging.info("%i MMSeqs2 hits in the database.", output.shape[0])
+    logger.info("%i MMSeqs2 hits in the database.", output.shape[0])
 
     # MMSeqs2 alginment filters
     if min_identity:
@@ -170,7 +170,7 @@ def filter_mmseqs_results(results_file: str,
 
     final_database = np.concatenate(top_k_chunks)
 
-    logging.info("%i pairs after filtering with k=%i best hits.",
-                 final_database.shape[0], k_best_hits)
+    logger.info("%i pairs after filtering with k=%i best hits.",
+                final_database.shape[0], k_best_hits)
 
     return final_database

@@ -6,6 +6,8 @@ import pyopal
 
 from mDeepFRI.alignment_utils import alignment_identity
 
+logger = logging.getLogger(__name__)
+
 
 def insert_gaps(sequence, reference, alignment_string):
     sequence = list(sequence)
@@ -75,7 +77,7 @@ def align_best_score(query_item: str, database: pyopal.Database,
 
     query_name, query_sequence = query_item
 
-    logging.debug("Aligning %s", query_name)
+    logger.debug("Aligning %s", query_name)
     # current bug in pyOpal
     # https://github.com/althonos/pyopal/issues/3
     try:
@@ -98,15 +100,15 @@ def align_best_score(query_item: str, database: pyopal.Database,
         result = AlignmentResult(query_name, query_sequence, best_name,
                                  best_sequence, alignment)
         result.insert_gaps().calculate_identity()
-        logging.debug("Alignment of %s finished.", query_name)
+        logger.debug("Alignment of %s finished.", query_name)
         if result.identity >= identity_threshold:
             pass
         else:
-            logging.debug("No alignment for  %s.", query_name)
+            logger.debug("No alignment for  %s.", query_name)
             result = None
 
     except RuntimeError:
-        logging.debug("Alignment of %s failed.", query_name)
+        logger.debug("Alignment of %s failed.", query_name)
         result = None
 
     return result
@@ -119,9 +121,9 @@ def align_query(query_seqs: dict,
                 identity_threshold: str = 0.3,
                 threads: int = 1):
 
-    logging.info("Pairwise alignment started.")
-    logging.info("Aligning %i queries against %i database sequences.",
-                 len(query_seqs), len(target_seqs))
+    logger.info("Pairwise alignment started.")
+    logger.info("Aligning %i queries against %i database sequences.",
+                len(query_seqs), len(target_seqs))
     # Default substitution matrix BLOSUM50
     database = pyopal.Database(list(target_seqs.values()))
     align_against_db = partial(align_best_score,
@@ -135,7 +137,7 @@ def align_query(query_seqs: dict,
         all_alignments = pool.map(align_against_db, query_seqs.items())
 
     filtered_alignments = list(filter(None, all_alignments))
-    logging.info("Found %i alignments.", len(filtered_alignments))
-    logging.info("Pairwise alignment finished.")
+    logger.info("Found %i alignments.", len(filtered_alignments))
+    logger.info("Pairwise alignment finished.")
 
     return filtered_alignments
