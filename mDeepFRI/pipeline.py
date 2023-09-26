@@ -133,6 +133,7 @@ def predict_protein_function(
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.3,
         remove_intermediate=False,
+        overwrite=False,
         threads: int = 1):
 
     MAX_SEQ_LEN = 1000
@@ -145,6 +146,7 @@ def predict_protein_function(
     intermediate = build_database(
         input_path=database,
         output_path=database.parent,
+        overwrite=overwrite,
         threads=threads,
     )
 

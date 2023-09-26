@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 def build_database(
     input_path: str,
     output_path: str,
+    overwrite: bool,
     threads: int,
 ) -> None:
     """
@@ -25,6 +26,7 @@ def build_database(
     Args:
         input_path (str): path to a FoldComp database with compressed structures.
         output_path (str): path to folder where the database for DeepFRI will be created.
+        overwrite (bool): overwrite existing database.
         threads (int): number of threads to use.
 
     Returns:
@@ -37,7 +39,7 @@ def build_database(
     output_path.mkdir(parents=True, exist_ok=True)
     output_sequences = output_path / MERGED_SEQUENCES
     # check if files exist in output directory
-    if output_sequences.exists():
+    if output_sequences.exists() and not overwrite:
         logging.info("Found %s in %s", MERGED_SEQUENCES, output_path)
         logging.info(
             "Skipping extraction of FASTA file from FoldComp database.")
@@ -48,7 +50,7 @@ def build_database(
 
     # create mmseqs db
     target_db = check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME)
-    if not target_db:
+    if not target_db and not overwrite:
         logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
         logging.info("Skipping creation of MMSeqs2 database.")
     else:
