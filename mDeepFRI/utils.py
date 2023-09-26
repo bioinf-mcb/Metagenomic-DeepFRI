@@ -2,10 +2,8 @@ import logging
 import pathlib
 import shlex
 import shutil
-import signal
 import subprocess
 import sys
-import time
 from glob import glob
 from pathlib import Path
 from typing import Iterable
@@ -19,33 +17,28 @@ def run_command(command, timeout=None):
     if isinstance(command, str):
         command = shlex.split(command, ' ')
 
-    process = subprocess.Popen(command,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               universal_newlines=True,
-                               shell=True)
-
     try:
-        while process.poll() is None:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        process.send_signal(signal.SIGINT)
-        raise KeyboardInterrupt(
-            f"Command {' '.join(command)} interrupted by user") from None
+        completed_process = subprocess.run(command,
+                                           capture_output=True,
+                                           timeout=timeout,
+                                           check=True,
+                                           universal_newlines=True)
 
-    stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"command {' '.join(command)} timed out") from None
 
-    if stderr:
-        error_code = process.returncode
-        raise subprocess.CalledProcessError(error_code, command, stderr)
+    except subprocess.CalledProcessError as err:
+        raise RuntimeError(
+            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}"
+        ) from err
 
-    return stdout
+    return completed_process.stdout
 
 
 def download_file(url, path):
-    with requests.get(url, stream=True, timeout=10) as req:
-        with open(path, 'wb') as file:
-            shutil.copyfileobj(req.raw, file)
+    with requests.get(url, stream=True) as r:
+        with open(path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 
 def download_model_weights(output_path: pathlib.Path):
