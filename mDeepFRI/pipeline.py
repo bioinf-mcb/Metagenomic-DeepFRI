@@ -1,7 +1,6 @@
 import csv
 import json
 import logging
-import os
 import pathlib
 from functools import partial
 from multiprocessing import Pool
@@ -9,12 +8,13 @@ from typing import Dict, List
 
 import numpy as np
 
-from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
+from mDeepFRI import MERGED_SEQUENCES
 from mDeepFRI.alignment import align_query
 from mDeepFRI.bio_utils import (load_fasta_as_dict, retrieve_align_contact_map,
                                 retrieve_fasta_entries_as_dict)
 from mDeepFRI.database import build_database
-from mDeepFRI.mmseqs import filter_mmseqs_results, run_mmseqs_search
+from mDeepFRI.mmseqs import (check_mmseqs_database, filter_mmseqs_results,
+                             run_mmseqs_search)
 from mDeepFRI.predict import Predictor
 from mDeepFRI.utils import remove_temporary
 
@@ -80,39 +80,6 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     return query_seqs
 
 
-def check_mmseqs_database(database: pathlib.Path):
-    """
-    Check if MMSeqs2 database is intact.
-
-    Args:
-        query_file (pathlib.Path): Path to a query file with protein sequences.
-        database (pathlib.Path): Path to a directory with a pre-built database.
-        output_path (pathlib.Path): Path to a directory where results will be saved.
-
-    Raises:
-        FileNotFoundError: MMSeqs2 database appears to be corrupted.
-
-    Returns:
-        target_db (pathlib.Path): Path to MMSeqs2 database.
-    """
-
-    # Verify all the files for MMSeqs2 database
-    mmseqs2_ext = [
-        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx",
-        ".idx.index", ".idx.dbtype", ".lookup", ".source"
-    ]
-
-    if os.path.isfile(database / TARGET_MMSEQS_DB_NAME):
-        target_db = pathlib.Path(database / TARGET_MMSEQS_DB_NAME)
-        for ext in mmseqs2_ext:
-            assert os.path.isfile(f"{target_db}{ext}")
-    else:
-        raise FileNotFoundError(
-            "MMSeqs2 database appears to be corrupted. Please, rebuild it.")
-
-    return target_db
-
-
 def load_deepfri_config(weights: pathlib.Path) -> pathlib.Path:
     """
     Check if DeepFRI weights are valid and load config.
@@ -167,13 +134,14 @@ def predict_protein_function(
         identity_threshold: float = 0.3,
         keep_intermediate=True,
         threads: int = 1):
-    """
 
-
-    """
     MAX_SEQ_LEN = 1000
     query_file = pathlib.Path(query_file)
     database = pathlib.Path(database)
+
+    # design solution
+    # database is built in the same directory
+    # where the structure database is stored
     intermediate = build_database(
         input_path=database,
         output_path=database.parent,

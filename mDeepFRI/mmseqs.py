@@ -1,4 +1,5 @@
 import logging
+import os
 import tempfile
 from functools import partial
 from multiprocessing.pool import ThreadPool
@@ -7,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 import mDeepFRI
-from mDeepFRI import MMSEQS_SEARCH_RESULTS
+from mDeepFRI import MMSEQS_SEARCH_RESULTS, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.utils import run_command
 
 MMSEQS_COLUMN_NAMES = [
@@ -87,6 +88,36 @@ def create_target_database(foldcomp_fasta_path: str,
     createdb(foldcomp_fasta_path, mmseqs_db_path)
     logger.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
     createindex(mmseqs_db_path)
+
+
+def check_mmseqs_database(database: Path):
+    """
+    Check if MMSeqs2 database is intact.
+
+    Args:
+        query_file (pathlib.Path): Path to a query file with protein sequences.
+        database (pathlib.Path): Path to a directory with a pre-built database.
+        output_path (pathlib.Path): Path to a directory where results will be saved.
+
+    Raises:
+        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+
+    Returns:
+        target_db (pathlib.Path): Path to MMSeqs2 database.
+    """
+
+    # Verify all the files for MMSeqs2 database
+    mmseqs2_ext = [
+        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx",
+        ".idx.index", ".idx.dbtype", ".lookup", ".source"
+    ]
+
+    target_db = Path(database / TARGET_MMSEQS_DB_NAME)
+    for ext in mmseqs2_ext:
+        if not os.path.isfile(f"{target_db}{ext}"):
+            target_db = None
+
+    return target_db
 
 
 def run_mmseqs_search(query_file: str,
