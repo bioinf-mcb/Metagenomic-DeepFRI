@@ -141,9 +141,11 @@ def get_models(ctx, output):
     help="Minimum identity for contact map alignment.",
 )
 @click.option(
-    "--keep-intermediate/--no-keep-intermediate",
-    default=True,
-    help="Keep intermediate files. Default is True.",
+    "--remove-intermediate",
+    default=False,
+    type=bool,
+    is_flag=True,
+    help="Remove intermediate files.",
 )
 @click.option(
     "-t",
@@ -158,7 +160,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_min_bit_score, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
-                     keep_intermediate, threads):
+                     remove_intermediate, threads):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
 
@@ -180,9 +182,5 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
         identity_threshold=alignment_min_identity,
-        keep_intermediate=keep_intermediate,
+        remove_intermediate=remove_intermediate,
         threads=threads)
-
-
-if __name__ == "__main__":
-    main()
