@@ -3,7 +3,8 @@ import logging
 from pathlib import Path
 
 from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
-from mDeepFRI.mmseqs import create_target_database, extract_fasta_foldcomp
+from mDeepFRI.mmseqs import (check_mmseqs_database, create_target_database,
+                             extract_fasta_foldcomp)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -45,7 +46,8 @@ def build_database(
         extract_fasta_foldcomp(input_path, output_sequences, threads)
         logging.info("FASTA file extracted to %s", output_sequences)
 
-    if (output_path / TARGET_MMSEQS_DB_NAME).exists():
+    # create mmseqs db
+    if check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME):
         logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
         logging.info("Skipping creation of MMSeqs2 database.")
     else:
