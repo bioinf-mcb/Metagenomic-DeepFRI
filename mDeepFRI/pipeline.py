@@ -132,7 +132,7 @@ def predict_protein_function(
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.3,
-        keep_intermediate=True,
+        remove_intermediate=False,
         threads: int = 1):
 
     MAX_SEQ_LEN = 1000
@@ -251,7 +251,7 @@ def predict_protein_function(
 
     output_buffer.close()
 
-    if not keep_intermediate:
+    if remove_intermediate:
         remove_temporary(intermediate)
 
     logging.info("meta-DeepFRI finished successfully.")

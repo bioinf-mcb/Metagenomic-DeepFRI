@@ -47,7 +47,8 @@ def build_database(
         logging.info("FASTA file extracted to %s", output_sequences)
 
     # create mmseqs db
-    if check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME):
+    target_db = check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME)
+    if not target_db:
         logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
         logging.info("Skipping creation of MMSeqs2 database.")
     else:
