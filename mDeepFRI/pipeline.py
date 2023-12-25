@@ -52,6 +52,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     logging.info("Found total of %i protein sequences in %s", len(query_seqs),
                  query_file)
 
+    # filter out sequences that are too short or too long
     prot_len_outliers = {}
     for prot_id, sequence in query_seqs.items():
         prot_len = len(sequence)
@@ -61,6 +62,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     for outlier in prot_len_outliers.keys():
         query_seqs.pop(outlier)
 
+    # write skipped protein ids to file
     if len(prot_len_outliers) > 0:
         logging.info(
             "Skipping %i proteins due to sequence length outside range %i-%i aa.",

@@ -8,7 +8,6 @@ cimport numpy as np
 np.import_array()
 
 import onnxruntime as rt
-import torch
 
 from mDeepFRI.bio_utils import seq2onehot
 
@@ -40,11 +39,7 @@ cdef class Predictor(object):
 
     def _load_model(self):
         session_options = rt.SessionOptions()
-
-        if torch.cuda.is_available():
-            session_options.intra_op_num_threads = 1
-        else:
-            session_options.intra_op_num_threads = self.threads
+        session_options.intra_op_num_threads = self.threads
 
         self.session = rt.InferenceSession(
             self.model_path,

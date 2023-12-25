@@ -1,4 +1,4 @@
-__version__ = "2.0.0"
+__version__ = "1.1.1"
 cnn_model_links = {
     "bp":
     "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_bp.onnx",
