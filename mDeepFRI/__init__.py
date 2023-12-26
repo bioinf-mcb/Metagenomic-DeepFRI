@@ -1,39 +1,120 @@
+import os
+
 __version__ = "1.1.1"
+
+repo_url = "https://huggingface.co/valentynbez/mDeepFRI/resolve/main/"
+
 cnn_model_links = {
-    "bp":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_bp.onnx",
-    "cc":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_cc.onnx",
-    "mf":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_mf.onnx",
-    "ec":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_ec.onnx",
+    "bp": {
+        "model": os.path.join(repo_url, "DeepCNN-MERGED_bp.onnx"),
+        "config": os.path.join(repo_url, "DeepCNN-MERGED_bp_model_params.json")
+    },
+    "cc": {
+        "model": os.path.join(repo_url, "DeepCNN-MERGED_cc.onnx"),
+        "config": os.path.join(repo_url, "DeepCNN-MERGED_cc_model_params.json")
+    },
+    "mf": {
+        "model": os.path.join(repo_url, "DeepCNN-MERGED_mf.onnx"),
+        "config": os.path.join(repo_url, "DeepCNN-MERGED_mf_model_params.json")
+    },
+    "ec": {
+        "model": os.path.join(repo_url, "DeepCNN-MERGED_ec.onnx"),
+        "config": os.path.join(repo_url, "DeepCNN-MERGED_ec_model_params.json")
+    },
 }
 
 gcn_model_links = {
-    "bp":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_bp.onnx",
-    "cc":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_cc.onnx",
-    "mf":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_mf.onnx",
-    "ec":
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec.onnx",
+    "1.0": {
+        "bp": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_bp.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_bp_model_params.json"
+            )
+        },
+        "cc": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_cc.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_cc_model_params.json"
+            )
+        },
+        "mf": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_mf.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_mf_model_params.json"
+            )
+        },
+        "ec": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec_model_params.json"
+            )
+        }
+    },
+    "1.1": {
+        "bp": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_bp.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_bp_model_params.json"
+            )
+        },
+        "cc": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_cc.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_cc_model_params.json"
+            )
+        },
+        "mf": {
+            "model":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_mf.onnx"
+            ),
+            "config":
+            os.path.join(
+                repo_url,
+                "DeepFRI-UNIPROT_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ext_desc_mf_model_params.json"
+            )
+        },
+    }
 }
 
-config_links = [
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_bp_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_cc_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_mf_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepCNN-MERGED_ec_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_bp_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_cc_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_ec_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/DeepFRI-MERGED_GraphConv_gcd_512-512-512_fcd_1024_ca_10.0_mf_model_params.json",
-    "https://huggingface.co/crusher083/mDeepFRI/resolve/main/model_config.json"
-]
+TARGET_MMSEQS_DB_NAME = "deepfriDB"
 
-TARGET_MMSEQS_DB_NAME = "targetDB"
-
-MERGED_SEQUENCES = "merged_sequences.faa"
+MERGED_SEQUENCES = "deepfri_db_seq.faa"
 MMSEQS_SEARCH_RESULTS = "mmseqs2_search_results.m8"

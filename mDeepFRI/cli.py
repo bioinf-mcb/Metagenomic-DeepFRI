@@ -5,7 +5,7 @@ import click
 
 from mDeepFRI import __version__
 from mDeepFRI.pipeline import predict_protein_function
-from mDeepFRI.utils import download_model_weights
+from mDeepFRI.utils import download_model_weights, generate_config_json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,14 +36,21 @@ def main(ctx, debug):
     type=click.Path(exists=False),
     help="Path to folder where the database will be created.",
 )
+@click.option("-v",
+              "--version",
+              required=True,
+              type=click.Choice(["1.0", "1.1"]),
+              help="Version of the model.")
 @click.pass_context
-def get_models(ctx, output):
+def get_models(ctx, output, version):
     """Download model weights for mDeepFRI."""
 
     logger.info("Downloading DeepFRI models.")
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
-    download_model_weights(output_path)
+    download_model_weights(output_path, version)
+    generate_config_json(output_path, version)
+    logger.info(f"DeepFRI models v{version} downloaded to {output_path}.")
 
 
 @main.command()
@@ -192,3 +199,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         remove_intermediate=remove_intermediate,
         overwrite=overwrite,
         threads=threads)
+
+
+if __name__ == "__main__":
+    main()

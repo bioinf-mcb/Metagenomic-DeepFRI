@@ -1,16 +1,17 @@
+import json
 import logging
-import pathlib
+import re
 import shlex
 import shutil
 import subprocess
 import sys
 from glob import glob
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 import requests
 
-from mDeepFRI import cnn_model_links, config_links, gcn_model_links
+from mDeepFRI import cnn_model_links, gcn_model_links
 
 
 def run_command(command, timeout=None):
@@ -62,7 +63,8 @@ def download_file(url, path):
             shutil.copyfileobj(r.raw, f)
 
 
-def download_model_weights(output_path: pathlib.Path):
+def download_model_weights(output_path: str,
+                           version: Literal["1.0", "1.1"] = "1.1") -> None:
     """
     Downloads model weights and configs from the internet.
 
@@ -73,17 +75,78 @@ def download_model_weights(output_path: pathlib.Path):
         None
     """
 
-    model_links = list(cnn_model_links.values()) + list(
-        gcn_model_links.values())
-    total_len = len(model_links)
-    for i, model_link in enumerate(model_links):
-        download_file(model_link, output_path / model_link.split("/")[-1])
-        logging.debug("Downloading model weights... %s/%s", i + 1, total_len)
+    output_path = Path(output_path)
+    try:
+        output_path.mkdir()
+    except FileExistsError:
+        # clean up the folder to avoid version conflicts
+        shutil.rmtree(output_path)
+        output_path.mkdir()
 
-    total_len = len(config_links)
-    for i, config in enumerate(config_links):
-        download_file(config, output_path / config.split("/")[-1])
-        logging.debug("Downloading model configs... %s/%s", i + 1, total_len)
+    for mode in gcn_model_links[version]:
+        logging.debug("Downloading GCN %s models...", mode.upper())
+        for url in gcn_model_links[version][mode].values():
+            download_file(url, output_path / url.split("/")[-1])
+
+    for mode in cnn_model_links:
+        logging.debug("Downloading CNN %s models...", mode.upper())
+        for url in cnn_model_links[mode].values():
+            # version 1.1 does not perdict EC number
+            if version == "1.1":
+                if mode == "ec":
+                    continue
+            download_file(url, output_path / url.split("/")[-1])
+
+
+## TODO: automatical generation of a config JSON
+def generate_config_json(weights_path: str, version: Literal["1.0",
+                                                             "1.1"]) -> None:
+    """
+    Generates a config json file.
+
+    Args:
+        weights_path (str): Path to the weights folder.
+        version (str): Version of the model.
+
+    Returns:
+        None
+    """
+
+    weights_path = Path(weights_path)
+    config = {
+        "gcn": {
+            "bp": None,
+            "cc": None,
+            "mf": None,
+            "ec": None
+        },
+        "cnn": {
+            "bp": None,
+            "cc": None,
+            "mf": None,
+            "ec": None
+        },
+        "version": None
+    }
+
+    models = list(weights_path.glob("*.onnx"))
+    possible_modes = "|".join(list(config["cnn"].keys()))
+    for model in models:
+        mode = re.search(possible_modes, model.name).group(0)
+        if "CNN" in model.name:
+            config["cnn"][mode] = str(model)
+        elif "GraphConv" in model.name:
+            config["gcn"][mode] = str(model)
+
+    config["version"] = version
+    # version 1.1 doesn't predict EC
+    if version == "1.1":
+        del config["cnn"]["ec"]
+        del config["gcn"]["ec"]
+
+    config_name = "model_config.json"
+    with open(weights_path / config_name, "w") as f:
+        json.dump(config, f, indent=4, sort_keys=True)
 
 
 # def merge_files_binary(file_paths: list, output_path: pathlib.Path) -> None:
@@ -158,3 +221,40 @@ def remove_temporary(temporary_files: Iterable):
         for ext in extensions:
             logging.info(f"Removing temporary file {ext}.")
             Path(ext).unlink()
+
+
+def load_deepfri_config(weights: str) -> dict:
+    """
+    Check if DeepFRI weights are valid and load config.
+    Args:
+        weights: Path to DeepFRI weights.
+
+    Returns:
+        pathlib.Path: Path to DeepFRI config.
+    """
+
+    weights = Path(weights)
+    assert weights.exists(), f"DeepFRI weights not found at {weights}"
+    assert weights.is_dir(
+    ), "DeepFRI weights should be a directory, not a file."
+
+    config_path = weights / "model_config.json"
+    assert config_path.exists(
+    ), "DeepFRI weights are missing model_config.json"
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        models_config = json.load(f)
+
+    for net in ["cnn", "gcn"]:
+        for model_type, model_path in models_config[net].items():
+            model_name = weights / (Path(model_path).name)
+            config_name = weights / (Path(model_path).stem +
+                                     "_model_params.json")
+            assert model_name.exists(
+            ), f"DeepFRI weights are missing {model_type} model at {model_name}"
+            assert config_name.exists(
+            ), f"DeepFRI weights are missing {model_type} model config at {config_name}"
+            # correct config
+            models_config[net][model_type] = str(model_name.absolute())
+
+    return models_config
