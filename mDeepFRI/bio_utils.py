@@ -8,15 +8,35 @@ from pysam import FastaFile, FastxFile
 from scipy.spatial.distance import pdist, squareform
 
 
-def load_fasta_as_dict(fasta_file):
-    """Load FASTA file as dict"""
+def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
+    """
+    Load FASTA file as dict of headers to sequences
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries.
+    """
+
     with FastxFile(fasta_file) as fasta:
         fasta_dict = {entry.name: entry.sequence for entry in fasta}
     return fasta_dict
 
 
-def retrieve_fasta_entries_as_dict(fasta_file, entries):
-    """Retrieve selected FASTA entries as dict"""
+def retrieve_fasta_entries_as_dict(fasta_file: str,
+                                   entries: List[str]) -> Dict[str, str]:
+    """
+    Retrieve selected FASTA entries as dict
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+        entries (List[str]): List of entries to retrieve.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries.
+    """
+
     fasta_dict = dict()
     with FastaFile(fasta_file) as fasta:
         for name in entries:
@@ -70,8 +90,16 @@ for k, v in protein_letters_3to1_extended.items():
 PROTEIN_LETTERS["UNK"] = "X"
 
 
-def seq2onehot(seq):
-    """Create 26-dim embedding"""
+def seq2onehot(seq: str) -> np.ndarray:
+    """Create 26-dim one-hot encoding of a protein sequence.
+
+    Args:
+        seq (str): Protein sequence.
+
+    Returns:
+        np.ndarray: One-hot encoding of protein sequence.
+    """
+
     chars = [
         '-', 'D', 'G', 'U', 'L', 'N', 'T', 'K', 'H', 'Y', 'W', 'C', 'P', 'V',
         'S', 'O', 'I', 'E', 'F', 'X', 'Q', 'A', 'B', 'Z', 'R', 'M'
@@ -90,7 +118,22 @@ def seq2onehot(seq):
     return seqs_x
 
 
-def calculate_cmap(pdb_string, max_seq_len=1000, threshold=6.0, mode="matrix"):
+def calculate_contact_map(pdb_string,
+                          max_seq_len=1000,
+                          threshold=6.0,
+                          mode="matrix") -> np.ndarray:
+    """
+    Calculate contact map from PDB string.
+
+    Args:
+        pdb_string (str): PDB file read into string.
+        max_seq_len (int): Maximum sequence length.
+        threshold (float): Distance threshold for contact map.
+        mode (str): Output mode. Either "matrix" or "sparse".
+
+    Returns:
+        np.ndarray: Contact map.
+    """
 
     parser = PDBParser()
     structure = parser.get_structure("", StringIO(pdb_string))
@@ -110,12 +153,23 @@ def calculate_cmap(pdb_string, max_seq_len=1000, threshold=6.0, mode="matrix"):
     return cmap
 
 
-def retrieve_structure(idx, db):
+def retrieve_structure(idx: str, db: str) -> str:
+    """
+    Retrieve structure from FoldComp database.
+
+    Args:
+        idx (str): Index of structure.
+        db (str): Path to FoldComp database.
+
+    Returns:
+        str: PDBfile read as string
+    """
+
     with foldcomp.open(db, ids=[idx]) as db:
         for _, pdb in db:
             structure = pdb
 
-        return structure
+    return structure
 
 
 def align_contact_map(query_alignment: str,
@@ -232,10 +286,10 @@ def retrieve_align_contact_map(alignment, database: str, max_seq_len: int,
                                threshold: float, generated_contacts: int):
     idx = alignment.target_name.rsplit(".", 1)[0]
     pdb_string = retrieve_structure(idx, database)
-    cmap = calculate_cmap(pdb_string,
-                          max_seq_len=max_seq_len,
-                          threshold=threshold,
-                          mode="sparse")
+    cmap = calculate_contact_map(pdb_string,
+                                 max_seq_len=max_seq_len,
+                                 threshold=threshold,
+                                 mode="sparse")
     aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                      alignment.gapped_target, cmap,
                                      generated_contacts)
