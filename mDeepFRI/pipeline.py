@@ -16,7 +16,7 @@ from mDeepFRI.database import build_database
 from mDeepFRI.mmseqs import (check_mmseqs_database, filter_mmseqs_results,
                              run_mmseqs_search)
 from mDeepFRI.predict import Predictor
-from mDeepFRI.utils import remove_temporary
+from mDeepFRI.utils import load_deepfri_config, remove_temporary
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -82,43 +82,6 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     return query_seqs
 
 
-def load_deepfri_config(weights: pathlib.Path) -> pathlib.Path:
-    """
-    Check if DeepFRI weights are valid and load config.
-    Args:
-        weights :
-
-    Returns:
-        pathlib.Path: Path to DeepFRI config.
-    """
-
-    assert weights.exists(), f"DeepFRI weights not found at {weights}"
-    assert weights.is_dir(
-    ), "DeepFRI weights should be a directory, not a file."
-
-    config_path = weights / "model_config.json"
-    assert config_path.exists(
-    ), "DeepFRI weights are missing model_config.json"
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        models_config = json.load(f)
-
-    for net in ["cnn", "gcn"]:
-        for model_type, model_path in models_config[net]["models"].items():
-            model_name = weights / (pathlib.Path(model_path).name + ".onnx")
-            config_name = weights / (pathlib.Path(model_path).name +
-                                     "_model_params.json")
-            assert model_name.exists(
-            ), f"DeepFRI weights are missing {model_type} model at {model_name}"
-            assert config_name.exists(
-            ), f"DeepFRI weights are missing {model_type} model config at {config_name}"
-            # correct config
-            models_config[net]["models"][model_type] = str(
-                model_name.absolute())
-    return models_config
-
-
-## TODO: structure output folder
 def predict_protein_function(
         query_file: str,
         database: str,
@@ -152,15 +115,31 @@ def predict_protein_function(
         threads=threads,
     )
 
+    deepfri_models_config = load_deepfri_config(weights)
+
+    # version 1.1 drops support for ec
+    if deepfri_models_config["version"] == "1.1":
+        # remove "ec" from processing modes
+        deepfri_processing_modes = [
+            mode for mode in deepfri_processing_modes if mode != "ec"
+        ]
+        logging.info("EC number prediction is not supported in version 1.1.")
+
+    assert len(
+        deepfri_processing_modes) > 0, "No valid processing modes selected."
+
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
 
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
-    target_db = check_mmseqs_database(database.parent)
+    target_db = check_mmseqs_database(database)
+    if target_db is None:
+        raise ValueError(f"MMSeqs2 database not found in {database.parent}.")
 
-    mmseqs_results = run_mmseqs_search(query_file, target_db, output_path)
+    mmseqs_results = run_mmseqs_search(query_file, target_db, output_path,
+                                       threads)
     filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
                                                     mmseqs_min_bit_score,
                                                     mmseqs_max_eval,
@@ -181,8 +160,6 @@ def predict_protein_function(
         k: v
         for k, v in query_seqs.items() if k not in aligned_queries
     }
-
-    deepfri_models_config = load_deepfri_config(weights)
 
     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
     # mf = molecular_function
@@ -218,9 +195,9 @@ def predict_protein_function(
                      len(deepfri_processing_modes))
         # GCN for queries with aligned contact map
         logging.info("Predicting with GCN: %i proteins", gcn_prots)
-        gcn_params = deepfri_models_config[net_type]["models"][mode]
+        gcn_path = deepfri_models_config[net_type][mode]
 
-        gcn = Predictor(gcn_params, threads=threads)
+        gcn = Predictor(gcn_path, threads=threads)
 
         for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
             logging.info("Predicting %s; %i/%i", aln.query_name, i + 1,
@@ -240,8 +217,8 @@ def predict_protein_function(
         if cnn_prots > 0:
             net_type = "cnn"
             logging.info("Predicting with CNN: %i proteins", cnn_prots)
-            cnn_params = deepfri_models_config[net_type]["models"][mode]
-            cnn = Predictor(cnn_params, threads=threads)
+            cnn_path = deepfri_models_config[net_type][mode]
+            cnn = Predictor(cnn_path, threads=threads)
             for i, query_id in enumerate(unaligned_queries):
                 logging.info("Predicting %s; %i/%i", query_id, i + 1,
                              cnn_prots)

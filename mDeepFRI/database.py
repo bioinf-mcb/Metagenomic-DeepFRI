@@ -50,7 +50,7 @@ def build_database(
 
     # create mmseqs db
     target_db = check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME)
-    if not target_db and not overwrite:
+    if target_db and not overwrite:
         logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
         logging.info("Skipping creation of MMSeqs2 database.")
     else:

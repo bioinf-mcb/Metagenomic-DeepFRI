@@ -99,9 +99,6 @@ def check_mmseqs_database(database: Path):
         database (pathlib.Path): Path to a directory with a pre-built database.
         output_path (pathlib.Path): Path to a directory where results will be saved.
 
-    Raises:
-        FileNotFoundError: MMSeqs2 database appears to be corrupted.
-
     Returns:
         target_db (pathlib.Path): Path to MMSeqs2 database.
     """
@@ -112,10 +109,12 @@ def check_mmseqs_database(database: Path):
         ".idx.index", ".idx.dbtype", ".lookup", ".source"
     ]
 
-    target_db = Path(database / TARGET_MMSEQS_DB_NAME)
+    target_db = Path(database.parent / TARGET_MMSEQS_DB_NAME)
     for ext in mmseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
+            logging.debug(f"{target_db}{ext} is missing.")
             target_db = None
+            break
 
     return target_db
 
