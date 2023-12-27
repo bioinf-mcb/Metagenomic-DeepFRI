@@ -1,4 +1,4 @@
-# Metagenomic-DeepFRI
+# Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
 
 ## About The Project
 Do you have **thousands of protein sequences** with **unknown structures**, but still want to know their
