@@ -56,16 +56,18 @@ Other available parameters can be found upon command `mDeepFRI --help`.
 The output folder will contain:
 1. `mmseqs2_search_results.m8`
 2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict the function of proteins in the range of 60-1000 aa).
-3. `queryDB` + index from MMSeqs2 search.
+3. `query.mmseqsDB` + index from MMSeqs2 search.
 4. `results.tsv` - an output from the DeepFRI model.
 
 ## Example output (`results.tsv`)
-|  Protein  | GO_term/EC_numer | Score | Annotation                     | Neural_net | DeepFRI_mode |
-|-----------|------------------|-------|--------------------------------|------------|--------------|
-| 1AAM_1    | 2.6.1.1          | 1     | 2.6.1.1                        | gcn        | ec           |
-| unaligned | 3.2.1.-          | 0.22  | 3.2.1.-                        | cnn        | ec           |
-| 1AAM_1    | GO:0006082       | 0.93  | organic acid metabolic process | gcn        | bp           |
-| unaligned | GO:0006810       | 0.17  | transport                      | cnn        | bp           |
+MIP_00215364	GO:0016798	0.21886511147022247	hydrolase activity, acting on glycosyl bonds	gcn	mf	MIP_00215364	mip_rosetta_hq	0.9333333373069763
+1GVH_1|Chain	GO:0009055	0.21663539111614227	electron transfer activity	gcn	mf	AF-P24232-F1-model_v4	afdb_swissprot_v4	1.0
+unaligned	3.2.1.-	0.21533216536045074	3.2.1.-	cnn	ec	nan	nan	nan
+|  Protein     | GO_term/EC_numer | Score | Annotation                                   | Neural_net | DeepFRI_mode | DB_hit        | DB_name        |Identity |
+|--------------|------------------|-------|----------------------------------------------|------------|--------------|---------------|----------------|------------|
+| MIP_00215364 | GO:0016798       | 0.218 | hydrolase activity, acting on glycosyl bonds | gcn        | mf           | MIP_00215364  | mip_rosetta_hq |0.933      |
+| 1GVH_1 | GO:0009055       | 0.217 | electron transfer activity	                 | gnn        | mf           | 	AF-P24232-F1-model_v4 | afdb_swissprot_v4 | 1.0  |
+| unaligned | 3.2.1.-          | 0.215 | 3.2.1.-                        | cnn        | ec           | nan | nan | nan
 
 This is an example of protein annotation with the AlphaFold database.
 - Protein - the name of the protein from the FASTA file.
@@ -119,4 +121,3 @@ pip install .[dev]
 ### Contact
 
 Valentyn Bezshapkin - valentyn.bezshapkin@micro.biol.ethz.ch
-Piotr Kucharski - soliareofastorauj@gmail.com
