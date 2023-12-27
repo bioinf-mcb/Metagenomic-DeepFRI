@@ -107,14 +107,29 @@ If you use this software please cite:
 - Kim, Midrita & Steinegger "Foldcomp: a library and format for compressing and indexing large protein structure sets" Bioinformatics (2023) https://doi.org/10.1093/bioinformatics/btad153
 - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023) https://doi.org/10.1128/msystems.01178-22
 
-## Contributing
+## 💭 Feedback
 
-If you have a suggestion that would make this project better, please send an e-mail or fork the repo and create a pull request.
-To install version for development with extra packages, clone the repository and run the following command:
-```
-pip install .[dev]
-```
+### ⚠️ Issue Tracker
 
-### Contact
+Found a bug ? Have an enhancement request ? Head over to the [GitHub issue
+tracker](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) if you need to report
+or ask something. If you are filing in on a bug, please include as much
+information as you can about the issue, and try to recreate the same bug
+in a simple, easily reproducible situation.
 
-Valentyn Bezshapkin - valentyn.bezshapkin@micro.biol.ethz.ch
+### 🏗️ Contributing
+
+Contributions are more than welcome! See
+[`CONTRIBUTING.md`](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/CONTRIBUTING.md)
+for more details.
+
+## 📋 Changelog
+
+This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html)
+and provides a [changelog](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/CONTRIBUTING.md)
+in the [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) format.
+
+
+## ⚖️ License
+
+This library is provided under the [The 3-Clause BSD License](https://opensource.org/license/bsd-3-clause/).
