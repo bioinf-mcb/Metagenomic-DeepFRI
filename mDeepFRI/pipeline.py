@@ -232,6 +232,17 @@ def predict_protein_function(
 
     output_buffer.close()
 
+    # sort predictions by score
+    with open(output_file_name, "r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        header = next(reader)
+        rows = sorted(reader, key=lambda row: float(row[2]), reverse=True)
+
+    with open(output_file_name, "w", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(header)
+        writer.writerows(rows)
+
     if remove_intermediate:
         remove_temporary(intermediate)
 
