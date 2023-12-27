@@ -1,5 +1,5 @@
 # 🍳 Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
-*Optimized version of [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional annotation of proteins with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). Specialised for annotation of big (metagenomic) datasets with predicted databases of structures.*
+*A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). It incorporates databases of predicted protein structures for fast annotation of metagenomic gene catalogues.*
 
 ## About The Project
 Do you have **thousands of protein sequences** with **unknown structures**, but still want to know their
@@ -12,10 +12,10 @@ This is the right project for this task! Pipeline in a nutshell:
 
 ### Built With
 
-* [DeepFRI](https://github.com/SoliareofAstora/DeepFRI)
+* [DeepFRI](https://github.com/flatironinstitute/DeepFRI)
 * [MMseqs2](https://github.com/soedinglab/MMseqs2)
 * [FoldComp](https://github.com/steineggerlab/foldcomp)
-* [pyOpal](https://github.com/steineggerlab/foldcomp)
+* [pyOpal](https://github.com/althonos/pyOpal)
 * [ONNX](https://github.com/onnx/onnx)
 
 # Installation
