@@ -60,9 +60,6 @@ The output folder will contain:
 4. `results.tsv` - an output from the DeepFRI model.
 
 ## Example output (`results.tsv`)
-MIP_00215364	GO:0016798	0.21886511147022247	hydrolase activity, acting on glycosyl bonds	gcn	mf	MIP_00215364	mip_rosetta_hq	0.9333333373069763
-1GVH_1|Chain	GO:0009055	0.21663539111614227	electron transfer activity	gcn	mf	AF-P24232-F1-model_v4	afdb_swissprot_v4	1.0
-unaligned	3.2.1.-	0.21533216536045074	3.2.1.-	cnn	ec	nan	nan	nan
 |  Protein     | GO_term/EC_numer | Score | Annotation                                   | Neural_net | DeepFRI_mode | DB_hit        | DB_name        |Identity |
 |--------------|------------------|-------|----------------------------------------------|------------|--------------|---------------|----------------|------------|
 | MIP_00215364 | GO:0016798       | 0.218 | hydrolase activity, acting on glycosyl bonds | gcn        | mf           | MIP_00215364  | mip_rosetta_hq |0.933      |
