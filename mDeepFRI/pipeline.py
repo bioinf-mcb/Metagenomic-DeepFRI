@@ -15,7 +15,7 @@ from mDeepFRI.database import build_database
 from mDeepFRI.mmseqs import (filter_mmseqs_results, run_mmseqs_search,
                              validate_mmseqs_database)
 from mDeepFRI.predict import Predictor
-from mDeepFRI.utils import load_deepfri_config, remove_temporary
+from mDeepFRI.utils import load_deepfri_config, remove_intermediate_files
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -48,16 +48,9 @@ def predict_protein_function(
     MAX_SEQ_LEN = 1000
     query_file = pathlib.Path(query_file)
     database = pathlib.Path(database)
-
-    # design solution
-    # database is built in the same directory
-    # where the structure database is stored
-    sequence_db, mmseqs_db = build_database(
-        input_path=database,
-        output_path=database.parent,
-        overwrite=overwrite,
-        threads=threads,
-    )
+    weights = pathlib.Path(weights)
+    output_path = pathlib.Path(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     deepfri_models_config = load_deepfri_config(weights)
 
@@ -72,17 +65,25 @@ def predict_protein_function(
     assert len(
         deepfri_processing_modes) > 0, "No valid processing modes selected."
 
-    weights = pathlib.Path(weights)
-    output_path = pathlib.Path(output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
+    # design solution
+    # database is built in the same directory
+    # where the structure database is stored
+
+    aligned_queries = {}
+    db = build_database(
+        input_path=database,
+        output_path=database.parent,
+        overwrite=overwrite,
+        threads=threads,
+    )
 
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
-    mmseqs_valid = validate_mmseqs_database(database)
+    mmseqs_valid = validate_mmseqs_database(db.mmseqs_db)
     if not mmseqs_valid:
         raise ValueError(f"MMSeqs2 database not found in {database.parent}.")
 
-    mmseqs_results = run_mmseqs_search(query_file, mmseqs_db, output_path,
+    mmseqs_results = run_mmseqs_search(query_file, db.mmseqs_db, output_path,
                                        threads)
 
     filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
@@ -92,17 +93,28 @@ def predict_protein_function(
                                                     k_best_hits=top_k,
                                                     threads=threads)
 
-    target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
-    target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
+    # if MMSeqs2 alignment is empty
+    if filtered_mmseqs_results is None:
+        pass
+    else:
+        target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
+        target_seqs = retrieve_fasta_entries_as_dict(db.sequence_db,
+                                                     target_ids)
 
-    alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
-                             alignment_gap_continuation, identity_threshold,
-                             threads)
+        alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
+                                 alignment_gap_continuation,
+                                 identity_threshold, threads)
 
-    aligned_queries = [aln.query_name for aln in alignments]
+        aligned_queries.update({
+            # corrected name for FoldComp inconsistency
+            aln.query_name:
+            [aln.target_name.rsplit(".", 1)[0], aln.identity, db.name]
+            for aln in alignments
+        })
+
     unaligned_queries = {
         k: v
-        for k, v in query_seqs.items() if k not in aligned_queries
+        for k, v in query_seqs.items() if k not in aligned_queries.keys()
     }
 
     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
@@ -112,13 +124,6 @@ def predict_protein_function(
     # ec = enzyme_commission
 
     gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
-    output_file_name = output_path / "results.tsv"
-    output_buffer = open(output_file_name, "w", encoding="utf-8")
-    csv_writer = csv.writer(output_buffer, delimiter="\t")
-    csv_writer.writerow([
-        'Protein', 'GO_term/EC_number', 'Score', 'Annotation', 'Neural_net',
-        'DeepFRI_mode'
-    ])
 
     if gcn_prots > 0:
         partial_align = partial(retrieve_align_contact_map,
@@ -133,29 +138,47 @@ def predict_protein_function(
 
         logging.info("Aligned %i contact maps", len(aligned_cmaps))
 
+    output_file_name = output_path / "results.tsv"
+    output_buffer = open(output_file_name, "w", encoding="utf-8")
+    csv_writer = csv.writer(output_buffer, delimiter="\t")
+    csv_writer.writerow([
+        'Protein',
+        'GO_term/EC_number',
+        'Score',
+        'Annotation',
+        'Neural_net',
+        'DeepFRI_mode',
+        'DB_hit',
+        'DB_name',
+        'Identity',
+    ])
+
     for i, mode in enumerate(deepfri_processing_modes):
-        net_type = "gcn"
-        logging.info("Processing mode: %s; %i/%i", mode, i + 1,
-                     len(deepfri_processing_modes))
-        # GCN for queries with aligned contact map
-        logging.info("Predicting with GCN: %i proteins", gcn_prots)
-        gcn_path = deepfri_models_config[net_type][mode]
+        if gcn_prots > 0:
+            net_type = "gcn"
+            logging.info("Processing mode: %s; %i/%i", mode, i + 1,
+                         len(deepfri_processing_modes))
+            # GCN for queries with aligned contact map
+            logging.info("Predicting with GCN: %i proteins", gcn_prots)
+            gcn_path = deepfri_models_config[net_type][mode]
 
-        gcn = Predictor(gcn_path, threads=threads)
+            gcn = Predictor(gcn_path, threads=threads)
 
-        for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
-            logging.info("Predicting %s; %i/%i", aln.query_name, i + 1,
-                         gcn_prots)
-            # running the actual prediction
-            prediction_rows = gcn.predict_function(seqres=aln.query_sequence,
-                                                   cmap=aligned_cmap,
-                                                   chain=aln.query_name)
-            # writing the results to the output file
-            for row in prediction_rows:
-                row.extend([net_type, mode])
-                csv_writer.writerow(row)
+            for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
+                logging.info("Predicting %s; %i/%i", aln.query_name, i + 1,
+                             gcn_prots)
+                # running the actual prediction
+                prediction_rows = gcn.predict_function(
+                    seqres=aln.query_sequence,
+                    cmap=aligned_cmap,
+                    chain=aln.query_name)
+                # writing the results to the output file
+                for row in prediction_rows:
+                    row.extend([net_type, mode])
+                    row.extend(aligned_queries[aln.query_name])
+                    csv_writer.writerow(row)
 
-        del gcn
+            del gcn
 
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
@@ -170,6 +193,7 @@ def predict_protein_function(
                     seqres=query_seqs[query_id], chain=query_id)
                 for row in prediction_rows:
                     row.extend([net_type, mode])
+                    row.extend([np.nan, np.nan, np.nan])
                     csv_writer.writerow(row)
 
             del cnn
@@ -188,6 +212,6 @@ def predict_protein_function(
         writer.writerows(rows)
 
     if remove_intermediate:
-        remove_temporary([sequence_db, mmseqs_db])
+        remove_intermediate_files([db.sequence_db, db.mmseqs_db])
 
     logging.info("meta-DeepFRI finished successfully.")

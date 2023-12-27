@@ -211,21 +211,29 @@ def calculate_contact_map(pdb_string,
     return cmap
 
 
-def retrieve_structure(idx: str, db: str) -> str:
+def retrieve_structure(idx: str, database_path: str) -> str:
     """
     Retrieve structure from FoldComp database.
 
     Args:
         idx (str): Index of structure.
-        db (str): Path to FoldComp database.
+        database_path (str): Path to FoldComp database.
 
     Returns:
-        str: PDBfile read as string
+        str: PDB file read as string
     """
 
-    with foldcomp.open(db, ids=[idx]) as db:
+    with foldcomp.open(database_path, ids=[idx]) as db:
         for _, pdb in db:
             structure = pdb
+
+    # issue with FoldComp inconsistency
+    # https://github.com/steineggerlab/foldcomp/issues/45
+    if "structure" not in locals():
+        idx = idx + ".pdb"
+        with foldcomp.open(database_path, ids=[idx]) as db:
+            for _, pdb in db:
+                structure = pdb
 
     return structure
 

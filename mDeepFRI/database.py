@@ -1,6 +1,9 @@
 # Create logger
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
+
+import numpy as np
 
 from mDeepFRI.mmseqs import (create_target_database, extract_fasta_foldcomp,
                              validate_mmseqs_database)
@@ -11,6 +14,32 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Database:
+    """
+    Class for storing database paths.
+    """
+    foldcomp_db: Path
+    sequence_db: Path
+    mmseqs_db: Path
+    aligned_queries: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.foldcomp_db = Path(self.foldcomp_db)
+        self.sequence_db = Path(self.sequence_db)
+        self.mmseqs_db = Path(self.mmseqs_db)
+        self.name = self.foldcomp_db.stem
+
+
+@dataclass
+class AlignedQuery:
+    name: str
+    best_hit_name: str
+    db_name: str
+    identity: float
+    aligned_contact_map: np.ndarray
 
 
 def build_database(
@@ -66,4 +95,8 @@ def build_database(
         logging.info("Found %s in %s", mmseqs_path, output_path)
         logging.info("Skipping creation of MMSeqs2 database.")
 
-    return (output_sequences, mmseqs_path)
+    database = Database(foldcomp_db=input_path,
+                        sequence_db=output_sequences,
+                        mmseqs_db=mmseqs_path)
+
+    return database

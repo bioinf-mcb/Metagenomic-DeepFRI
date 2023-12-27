@@ -142,8 +142,8 @@ def run_mmseqs_search(query_file: str,
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
-    output_file = output_path / target_db.stem + "search_results.tsv"
-    query_db = str(output_path / 'queryDB')
+    output_file = output_path / Path(target_db.stem + ".search_results.tsv")
+    query_db = str(output_path / 'query.mmseqsDB')
     createdb(query_file, query_db)
 
     with tempfile.TemporaryDirectory() as tmp_path:
@@ -187,25 +187,30 @@ def filter_mmseqs_results(results_file: str,
                            encoding="utf-8",
                            names=MMSEQS_COLUMN_NAMES)
 
-    logger.info("%i MMSeqs2 hits in the database.", output.shape[0])
+    logger.info("%i MMSeqs2 hits in the database.", output.size)
 
-    # MMSeqs2 alginment filters
-    if min_identity:
-        filtered = output[output['identity'] >= min_identity]
-    if min_bit_score:
-        filtered = output[output['bit_score'] >= min_bit_score]
-    if max_evalue:
-        filtered = output[output['e_value'] <= max_evalue]
+    # check if output is not empty
+    if output.size == 0:
+        logging.info("No hits found in MMSeqs2 database.")
+        final_database = None
+    else:
+        # MMSeqs2 alginment filters
+        if min_identity:
+            filtered = output[output['identity'] >= min_identity]
+        if min_bit_score:
+            filtered = output[output['bit_score'] >= min_bit_score]
+        if max_evalue:
+            filtered = output[output['e_value'] <= max_evalue]
 
-    # Get k best hits
-    filtered.sort(order=["query", "identity", "e_value"], kind="quciksort")
-    top_k_db = partial(select_top_k, db=filtered, k=k_best_hits)
-    with ThreadPool(threads) as pool:
-        top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
+        # Get k best hits
+        filtered.sort(order=["query", "identity", "e_value"], kind="quciksort")
+        top_k_db = partial(select_top_k, db=filtered, k=k_best_hits)
+        with ThreadPool(threads) as pool:
+            top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
 
-    final_database = np.concatenate(top_k_chunks)
+        final_database = np.concatenate(top_k_chunks)
 
-    logger.info("%i pairs after filtering with k=%i best hits.",
-                final_database.shape[0], k_best_hits)
+        logger.info("%i pairs after filtering with k=%i best hits.",
+                    final_database.shape[0], k_best_hits)
 
     return final_database

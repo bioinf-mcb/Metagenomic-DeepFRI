@@ -205,7 +205,7 @@ def shutdown(message):
     sys.exit(message)
 
 
-def remove_temporary(temporary_files: Iterable):
+def remove_intermediate_files(temporary_files: Iterable):
     """
     Removes temporary files.
 
