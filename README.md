@@ -1,4 +1,5 @@
 # Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
+*Optimized version of [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional annotation of proteins with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). Specialised for annotation of big (metagenomic) datasets with predicted databases of structures.*
 
 ## About The Project
 Do you have **thousands of protein sequences** with **unknown structures**, but still want to know their
