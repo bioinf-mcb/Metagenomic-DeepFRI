@@ -72,7 +72,7 @@ This is an example of protein annotation with the AlphaFold database.
 - GO_term/EC_numer - predicted GO term or EC number (dependent on mode)
 - Score - DeepFRI score, translates to model confidence in prediction. Details in [publication](https://www.nature.com/articles/s41467-021-23303-9).
 - Annotation - annotation from ontology
-- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is employed when structural information is available in the database, allowing for generally more confident predictions. 
+- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is employed when structural information is available in the database, allowing for generally more confident predictions.
 - DeepFRI_mode:
    ```
    mf = molecular_function
@@ -80,13 +80,13 @@ This is an example of protein annotation with the AlphaFold database.
    cc = cellular_component
    ec = enzyme_commission
    ```
-   
+
 ## Prediction modes
 The GO ontology contains three subontologies, defined by their root nodes:
 - Molecular Function (MF)
 - Biological Process (BP)
 - Cellular Component (CC)
-- Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC).  
+- Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC).
 By default, the tool makes predictions in all 4 categories. To select only a few pass the parameter `-p` or `--processing-modes` few times, i.e.:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
@@ -111,8 +111,12 @@ If you use this software please cite:
 ## Contributing
 
 If you have a suggestion that would make this project better, please send an e-mail or fork the repo and create a pull request.
+To install version for development with extra packages, clone the repository and run the following command:
+```
+pip install .[dev]
+```
 
 ### Contact
 
-Valentyn Bezshapkin - valentyn.bezshapkin@micro.biol.ethz.ch \
+Valentyn Bezshapkin - valentyn.bezshapkin@micro.biol.ethz.ch
 Piotr Kucharski - soliareofastorauj@gmail.com

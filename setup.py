@@ -127,19 +127,23 @@ PACKAGES = [SRC_DIR]
 
 install_requires = ["cython", "numpy"]
 setup_requires = ["cython"]
+extra_compile_args = ["-std=c++17", "-O3"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
               sources=[SRC_DIR + "/predict.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=["-std=c++17", "-O3"]),
+              extra_compile_args=extra_compile_args),
     Extension("mDeepFRI.alignment_utils",
               sources=[SRC_DIR + "/alignment_utils.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=["-std=c++17", "-O3"]),
+              extra_compile_args=extra_compile_args),
 ]
+
+extras = {}
+extras["dev"] = ["pre-commit"]
 
 setup(
     name="mDeepFRI",
@@ -149,9 +153,9 @@ setup(
     long_description=read("README.md"),
     long_description_content_type='text/markdown',
     keywords="protein function metagenomics deep neural network",
-    author="Piotr Kucharski, Valentyn Bezshapkin",
+    author=" Valentyn Bezshapkin, Piotr Kucharski",
     author_email=
-    "soliareofastorauj@gmail.com, valentyn.bezshapkin@micro.biol.ethz.ch",
+    "valentyn.bezshapkin@micro.biol.ethz.ch, soliareofastorauj@gmail.com",
     url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     include_package_data=True,
@@ -162,6 +166,7 @@ setup(
     },
     ext_modules=EXTENSIONS,
     include_dirs=[np.get_include()],
+    extras_require=extras,
     install_requires=install_requires,
     cmdclass={'build_ext': build_ext},
     license="GNU GPLv3",
