@@ -49,6 +49,7 @@ class AlignmentResult:
                  gapped_sequence="",
                  gapped_target="",
                  identity=None):
+
         self.query_name = query_name
         self.query_sequence = query_sequence
         self.target_name = target_name
@@ -57,6 +58,7 @@ class AlignmentResult:
         self.gapped_sequence = gapped_sequence
         self.gapped_target = gapped_target
         self.identity = identity
+        self.db_name = None
 
     def __str__(self):
         return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \

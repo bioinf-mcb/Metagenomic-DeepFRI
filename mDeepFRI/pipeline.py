@@ -3,7 +3,7 @@ import logging
 import pathlib
 from functools import partial
 from multiprocessing import Pool
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # TODO: input an MMSeqs DB as query
 def predict_protein_function(
         query_file: str,
-        database: str,
+        databases: Tuple[str],
         weights: str,
         output_path: str,
         deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
@@ -47,7 +47,6 @@ def predict_protein_function(
 
     MAX_SEQ_LEN = 1000
     query_file = pathlib.Path(query_file)
-    database = pathlib.Path(database)
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -69,48 +68,56 @@ def predict_protein_function(
     # database is built in the same directory
     # where the structure database is stored
 
-    aligned_queries = {}
-    db = build_database(
-        input_path=database,
-        output_path=database.parent,
-        overwrite=overwrite,
-        threads=threads,
-    )
+    deepfri_dbs = []
+    for database in databases:
+        database = pathlib.Path(database)
+        db = build_database(
+            input_path=database,
+            output_path=database.parent,
+            overwrite=overwrite,
+            threads=threads,
+        )
+        deepfri_dbs.append(db)
 
+    # SEQUENCE ALIGNMENT
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
-    mmseqs_valid = validate_mmseqs_database(db.mmseqs_db)
-    if not mmseqs_valid:
-        raise ValueError(f"MMSeqs2 database not found in {database.parent}.")
+    aligned_queries = {}
 
-    mmseqs_results = run_mmseqs_search(query_file, db.mmseqs_db, output_path,
-                                       threads)
+    for db in deepfri_dbs:
+        mmseqs_valid = validate_mmseqs_database(db.mmseqs_db)
+        if not mmseqs_valid:
+            raise ValueError(
+                f"MMSeqs2 database not found in {database.parent}.")
 
-    filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
-                                                    mmseqs_min_bit_score,
-                                                    mmseqs_max_eval,
-                                                    mmseqs_min_identity,
-                                                    k_best_hits=top_k,
-                                                    threads=threads)
+        mmseqs_results = run_mmseqs_search(query_file, db.mmseqs_db,
+                                           output_path, threads)
 
-    # if MMSeqs2 alignment is empty
-    if filtered_mmseqs_results is None:
-        pass
-    else:
-        target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
-        target_seqs = retrieve_fasta_entries_as_dict(db.sequence_db,
-                                                     target_ids)
+        filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
+                                                        mmseqs_min_bit_score,
+                                                        mmseqs_max_eval,
+                                                        mmseqs_min_identity,
+                                                        k_best_hits=top_k,
+                                                        threads=threads)
 
-        alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
-                                 alignment_gap_continuation,
-                                 identity_threshold, threads)
+        # if MMSeqs2 alignment is empty
+        if filtered_mmseqs_results is None:
+            pass
+        else:
+            target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
+            target_seqs = retrieve_fasta_entries_as_dict(
+                db.sequence_db, target_ids)
 
-        aligned_queries.update({
-            # corrected name for FoldComp inconsistency
-            aln.query_name:
-            [aln.target_name.rsplit(".", 1)[0], aln.identity, db.name]
-            for aln in alignments
-        })
+            alignments = align_query(query_seqs, target_seqs,
+                                     alignment_gap_open,
+                                     alignment_gap_continuation,
+                                     identity_threshold, threads)
+
+            # set a db name for alignments
+            for aln in alignments:
+                aln.db_name = db.name
+
+            aligned_queries.update({aln.query_name: aln for aln in alignments})
 
     unaligned_queries = {
         k: v
@@ -125,18 +132,28 @@ def predict_protein_function(
 
     gcn_prots, cnn_prots = len(aligned_queries), len(unaligned_queries)
 
+    # CONTACT MAP ALIGNMENT
+    aligned_cmaps = []
     if gcn_prots > 0:
-        partial_align = partial(retrieve_align_contact_map,
-                                database=database,
-                                max_seq_len=MAX_SEQ_LEN,
-                                threshold=angstrom_contact_threshold,
-                                generated_contacts=generate_contacts)
-        logging.info("Aligning contact maps for %i proteins", gcn_prots)
+        for db in deepfri_dbs:
+            # select only alignments from db
+            db_alignments = [
+                v for v in aligned_queries.values() if v.db_name == db.name
+            ]
 
-        with Pool(threads) as p:
-            aligned_cmaps = p.map(partial_align, alignments)
+            partial_align = partial(retrieve_align_contact_map,
+                                    database=db.foldcomp_db,
+                                    max_seq_len=MAX_SEQ_LEN,
+                                    threshold=angstrom_contact_threshold,
+                                    generated_contacts=generate_contacts)
+            logging.info("Aligning contact maps for %i proteins", gcn_prots)
 
-        logging.info("Aligned %i contact maps", len(aligned_cmaps))
+            with Pool(threads) as p:
+                partial_cmaps = p.map(partial_align, db_alignments)
+
+            aligned_cmaps.extend(partial_cmaps)
+
+    logging.info("Aligned %i contact maps", len(aligned_cmaps))
 
     output_file_name = output_path / "results.tsv"
     output_buffer = open(output_file_name, "w", encoding="utf-8")
@@ -153,7 +170,9 @@ def predict_protein_function(
         'Identity',
     ])
 
+    # FUNCTION PREDICTION
     for i, mode in enumerate(deepfri_processing_modes):
+        # GCN
         if gcn_prots > 0:
             net_type = "gcn"
             logging.info("Processing mode: %s; %i/%i", mode, i + 1,
@@ -175,7 +194,11 @@ def predict_protein_function(
                 # writing the results to the output file
                 for row in prediction_rows:
                     row.extend([net_type, mode])
-                    row.extend(aligned_queries[aln.query_name])
+                    # corrected name for FoldComp inconsistency
+                    row.extend([
+                        aln.target_name.rsplit(".", 1)[0], aln.db_name,
+                        aln.identity
+                    ])
                     csv_writer.writerow(row)
 
             del gcn

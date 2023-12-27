@@ -359,4 +359,5 @@ def retrieve_align_contact_map(alignment, database: str, max_seq_len: int,
     aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                      alignment.gapped_target, cmap,
                                      generated_contacts)
+
     return (alignment, aligned_cmap)

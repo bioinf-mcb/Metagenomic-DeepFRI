@@ -66,6 +66,7 @@ def get_models(ctx, output, version):
     "--db-path",
     required=True,
     type=click.Path(exists=True),
+    multiple=True,
     help="Path to a structures database compessed with FoldComp.",
 )
 @click.option(
@@ -182,9 +183,9 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
     output_path.mkdir(parents=True, exist_ok=True)
 
     predict_protein_function(
-        query_file=Path(input),
-        database=Path(db_path),
-        weights=Path(weights),
+        query_file=input,
+        databases=db_path,
+        weights=weights,
         output_path=output_path,
         deepfri_processing_modes=processing_modes,
         angstrom_contact_threshold=angstrom_contact_thresh,
