@@ -1,3 +1,5 @@
+import json
+import logging
 from io import StringIO
 from typing import Dict, List, Tuple
 
@@ -116,6 +118,62 @@ def seq2onehot(seq: str) -> np.ndarray:
     seqs_x = np.array([vocab_one_hot[j, :] for j in embed_x])
 
     return seqs_x
+
+
+def load_query_sequences(query_file, output_path) -> Dict[str, str]:
+    """
+    Loads query protein sequences from FASTA file. Filters
+    out sequences that are too short or too long.
+
+    Args:
+        query_file (str): Path to FASTA file with query protein sequences.
+        output_path (str): Path to output folder.
+
+    Returns:
+        query_seqs (dict): Dictionary with query protein headers to sequences.
+    """
+
+    # By DeepFRI design (60, 1000)
+    MIN_PROTEIN_LENGTH = 60
+    MAX_PROTEIN_LENGTH = 1_000
+
+    query_seqs = load_fasta_as_dict(query_file)
+
+    if len(query_seqs) == 0:
+        raise ValueError(
+            f"{query_file} does not contain parsable protein sequences.")
+
+    logging.info("Found total of %i protein sequences in %s", len(query_seqs),
+                 query_file)
+
+    # filter out sequences that are too short or too long
+    prot_len_outliers = {}
+    for prot_id, sequence in query_seqs.items():
+        prot_len = len(sequence)
+        if prot_len > MAX_PROTEIN_LENGTH or prot_len < MIN_PROTEIN_LENGTH:
+            prot_len_outliers[prot_id] = prot_len
+
+    for outlier in prot_len_outliers.keys():
+        query_seqs.pop(outlier)
+
+    # write skipped protein ids to file
+    if len(prot_len_outliers) > 0:
+        logging.info(
+            "Skipping %i proteins due to sequence length outside range %i-%i aa.",
+            len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
+        logging.info("Skipped protein ids will be saved in " \
+                     "metadata_skipped_ids_length.json.")
+        json.dump(prot_len_outliers,
+                  open(output_path / 'metadata_skipped_ids_due_to_length.json',
+                       "w",
+                       encoding="utf-8"),
+                  indent=4,
+                  sort_keys=True)
+
+    assert len(query_seqs
+               ) > 0, "All proteins were filtered out due to sequence length."
+
+    return query_seqs
 
 
 def calculate_contact_map(pdb_string,

@@ -113,8 +113,3 @@ gcn_model_links = {
         },
     }
 }
-
-TARGET_MMSEQS_DB_NAME = "deepfriDB"
-
-MERGED_SEQUENCES = "deepfri_db_seq.faa"
-MMSEQS_SEARCH_RESULTS = "mmseqs2_search_results.m8"

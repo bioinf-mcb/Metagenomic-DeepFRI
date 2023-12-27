@@ -1,20 +1,19 @@
 import csv
-import json
 import logging
 import pathlib
 from functools import partial
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import List
 
 import numpy as np
 
-from mDeepFRI import MERGED_SEQUENCES
 from mDeepFRI.alignment import align_query
-from mDeepFRI.bio_utils import (load_fasta_as_dict, retrieve_align_contact_map,
+from mDeepFRI.bio_utils import (load_query_sequences,
+                                retrieve_align_contact_map,
                                 retrieve_fasta_entries_as_dict)
 from mDeepFRI.database import build_database
-from mDeepFRI.mmseqs import (check_mmseqs_database, filter_mmseqs_results,
-                             run_mmseqs_search)
+from mDeepFRI.mmseqs import (filter_mmseqs_results, run_mmseqs_search,
+                             validate_mmseqs_database)
 from mDeepFRI.predict import Predictor
 from mDeepFRI.utils import load_deepfri_config, remove_temporary
 
@@ -26,62 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_query_sequences(query_file, output_path) -> Dict[str, str]:
-    """
-    Loads query protein sequences from FASTA file. Filters
-    out sequences that are too short or too long.
-
-    Args:
-        query_file (str): Path to FASTA file with query protein sequences.
-        output_path (str): Path to output folder.
-
-    Returns:
-        query_seqs (dict): Dictionary with query protein headers to sequences.
-    """
-
-    # By DeepFRI design (60, 1000)
-    MIN_PROTEIN_LENGTH = 60
-    MAX_PROTEIN_LENGTH = 1_000
-
-    query_seqs = load_fasta_as_dict(query_file)
-
-    if len(query_seqs) == 0:
-        raise ValueError(
-            f"{query_file} does not contain parsable protein sequences.")
-
-    logging.info("Found total of %i protein sequences in %s", len(query_seqs),
-                 query_file)
-
-    # filter out sequences that are too short or too long
-    prot_len_outliers = {}
-    for prot_id, sequence in query_seqs.items():
-        prot_len = len(sequence)
-        if prot_len > MAX_PROTEIN_LENGTH or prot_len < MIN_PROTEIN_LENGTH:
-            prot_len_outliers[prot_id] = prot_len
-
-    for outlier in prot_len_outliers.keys():
-        query_seqs.pop(outlier)
-
-    # write skipped protein ids to file
-    if len(prot_len_outliers) > 0:
-        logging.info(
-            "Skipping %i proteins due to sequence length outside range %i-%i aa.",
-            len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
-        logging.info("Skipped protein ids will be saved in " \
-                     "metadata_skipped_ids_length.json.")
-        json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json',
-                       "w",
-                       encoding="utf-8"),
-                  indent=4,
-                  sort_keys=True)
-
-    assert len(query_seqs
-               ) > 0, "All proteins were filtered out due to sequence length."
-
-    return query_seqs
-
-
+# TODO: input an MMSeqs DB as query
 def predict_protein_function(
         query_file: str,
         database: str,
@@ -108,7 +52,7 @@ def predict_protein_function(
     # design solution
     # database is built in the same directory
     # where the structure database is stored
-    intermediate = build_database(
+    sequence_db, mmseqs_db = build_database(
         input_path=database,
         output_path=database.parent,
         overwrite=overwrite,
@@ -134,12 +78,13 @@ def predict_protein_function(
 
     query_seqs = load_query_sequences(query_file, output_path)
     logging.info("Aligning %i sequences with MMSeqs2.", len(query_seqs))
-    target_db = check_mmseqs_database(database)
-    if target_db is None:
+    mmseqs_valid = validate_mmseqs_database(database)
+    if not mmseqs_valid:
         raise ValueError(f"MMSeqs2 database not found in {database.parent}.")
 
-    mmseqs_results = run_mmseqs_search(query_file, target_db, output_path,
+    mmseqs_results = run_mmseqs_search(query_file, mmseqs_db, output_path,
                                        threads)
+
     filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
                                                     mmseqs_min_bit_score,
                                                     mmseqs_max_eval,
@@ -148,8 +93,7 @@ def predict_protein_function(
                                                     threads=threads)
 
     target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
-    target_seqs = retrieve_fasta_entries_as_dict(
-        database.parent / MERGED_SEQUENCES, target_ids)
+    target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
 
     alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
                              alignment_gap_continuation, identity_threshold,
@@ -244,6 +188,6 @@ def predict_protein_function(
         writer.writerows(rows)
 
     if remove_intermediate:
-        remove_temporary(intermediate)
+        remove_temporary([sequence_db, mmseqs_db])
 
     logging.info("meta-DeepFRI finished successfully.")

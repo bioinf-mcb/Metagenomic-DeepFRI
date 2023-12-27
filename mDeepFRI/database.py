@@ -2,9 +2,8 @@
 import logging
 from pathlib import Path
 
-from mDeepFRI import MERGED_SEQUENCES, TARGET_MMSEQS_DB_NAME
-from mDeepFRI.mmseqs import (check_mmseqs_database, create_target_database,
-                             extract_fasta_foldcomp)
+from mDeepFRI.mmseqs import (create_target_database, extract_fasta_foldcomp,
+                             validate_mmseqs_database)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 def build_database(
     input_path: str,
     output_path: str,
-    overwrite: bool,
-    threads: int,
+    overwrite: bool = False,
+    threads: int = 1,
 ) -> None:
     """
     Extracts FASTA file from FoldComp database. Creates MMSeqs2 database and index.
@@ -37,26 +36,34 @@ def build_database(
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
-    output_sequences = output_path / MERGED_SEQUENCES
+    output_sequences = output_path / Path(input_path.stem + ".fasta.gz")
+    unzipped_sequences = output_sequences.with_suffix("")
+    needs_new_mmseqs = False
+
     # check if files exist in output directory
     if output_sequences.exists() and not overwrite:
-        logging.info("Found %s in %s", MERGED_SEQUENCES, output_path)
+        logging.info("Found %s in %s", output_sequences, output_path)
         logging.info(
             "Skipping extraction of FASTA file from FoldComp database.")
     else:
         logging.info("Extracting FASTA file from FoldComp database.")
-        extract_fasta_foldcomp(input_path, output_sequences, threads)
+        output_sequences = extract_fasta_foldcomp(input_path,
+                                                  unzipped_sequences, threads)
         logging.info("FASTA file extracted to %s", output_sequences)
+        needs_new_mmseqs = True
 
     # create mmseqs db
-    target_db = check_mmseqs_database(output_path / TARGET_MMSEQS_DB_NAME)
-    if target_db and not overwrite:
-        logging.info("Found %s in %s", TARGET_MMSEQS_DB_NAME, output_path)
-        logging.info("Skipping creation of MMSeqs2 database.")
-    else:
+    mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
+    mmseqs_valid = validate_mmseqs_database(mmseqs_path)
+    if not mmseqs_valid:
         logging.info("Creating MMSeqs2 database.")
-        create_target_database(output_sequences,
-                               output_path / TARGET_MMSEQS_DB_NAME)
+        create_target_database(output_sequences, mmseqs_path)
+    elif overwrite or needs_new_mmseqs:
+        logging.info("Creating MMSeqs2 database.")
+        create_target_database(output_sequences, mmseqs_path)
+    else:
         logging.info("Database created at %s", output_path)
+        logging.info("Found %s in %s", mmseqs_path, output_path)
+        logging.info("Skipping creation of MMSeqs2 database.")
 
-    return (output_sequences, output_path / TARGET_MMSEQS_DB_NAME)
+    return (output_sequences, mmseqs_path)

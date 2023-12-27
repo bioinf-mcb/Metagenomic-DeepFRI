@@ -6,9 +6,9 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import numpy as np
+from pysam import tabix_compress
 
 import mDeepFRI
-from mDeepFRI import MMSEQS_SEARCH_RESULTS, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.utils import run_command
 
 MMSEQS_COLUMN_NAMES = [
@@ -71,6 +71,11 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     run_command(
         f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
     )
+    # gzip fasta file
+    tabix_compress(output_file, str(output_file) + ".gz", force=True)
+    # remove unzipped file
+    os.remove(output_file)
+    return Path(str(output_file) + ".gz")
 
 
 def create_target_database(foldcomp_fasta_path: str,
@@ -90,17 +95,16 @@ def create_target_database(foldcomp_fasta_path: str,
     createindex(mmseqs_db_path)
 
 
-def check_mmseqs_database(database: Path):
+def validate_mmseqs_database(database: str):
     """
     Check if MMSeqs2 database is intact.
 
     Args:
-        query_file (pathlib.Path): Path to a query file with protein sequences.
-        database (pathlib.Path): Path to a directory with a pre-built database.
-        output_path (pathlib.Path): Path to a directory where results will be saved.
+        database (str): Path to MMSeqs2 database.
 
     Returns:
-        target_db (pathlib.Path): Path to MMSeqs2 database.
+        is_valid (bool): True if database is intact.
+
     """
 
     # Verify all the files for MMSeqs2 database
@@ -109,14 +113,15 @@ def check_mmseqs_database(database: Path):
         ".idx.index", ".idx.dbtype", ".lookup", ".source"
     ]
 
-    target_db = Path(database.parent / TARGET_MMSEQS_DB_NAME)
+    target_db = Path(database)
+    is_valid = True
     for ext in mmseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
             logging.debug(f"{target_db}{ext} is missing.")
-            target_db = None
+            is_valid = False
             break
 
-    return target_db
+    return is_valid
 
 
 def run_mmseqs_search(query_file: str,
@@ -137,7 +142,7 @@ def run_mmseqs_search(query_file: str,
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
-    output_file = output_path / MMSEQS_SEARCH_RESULTS
+    output_file = output_path / target_db.stem + "search_results.tsv"
     query_db = str(output_path / 'queryDB')
     createdb(query_file, query_db)
 
