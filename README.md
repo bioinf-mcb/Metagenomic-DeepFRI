@@ -42,9 +42,12 @@ pip install .
 ### 1. Prepare structural database
 Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and the app will crash.
 ### 2. Download models
-Run command:
+Two versions of models available:
+- `v1.0` - is the original version from DeepFRI publication.
+- `v1.1` - is a version finetuned on AlphaFold models and Gene Ontology Uniprot annotations.
+To download models run command:
 ```
-mDeepFRI get-models --output path/to/weights/folder
+mDeepFRI get-models --output path/to/weights/folder -v {1.0 or 1.1}
 ```
 
 ### 3. Predict protein function & capture log
