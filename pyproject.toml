@@ -1,3 +1,7 @@
+[metadata]
+name = "mdeepfri"
+version = "1.1.1"
+
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = ["setuptools", "numpy", "cython", "requests"]
