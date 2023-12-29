@@ -1,26 +1,27 @@
 # 🍳 Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
-*A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). It incorporates databases of predicted protein structures for fast annotation of metagenomic gene catalogues.*
+*A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). It incorporates [FoldComp](https://github.com/steineggerlab/foldcomp) databases of predicted protein structures for fast annotation of metagenomic gene catalogues.*
 
-## About The Project
-Do you have **thousands of protein sequences** with **unknown structures**, but still want to know their
-molecular function, biological process, cellular component and enzyme commission **predicted by DeepFRI Graph Convolutional Network?**
+## 🔍 Overview
+Proteins perform most of the work of living cells. Amino acid sequence and structural features of proteins determine a wide range of functions: from binding specificity and conferring mechanical stability, to catalysis of biochemical reactions, transport, and signal transduction.
+DeepFRI is a neural network designed to predict protein function within the framework of the Gene Ontology (GO). The exponential growth in the number of available protein sequences, driven by advancements in low-cost sequencing technologies and computational methods (e.g., gene prediction), has resulted in a pressing need for efficient software to facilitate the annotation of protein databases.
+Metagenomic-DeepFRI addresses such need, building upon efficient libraries. It incorporates novel databases of predicted structures (AlphaFold, ESM-Fold, MIP, etc.) and improves runtimes of DeepFRI by [2-12 times](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/weight_convert/onnx_vs_tf2.png)!
 
-This is the right project for this task! Pipeline in a nutshell:
-1. Search for similar target protein sequences using MMseqs2.
-2. Align target protein contact map to fit your query protein with unknown structure.
-3. Run predictions on query sequence combined with aligned target contact map or sequence alone if no alignment was found.
+### 📋 Pipeline stages
 
-### Built With
+1. Search proteins similar to query in a FoldComp database with MMSeqs2.
+2. Find the best alignment among MMSeqs2 hits using PyOpal.
+3. Align target protein contact map to query protein with unknown structure.
+4. Run DeepFRI with structure if it was found in database, otherwise run DeepFRI with sequence only.
 
-* [DeepFRI](https://github.com/flatironinstitute/DeepFRI)
+### 🛠️ Built With
+
 * [MMseqs2](https://github.com/soedinglab/MMseqs2)
-* [FoldComp](https://github.com/steineggerlab/foldcomp)
 * [pyOpal](https://github.com/althonos/pyOpal)
+* [DeepFRI](https://github.com/flatironinstitute/DeepFRI)
+* [FoldComp](https://github.com/steineggerlab/foldcomp)
 * [ONNX](https://github.com/onnx/onnx)
 
-# Installation
-
-## 1. Install environment and DeepFRI
+## 🔧 Installation
 
 1. Clone repo locally
 ```{code-block} bash
@@ -37,30 +38,31 @@ conda activate deepfri
 pip install .
 ```
 
-# Usage
-## Prepare structural database
+## 💡 Usage
+### 1. Prepare structural database
 Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and the app will crash.
-## 1. Download models
+### 2. Download models
 Run command:
 ```
 mDeepFRI get-models --output path/to/weights/folder
 ```
 
-## 2. Predict protein function & capture log
+### 3. Predict protein function & capture log
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path 2> log.txt
 ```
 
 The `logging` module writes output into `stderr`, so use `2>` to redirect it to the file.
 Other available parameters can be found upon command `mDeepFRI --help`.
-## Results
+
+## ✅ Results
 The output folder will contain:
-1. `mmseqs2_search_results.m8`
+1. `{database_name}.search_results.tsv`
 2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict the function of proteins in the range of 60-1000 aa).
 3. `query.mmseqsDB` + index from MMSeqs2 search.
-4. `results.tsv` - an output from the DeepFRI model.
+4. `results.tsv` - a final output from the DeepFRI model.
 
-## Example output (`results.tsv`)
+### Example output (`results.tsv`)
 |  Protein     | GO_term/EC_numer | Score | Annotation                                   | Neural_net | DeepFRI_mode | DB_hit        | DB_name        |Identity |
 |--------------|------------------|-------|----------------------------------------------|------------|--------------|---------------|----------------|------------|
 | MIP_00215364 | GO:0016798       | 0.218 | hydrolase activity, acting on glycosyl bonds | gcn        | mf           | MIP_00215364  | mip_rosetta_hq |0.933      |
@@ -81,7 +83,7 @@ This is an example of protein annotation with the AlphaFold database.
    ec = enzyme_commission
    ```
 
-## Prediction modes
+### Prediction modes
 The GO ontology contains three subontologies, defined by their root nodes:
 - Molecular Function (MF)
 - Biological Process (BP)
@@ -92,17 +94,17 @@ By default, the tool makes predictions in all 4 categories. To select only a few
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
 ```
 
-## Temporary files
+### Temporary files
 The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run use
 flag `--no-keep-temporary`.
 
-## CPU / GPU utilization
+### CPU / GPU utilization
 If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, inference).
 If CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
 **Technical tip:** Single instance of DeepFRI on GPU requires 2GB VRAM. Every currently available GPU with CUDA support should be able to run the model.
 
-## Citations
-If you use this software please cite:
+## 🔖 Citations
+Metagenomic-DeepFRI is a scientific software. If you use it in an academic work, please cite the papers behind it:
 - Gligorijević et al. "Structure-based protein function prediction using graph convolutional networks" Nat. Comms. (2021). https://doi.org/10.1038/s41467-021-23303-9
 - Steinegger & Söding "MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets" Nat. Biotechnol. (2017) https://doi.org/10.1038/nbt.3988
 - Kim, Midrita & Steinegger "Foldcomp: a library and format for compressing and indexing large protein structure sets" Bioinformatics (2023) https://doi.org/10.1093/bioinformatics/btad153
