@@ -23,6 +23,23 @@ def insert_gaps(sequence, reference, alignment_string):
 
 
 class AlignmentResult:
+    """
+    Class for storing pairwise alignment results.
+
+    Attributes:
+        query_name (str): Name of the query sequence.
+        query_sequence (str): Query sequence.
+        target_name (str): Name of the target sequence.
+        target_sequence (str): Target sequence.
+        alignment (str): Alignment string.
+        gapped_sequence (str): Query sequence with gaps.
+        gapped_target (str): Target sequence with gaps.
+        identity (float): Identity between two sequences.
+
+    Methods:
+        insert_gaps: Inserts gaps into query and target sequences.
+        calculate_identity: Calculates identity between query and target.
+    """
     def __init__(self,
                  query_name,
                  query_sequence,
@@ -32,6 +49,7 @@ class AlignmentResult:
                  gapped_sequence="",
                  gapped_target="",
                  identity=None):
+
         self.query_name = query_name
         self.query_sequence = query_sequence
         self.target_name = target_name
@@ -40,6 +58,7 @@ class AlignmentResult:
         self.gapped_sequence = gapped_sequence
         self.gapped_target = gapped_target
         self.identity = identity
+        self.db_name = None
 
     def __str__(self):
         return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
@@ -50,6 +69,14 @@ class AlignmentResult:
                f"identity={self.identity})"
 
     def insert_gaps(self):
+        """
+        Inserts gaps into query and target sequences.
+
+        Args:
+            None
+        Returns:
+            self
+        """
         seq = list(self.query_sequence)
         ref = list(self.target_sequence)
         aln = list(self.alignment)
@@ -65,6 +92,15 @@ class AlignmentResult:
         return self
 
     def calculate_identity(self):
+        """
+        Calculates identity between query and target.
+
+        Args:
+            None
+        Returns:
+            self
+        """
+
         self.identity = alignment_identity(self.gapped_sequence,
                                            self.gapped_target)
 
@@ -106,7 +142,6 @@ def align_best_score(query_item: str, database: pyopal.Database,
         else:
             logger.debug("No alignment for  %s.", query_name)
             result = None
-
     except RuntimeError:
         logger.debug("Alignment of %s failed.", query_name)
         result = None

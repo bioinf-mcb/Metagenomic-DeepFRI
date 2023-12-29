@@ -4,9 +4,7 @@ import logging
 from pathlib import Path
 
 import tf2onnx
-# Is used to load weigths for the model
-# Can be replaced with tf.keras.models.load_model
-from DeepFRI.deepfrier.Predictor import Predictor
+from tensorflow.keras.saving import load_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,12 +36,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def convert_model(model_path, gcn, output_path):
+def convert_model(model_path, output_path):
+    # IMPORTANT - IMPORT ALL CUSTOM LAYERS
+    model = load_model(model_path + ".hdf5", custom_objects={})
 
-    pred = Predictor(model_prefix=model_path, gcn=gcn)
-    tf2onnx.convert.from_keras(pred.model,
-                               output_path=str(output_path),
-                               opset=15)
+    tf2onnx.convert.from_keras(model, output_path=str(output_path), opset=15)
 
 
 # Newest CPU models
@@ -74,7 +71,7 @@ if __name__ == "__main__":
             out_path = Path(args.output) / f"{model_name}.onnx"
             logging.info("Converting model %s to %s", model_prefix + ".hdf5",
                          out_path)
-            convert_model(model_prefix, config[net_type]["gcn"], out_path)
+            convert_model(model_prefix, out_path)
             logging.info(
                 "Tensorflow to ONNX conversion of %s - %s is finished",
                 net_type, mode)

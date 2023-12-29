@@ -10,14 +10,27 @@ dependencies:
   - mmseqs2=14.7e284
   - pip
   - pytest
-  - python>=3.11
+  - python==3.11
   - libdeflate
   - pip:
     - pyopal
     - pysam>=0.21.0
     - foldcomp
-    - onnxruntime-gpu
-    - torch
-    - pre-commit
     - cython
     - requests
+    # onnx stuff
+    - coloredlogs
+    - flatbuffers
+    - packaging
+    - protobuf
+    - sympy
+    - --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/
+    - ort_nightly_gpu
+    - --extra-index-url=https://pypi.ngc.nvidia.com
+    - nvidia-cublas==11.5.1.101
+    - nvidia-cublas-cu117==11.10.1.25
+    - nvidia-cuda-runtime-cu114==11.4.148
+    - nvidia-cudnn==8.2.0.51
+    - nvidia-cudnn-cu11==8.5.0.96
+    - nvidia-cufft==10.4.2.58
+    - nvidia-curand==10.2.4.58

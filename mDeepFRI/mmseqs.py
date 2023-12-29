@@ -6,9 +6,9 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import numpy as np
+from pysam import tabix_compress
 
 import mDeepFRI
-from mDeepFRI import MMSEQS_SEARCH_RESULTS, TARGET_MMSEQS_DB_NAME
 from mDeepFRI.utils import run_command
 
 MMSEQS_COLUMN_NAMES = [
@@ -71,6 +71,11 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     run_command(
         f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
     )
+    # gzip fasta file
+    tabix_compress(output_file, str(output_file) + ".gz", force=True)
+    # remove unzipped file
+    os.remove(output_file)
+    return Path(str(output_file) + ".gz")
 
 
 def create_target_database(foldcomp_fasta_path: str,
@@ -90,20 +95,16 @@ def create_target_database(foldcomp_fasta_path: str,
     createindex(mmseqs_db_path)
 
 
-def check_mmseqs_database(database: Path):
+def validate_mmseqs_database(database: str):
     """
     Check if MMSeqs2 database is intact.
 
     Args:
-        query_file (pathlib.Path): Path to a query file with protein sequences.
-        database (pathlib.Path): Path to a directory with a pre-built database.
-        output_path (pathlib.Path): Path to a directory where results will be saved.
-
-    Raises:
-        FileNotFoundError: MMSeqs2 database appears to be corrupted.
+        database (str): Path to MMSeqs2 database.
 
     Returns:
-        target_db (pathlib.Path): Path to MMSeqs2 database.
+        is_valid (bool): True if database is intact.
+
     """
 
     # Verify all the files for MMSeqs2 database
@@ -112,12 +113,15 @@ def check_mmseqs_database(database: Path):
         ".idx.index", ".idx.dbtype", ".lookup", ".source"
     ]
 
-    target_db = Path(database / TARGET_MMSEQS_DB_NAME)
+    target_db = Path(database)
+    is_valid = True
     for ext in mmseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
-            target_db = None
+            logging.debug(f"{target_db}{ext} is missing.")
+            is_valid = False
+            break
 
-    return target_db
+    return is_valid
 
 
 def run_mmseqs_search(query_file: str,
@@ -138,8 +142,8 @@ def run_mmseqs_search(query_file: str,
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
-    output_file = output_path / MMSEQS_SEARCH_RESULTS
-    query_db = str(output_path / 'queryDB')
+    output_file = output_path / Path(target_db.stem + ".search_results.tsv")
+    query_db = str(output_path / 'query.mmseqsDB')
     createdb(query_file, query_db)
 
     with tempfile.TemporaryDirectory() as tmp_path:
@@ -183,25 +187,30 @@ def filter_mmseqs_results(results_file: str,
                            encoding="utf-8",
                            names=MMSEQS_COLUMN_NAMES)
 
-    logger.info("%i MMSeqs2 hits in the database.", output.shape[0])
+    logger.info("%i MMSeqs2 hits in the database.", output.size)
 
-    # MMSeqs2 alginment filters
-    if min_identity:
-        filtered = output[output['identity'] >= min_identity]
-    if min_bit_score:
-        filtered = output[output['bit_score'] >= min_bit_score]
-    if max_evalue:
-        filtered = output[output['e_value'] <= max_evalue]
+    # check if output is not empty
+    if output.size == 0:
+        logging.info("No hits found in MMSeqs2 database.")
+        final_database = None
+    else:
+        # MMSeqs2 alginment filters
+        if min_identity:
+            filtered = output[output['identity'] >= min_identity]
+        if min_bit_score:
+            filtered = output[output['bit_score'] >= min_bit_score]
+        if max_evalue:
+            filtered = output[output['e_value'] <= max_evalue]
 
-    # Get k best hits
-    filtered.sort(order=["query", "identity", "e_value"], kind="quciksort")
-    top_k_db = partial(select_top_k, db=filtered, k=k_best_hits)
-    with ThreadPool(threads) as pool:
-        top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
+        # Get k best hits
+        filtered.sort(order=["query", "identity", "e_value"], kind="quciksort")
+        top_k_db = partial(select_top_k, db=filtered, k=k_best_hits)
+        with ThreadPool(threads) as pool:
+            top_k_chunks = pool.map(top_k_db, np.unique(filtered["query"]))
 
-    final_database = np.concatenate(top_k_chunks)
+        final_database = np.concatenate(top_k_chunks)
 
-    logger.info("%i pairs after filtering with k=%i best hits.",
-                final_database.shape[0], k_best_hits)
+        logger.info("%i pairs after filtering with k=%i best hits.",
+                    final_database.shape[0], k_best_hits)
 
     return final_database
