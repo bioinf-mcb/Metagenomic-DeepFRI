@@ -83,24 +83,31 @@ This is an example of protein annotation with the AlphaFold database.
    ec = enzyme_commission
    ```
 
-### Prediction modes
+## ⚙️Features
+### 1. Prediction modes
 The GO ontology contains three subontologies, defined by their root nodes:
 - Molecular Function (MF)
 - Biological Process (BP)
 - Cellular Component (CC)
-- Additionally, Metagenomic-DeepFRI is able to predict Enzyme Comission number (EC).
+- Additionally, Metagenomic-DeepFRI v1.0 is able to predict Enzyme Comission number (EC).
 By default, the tool makes predictions in all 4 categories. To select only a few pass the parameter `-p` or `--processing-modes` few times, i.e.:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
 ```
 
-### Temporary files
-The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run use
-flag `--no-keep-temporary`.
+### 2. Hierarchical database search
+Different databases have a different level of evidence. For example, PDB structures are real experimental structures, and AlphaFold predictions are more accurate than ESMFold predictions. We provide an opporunity to search multiple databases in a hierarchical manner. For example, if you want to search AlphaFold database first, and then ESMFold, you can pass the parameter `-d` or `--databases` few times, i.e.:
+```
+mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/alphafold/database/ -d /path/to/another/esmcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path
+```
 
-### CPU / GPU utilization
-If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, inference).
-If CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
+### 3. Temporary files
+The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run add
+flag `--remove-intermediate`.
+
+### 4. CPU / GPU utilization
+If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, functional annotation).
+GPU is often used to speed up neural networks. Metagenomic-DeepFRI takes care of this and, if CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
 **Technical tip:** Single instance of DeepFRI on GPU requires 2GB VRAM. Every currently available GPU with CUDA support should be able to run the model.
 
 ## 🔖 Citations
