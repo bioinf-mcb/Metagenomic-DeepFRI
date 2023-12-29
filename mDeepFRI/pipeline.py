@@ -235,6 +235,7 @@ def predict_protein_function(
         writer.writerows(rows)
 
     if remove_intermediate:
-        remove_intermediate_files([db.sequence_db, db.mmseqs_db])
+        for db in deepfri_dbs:
+            remove_intermediate_files([db.sequence_db, db.mmseqs_db])
 
     logging.info("meta-DeepFRI finished successfully.")
