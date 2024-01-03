@@ -8,7 +8,7 @@ Metagenomic-DeepFRI addresses such need, building upon efficient libraries. It i
 
 ### 📋 Pipeline stages
 
-1. Search proteins similar to query in a `FoldComp` database with `MMSeqs2`.
+1. Search proteins similar to query in PDB and supplied `FoldComp` databases with `MMSeqs2`.
 2. Find the best alignment among `MMSeqs2` hits using `PyOpal`.
 3. Align target protein contact map to query protein with unknown structure.
 4. Run `DeepFRI` with structure if it was found in database, otherwise run `DeepFRI` with sequence only.
@@ -40,7 +40,7 @@ pip install .
 
 ## 💡 Usage
 ### 1. Prepare structural database
-Download the database from the [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database and the format of protein names might differ and the app will crash.
+The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
 ### 2. Download models
 Two versions of models available:
 - `v1.0` - is the original version from DeepFRI publication.
@@ -99,7 +99,7 @@ mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/dat
 ```
 
 ### 2. Hierarchical database search
-Different databases have a different level of evidence. For example, PDB structures are real experimental structures, and AlphaFold predictions are more accurate than ESMFold predictions. We provide an opporunity to search multiple databases in a hierarchical manner. For example, if you want to search AlphaFold database first, and then ESMFold, you can pass the parameter `-d` or `--databases` few times, i.e.:
+Different databases have a different level of evidence. For example, PDB structures are real experimental structures, thus they are considered to be the data of highest quality. Therefore new proteins are first queried against PDB. Computational predictions differ by quality, i.e. AlphaFold predictions are often more accurate than ESMFold predictions. We provide an opporunity to search multiple databases in a hierarchical manner. For example, if you want to search AlphaFold database first, and then ESMFold, you can pass the parameter `-d` or `--databases` few times, i.e.:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/alphafold/database/ -d /path/to/another/esmcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path
 ```
