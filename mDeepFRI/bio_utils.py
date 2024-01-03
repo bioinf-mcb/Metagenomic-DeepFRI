@@ -1,50 +1,17 @@
 import json
 import logging
 from io import StringIO
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import foldcomp
 import numpy as np
-from Bio.PDB import PDBParser
+import requests
+from Bio.PDB import MMCIFParser, PDBParser
 from pysam import FastaFile, FastxFile
 from scipy.spatial.distance import pdist, squareform
 
-
-def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
-    """
-    Load FASTA file as dict of headers to sequences
-
-    Args:
-        fasta_file (str): Path to FASTA file. Can be compressed.
-
-    Returns:
-        Dict[str, str]: Dictionary of FASTA entries.
-    """
-
-    with FastxFile(fasta_file) as fasta:
-        fasta_dict = {entry.name: entry.sequence for entry in fasta}
-    return fasta_dict
-
-
-def retrieve_fasta_entries_as_dict(fasta_file: str,
-                                   entries: List[str]) -> Dict[str, str]:
-    """
-    Retrieve selected FASTA entries as dict
-
-    Args:
-        fasta_file (str): Path to FASTA file. Can be compressed.
-        entries (List[str]): List of entries to retrieve.
-
-    Returns:
-        Dict[str, str]: Dictionary of FASTA entries.
-    """
-
-    fasta_dict = dict()
-    with FastaFile(fasta_file) as fasta:
-        for name in entries:
-            fasta_dict[name] = fasta.fetch(name)
-    return fasta_dict
-
+from mDeepFRI.alignment_utils import alignment_identity
 
 # copied from Biopython to remove dependency
 protein_letters_1to3 = {
@@ -120,7 +87,155 @@ def seq2onehot(seq: str) -> np.ndarray:
     return seqs_x
 
 
-def load_query_sequences(query_file, output_path) -> Dict[str, str]:
+def insert_gaps(sequence: str, reference: str,
+                alignment_string: str) -> Tuple[str, str]:
+    """
+    Inserts gaps into query and target sequences.
+
+    Args:
+        sequence (str): Query sequence.
+        reference (str): Target sequence.
+        alignment_string (str): Alignment string.
+
+    Returns:
+        gapped_sequence (str): Query sequence with gaps.
+        gapped_target (str): Target sequence with gaps.
+    """
+
+    sequence = list(sequence)
+    reference = list(reference)
+    alignment_string = list(alignment_string)
+
+    for i, a in enumerate(alignment_string):
+        if a == "I":
+            sequence.insert(i, "-")
+        elif a == "D":
+            reference.insert(i, "-")
+    return "".join(sequence), "".join(reference)
+
+
+class AlignmentResult:
+    """
+    Class for storing pairwise alignment results.
+
+    Attributes:
+        query_name (str): Name of the query sequence.
+        query_sequence (str): Query sequence.
+        target_name (str): Name of the target sequence.
+        target_sequence (str): Target sequence.
+        alignment (str): Alignment string.
+        gapped_sequence (str): Query sequence with gaps.
+        gapped_target (str): Target sequence with gaps.
+        identity (float): Identity between two sequences.
+
+    Methods:
+        insert_gaps: Inserts gaps into query and target sequences.
+        calculate_identity: Calculates identity between query and target.
+    """
+    def __init__(self,
+                 query_name,
+                 query_sequence,
+                 target_name,
+                 target_sequence,
+                 alignment,
+                 gapped_sequence="",
+                 gapped_target="",
+                 identity=None):
+
+        self.query_name = query_name
+        self.query_sequence = query_sequence
+        self.target_name = target_name
+        self.target_sequence = target_sequence
+        self.alignment = alignment
+        self.gapped_sequence = gapped_sequence
+        self.gapped_target = gapped_target
+        self.identity = identity
+        self.db_name = None
+
+    def __str__(self):
+        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
+               f"identity={self.identity})"
+
+    def __repr__(self):
+        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
+               f"identity={self.identity})"
+
+    def insert_gaps(self):
+        """
+        Inserts gaps into query and target sequences.
+
+        Args:
+            None
+        Returns:
+            self
+        """
+        seq = list(self.query_sequence)
+        ref = list(self.target_sequence)
+        aln = list(self.alignment)
+
+        for i, a in enumerate(aln):
+            if a == "I":
+                seq.insert(i, "-")
+            elif a == "D":
+                ref.insert(i, "-")
+        self.gapped_sequence = "".join(seq)
+        self.gapped_target = "".join(ref)
+
+        return self
+
+    def calculate_identity(self):
+        """
+        Calculates identity between query and target.
+
+        Args:
+            None
+        Returns:
+            self
+        """
+
+        self.identity = alignment_identity(self.gapped_sequence,
+                                           self.gapped_target)
+
+        return self
+
+
+def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
+    """
+    Load FASTA file as dict of headers to sequences
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries.
+    """
+
+    with FastxFile(fasta_file) as fasta:
+        fasta_dict = {entry.name: entry.sequence for entry in fasta}
+    return fasta_dict
+
+
+def retrieve_fasta_entries_as_dict(fasta_file: str,
+                                   entries: List[str]) -> Dict[str, str]:
+    """
+    Retrieve selected FASTA entries as dict
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+        entries (List[str]): List of entries to retrieve.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries.
+    """
+
+    fasta_dict = dict()
+    with FastaFile(fasta_file) as fasta:
+        for name in entries:
+            fasta_dict[name] = fasta.fetch(name)
+    return fasta_dict
+
+
+def load_query_sequences(query_file: str, output_path: str) -> Dict[str, str]:
     """
     Loads query protein sequences from FASTA file. Filters
     out sequences that are too short or too long.
@@ -136,6 +251,9 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     # By DeepFRI design (60, 1000)
     MIN_PROTEIN_LENGTH = 60
     MAX_PROTEIN_LENGTH = 1_000
+
+    query_file = Path(query_file)
+    output_path = Path(output_path)
 
     query_seqs = load_fasta_as_dict(query_file)
 
@@ -176,8 +294,7 @@ def load_query_sequences(query_file, output_path) -> Dict[str, str]:
     return query_seqs
 
 
-def calculate_contact_map(pdb_string,
-                          max_seq_len=1000,
+def calculate_contact_map(coordinates: np.ndarray,
                           threshold=6.0,
                           mode="matrix") -> np.ndarray:
     """
@@ -193,14 +310,7 @@ def calculate_contact_map(pdb_string,
         np.ndarray: Contact map.
     """
 
-    parser = PDBParser()
-    structure = parser.get_structure("", StringIO(pdb_string))
-
-    residues = [x for x in structure.get_residues()][:max_seq_len]
-
-    coords = np.array([residue["CA"].get_coord() for residue in residues])
-    distances = squareform(pdist(coords))
-
+    distances = squareform(pdist(coordinates))
     cmap = (distances < threshold).astype(np.int32)
 
     if mode == "sparse":
@@ -211,31 +321,98 @@ def calculate_contact_map(pdb_string,
     return cmap
 
 
-def retrieve_structure(idx: str, database_path: str) -> str:
+def extract_residues_coordinates(
+        structure_string: str,
+        chain: str = None,
+        max_seq_len: int = 1_000) -> Tuple[List, np.ndarray]:
     """
-    Retrieve structure from FoldComp database.
+    Extracts residues and coordinates from structural file.
+    Automatically processes PDB and mmCIF files.
+
+    Args:
+        structure_string (str): Structure file read into string.
+        max_seq_len (int): Maximum sequence length.
+
+    Returns:
+        Tuple[List, np.ndarray]: Tuple of residues and coordinates.
+    """
+
+    try:
+        parser = MMCIFParser()
+        structure = parser.get_structure("", StringIO(structure_string))
+        if chain:
+            structure = structure[0][chain]
+
+        residues = list(structure.get_residues())
+        # get CA atom coordinates for mmCIF
+        coords = np.array([
+            atom.get_coord() for atom in structure.get_atoms()
+            if atom.get_name() == "CA"
+        ])
+
+    except KeyError:
+        parser = PDBParser()
+        structure = parser.get_structure("", StringIO(structure_string))
+        if chain:
+            structure = structure[0][chain]
+
+        residues = [x for x in structure.get_residues()][:max_seq_len]
+        coords = np.array([residue["CA"].get_coord() for residue in residues])
+
+    #     parser = MMCIFParser()
+    #     structure = parser.get_structure("", StringIO(structure_string))
+    #     if chain:
+    #         structure = structure[0][chain]
+
+    #     residues = list(structure.get_residues())
+    #     # get CA atom coordinates for mmCIF
+    #     coords = np.array([atom.get_coord() for atom in structure.get_atoms() if atom.get_name() == "CA"])
+    return (residues, coords)
+
+
+def retrieve_structure_features(
+        idx: str,
+        database_path: str = "pdb100",
+        max_seq_len: int = 1_000) -> Tuple[List, np.ndarray]:
+    """
+    Retrieves structure either from PDB or supplied FoldComp database.
+    Extracts sequence and coordinate infromaton.
 
     Args:
         idx (str): Index of structure.
-        database_path (str): Path to FoldComp database.
+        database_path (str): Path to FoldComp database. If empty, the structure will be retrieved from the PDB.
+        max_seq_len (int): Maximum sequence length.
 
     Returns:
-        str: PDB file read as string
+        Tuple[List, np.ndarray]: Tuple of residues and coordinates.
     """
+    pdb_http = "https://files.rcsb.org/view/{pdb_id}.cif"
 
-    with foldcomp.open(database_path, ids=[idx]) as db:
-        for _, pdb in db:
-            structure = pdb
+    if database_path == "pdb100":
+        pdb_id, chain = idx.split("_")
+        pdb_id = pdb_id.lower()
+        url = pdb_http.format(pdb_id=pdb_id)
+        structure = requests.get(url).text
 
-    # issue with FoldComp inconsistency
-    # https://github.com/steineggerlab/foldcomp/issues/45
-    if "structure" not in locals():
-        idx = idx + ".pdb"
+    else:
+        chain = None
         with foldcomp.open(database_path, ids=[idx]) as db:
             for _, pdb in db:
                 structure = pdb
 
-    return structure
+        # issue with FoldComp inconsistency
+        # https://github.com/steineggerlab/foldcomp/issues/45
+        if "structure" not in locals():
+            idx = idx + ".pdb"
+            with foldcomp.open(database_path, ids=[idx]) as db:
+                for _, pdb in db:
+                    structure = pdb
+
+    residues, coords = extract_residues_coordinates(structure,
+                                                    chain=chain,
+                                                    max_seq_len=max_seq_len)
+
+    return (residues, coords)
 
 
 def align_contact_map(query_alignment: str,
@@ -348,14 +525,38 @@ def align_contact_map(query_alignment: str,
     return output_contact_map
 
 
-def retrieve_align_contact_map(alignment, database: str, max_seq_len: int,
-                               threshold: float, generated_contacts: int):
+def retrieve_align_contact_map(
+        alignment: AlignmentResult,
+        database: str = "pdb100",
+        max_seq_len: int = 1000,
+        threshold: float = 6,
+        generated_contacts: int = 2) -> Tuple[AlignmentResult, np.ndarray]:
+    """
+    Retrieve contact map for aligned sequences.
+
+    Args:
+        alignment (AlignmentResult): Alignment of query and target sequences.
+        database (str): Path to FoldComp database. If empty, the structure will be retrieved from the PDB.
+        max_seq_len (int): Maximum sequence length.
+        threshold (float): Distance threshold for contact map.
+        generated_contacts (int): Number of generated contacts to add for gapped regions in the query alignment.
+
+    Returns:
+        Tuple[AlignmentResult, np.ndarray]: Tuple of alignment and contact map.
+    """
+
+    if "pdb" in str(database):
+        database = "pdb100"
+
     idx = alignment.target_name.rsplit(".", 1)[0]
-    pdb_string = retrieve_structure(idx, database)
-    cmap = calculate_contact_map(pdb_string,
-                                 max_seq_len=max_seq_len,
+    coordinates = retrieve_structure_features(idx,
+                                              database_path=database,
+                                              max_seq_len=max_seq_len)[1]
+
+    cmap = calculate_contact_map(coordinates,
                                  threshold=threshold,
                                  mode="sparse")
+
     aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                      alignment.gapped_target, cmap,
                                      generated_contacts)

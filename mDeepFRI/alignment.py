@@ -2,109 +2,15 @@ import logging
 from functools import partial
 from multiprocessing.pool import ThreadPool
 
+import numpy as np
 import pyopal
 
-from mDeepFRI.alignment_utils import alignment_identity
+from mDeepFRI.bio_utils import (AlignmentResult, load_query_sequences,
+                                retrieve_fasta_entries_as_dict)
+from mDeepFRI.mmseqs import (filter_mmseqs_results, run_mmseqs_search,
+                             validate_mmseqs_database)
 
 logger = logging.getLogger(__name__)
-
-
-def insert_gaps(sequence, reference, alignment_string):
-    sequence = list(sequence)
-    reference = list(reference)
-    alignment_string = list(alignment_string)
-
-    for i, a in enumerate(alignment_string):
-        if a == "I":
-            sequence.insert(i, "-")
-        elif a == "D":
-            reference.insert(i, "-")
-    return "".join(sequence), "".join(reference)
-
-
-class AlignmentResult:
-    """
-    Class for storing pairwise alignment results.
-
-    Attributes:
-        query_name (str): Name of the query sequence.
-        query_sequence (str): Query sequence.
-        target_name (str): Name of the target sequence.
-        target_sequence (str): Target sequence.
-        alignment (str): Alignment string.
-        gapped_sequence (str): Query sequence with gaps.
-        gapped_target (str): Target sequence with gaps.
-        identity (float): Identity between two sequences.
-
-    Methods:
-        insert_gaps: Inserts gaps into query and target sequences.
-        calculate_identity: Calculates identity between query and target.
-    """
-    def __init__(self,
-                 query_name,
-                 query_sequence,
-                 target_name,
-                 target_sequence,
-                 alignment,
-                 gapped_sequence="",
-                 gapped_target="",
-                 identity=None):
-
-        self.query_name = query_name
-        self.query_sequence = query_sequence
-        self.target_name = target_name
-        self.target_sequence = target_sequence
-        self.alignment = alignment
-        self.gapped_sequence = gapped_sequence
-        self.gapped_target = gapped_target
-        self.identity = identity
-        self.db_name = None
-
-    def __str__(self):
-        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
-               f"identity={self.identity})"
-
-    def __repr__(self):
-        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
-               f"identity={self.identity})"
-
-    def insert_gaps(self):
-        """
-        Inserts gaps into query and target sequences.
-
-        Args:
-            None
-        Returns:
-            self
-        """
-        seq = list(self.query_sequence)
-        ref = list(self.target_sequence)
-        aln = list(self.alignment)
-
-        for i, a in enumerate(aln):
-            if a == "I":
-                seq.insert(i, "-")
-            elif a == "D":
-                ref.insert(i, "-")
-        self.gapped_sequence = "".join(seq)
-        self.gapped_target = "".join(ref)
-
-        return self
-
-    def calculate_identity(self):
-        """
-        Calculates identity between query and target.
-
-        Args:
-            None
-        Returns:
-            self
-        """
-
-        self.identity = alignment_identity(self.gapped_sequence,
-                                           self.gapped_target)
-
-        return self
 
 
 def align_best_score(query_item: str, database: pyopal.Database,
@@ -176,3 +82,44 @@ def align_query(query_seqs: dict,
     logger.info("Pairwise alignment finished.")
 
     return filtered_alignments
+
+
+def run_alignment(query_file: str,
+                  mmseqs_db: str,
+                  sequence_db: str,
+                  output_path: str,
+                  mmseqs_min_bit_score: int = None,
+                  mmseqs_max_eval: float = 10e-5,
+                  mmseqs_min_identity: float = 0.3,
+                  top_k: int = 30,
+                  alignment_gap_open: int = 10,
+                  alignment_gap_continuation: int = 1,
+                  identity_threshold: float = 0.5,
+                  threads: int = 1):
+
+    query_seqs = load_query_sequences(query_file, output_path)
+    mmseqs_valid = validate_mmseqs_database(mmseqs_db)
+    if not mmseqs_valid:
+        raise ValueError(f"MMSeqs2 database not found in {mmseqs_db}.")
+
+    mmseqs_results = run_mmseqs_search(query_file, mmseqs_db, output_path,
+                                       threads)
+    filtered_mmseqs_results = filter_mmseqs_results(mmseqs_results,
+                                                    mmseqs_min_bit_score,
+                                                    mmseqs_max_eval,
+                                                    mmseqs_min_identity,
+                                                    k_best_hits=top_k,
+                                                    threads=threads)
+
+    # if MMSeqs2 alignment is empty
+    if filtered_mmseqs_results is None:
+        pass
+    else:
+        target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
+        target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
+
+        alignments = align_query(query_seqs, target_seqs, alignment_gap_open,
+                                 alignment_gap_continuation,
+                                 identity_threshold, threads)
+
+    return alignments

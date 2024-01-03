@@ -1,6 +1,6 @@
 # Create logger
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -24,13 +24,12 @@ class Database:
     foldcomp_db: Path
     sequence_db: Path
     mmseqs_db: Path
-    aligned_queries: dict = field(default_factory=dict)
 
     def __post_init__(self):
         self.foldcomp_db = Path(self.foldcomp_db)
         self.sequence_db = Path(self.sequence_db)
         self.mmseqs_db = Path(self.mmseqs_db)
-        self.name = self.foldcomp_db.stem
+        self.name = self.sequence_db.stem.rsplit(".", 1)[0]
 
 
 @dataclass
@@ -61,7 +60,7 @@ def build_database(
         None
     """
 
-    logging.info("Building MMSeqs2 database from %s", input_path)
+    logger.info("Building MMSeqs2 database from %s", input_path)
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -71,29 +70,29 @@ def build_database(
 
     # check if files exist in output directory
     if output_sequences.exists() and not overwrite:
-        logging.info("Found %s in %s", output_sequences, output_path)
-        logging.info(
+        logger.info("Found %s in %s", output_sequences, output_path)
+        logger.info(
             "Skipping extraction of FASTA file from FoldComp database.")
     else:
-        logging.info("Extracting FASTA file from FoldComp database.")
+        logger.info("Extracting FASTA file from FoldComp database.")
         output_sequences = extract_fasta_foldcomp(input_path,
                                                   unzipped_sequences, threads)
-        logging.info("FASTA file extracted to %s", output_sequences)
+        logger.info("FASTA file extracted to %s", output_sequences)
         needs_new_mmseqs = True
 
     # create mmseqs db
     mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
     mmseqs_valid = validate_mmseqs_database(mmseqs_path)
     if not mmseqs_valid:
-        logging.info("Creating MMSeqs2 database.")
+        logger.info("Creating MMSeqs2 database.")
         create_target_database(output_sequences, mmseqs_path)
     elif overwrite or needs_new_mmseqs:
-        logging.info("Creating MMSeqs2 database.")
+        logger.info("Creating MMSeqs2 database.")
         create_target_database(output_sequences, mmseqs_path)
     else:
-        logging.info("Database created at %s", output_path)
-        logging.info("Found %s in %s", mmseqs_path, output_path)
-        logging.info("Skipping creation of MMSeqs2 database.")
+        logger.info("Database created at %s", output_path)
+        logger.info("Found %s in %s", mmseqs_path, output_path)
+        logger.info("Skipping creation of MMSeqs2 database.")
 
     database = Database(foldcomp_db=input_path,
                         sequence_db=output_sequences,
