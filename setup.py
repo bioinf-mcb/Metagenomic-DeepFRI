@@ -146,8 +146,8 @@ class sdist(_sdist):
 SRC_DIR = "mDeepFRI"
 PACKAGES = [SRC_DIR]
 
-install_requires = ["cython", "numpy"]
-setup_requires = ["cython", "requests"]
+install_requires = ["cython", "numpy", "requests"]
+setup_requires = ["cython", "requests", "numpy"]
 extra_compile_args = ["-std=c++17", "-O3"]
 
 EXTENSIONS = [
