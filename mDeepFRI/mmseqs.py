@@ -139,6 +139,8 @@ def run_mmseqs_search(query_file: str,
     Returns:
         output_file (pathlib.Path): Path to MMSeqs2 search results.
     """
+    query_file = Path(query_file)
+    target_db = Path(target_db)
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
@@ -191,7 +193,7 @@ def filter_mmseqs_results(results_file: str,
 
     # check if output is not empty
     if output.size == 0:
-        logging.info("No hits found in MMSeqs2 database.")
+        logger.info("No hits found in MMSeqs2 database.")
         final_database = None
     else:
         # MMSeqs2 alginment filters

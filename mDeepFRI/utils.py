@@ -59,6 +59,14 @@ def download_file(url, path):
     """
 
     with requests.get(url, stream=True) as r:
+        # check response and raise error
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            raise RuntimeError(
+                f"Download of {url} failed with error code {err.response.status_code}"
+            ) from err
+
         with open(path, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
 
