@@ -65,15 +65,15 @@ def predict_protein_function(
     # PDB100 database
     logger.info(
         "Creating PDB100 database. This may take a bit during a first run.")
-    try:
-        pdb100 = create_pdb_mmseqs()
-        deepfri_dbs.append(pdb100)
-        logger.info("PDB100 database created.")
+    # try:
+    pdb100 = create_pdb_mmseqs()
+    deepfri_dbs.append(pdb100)
+    logger.info("PDB100 database created.")
 
-    except RuntimeError:
-        logger.warning(
-            "PDB100 server is not responding. Skipping PDB100 database creation."
-        )
+    # except RuntimeError:
+    #     logger.warning(
+    #         "PDB100 server is not responding. Skipping PDB100 database creation."
+    #     )
 
     # design solution
     # database is built in the same directory
