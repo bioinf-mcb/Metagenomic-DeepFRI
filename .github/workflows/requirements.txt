@@ -3,3 +3,4 @@ wheel
 auditwheel <5.2
 setuptools >=46.4.0
 numpy >= 1.19
+requests
