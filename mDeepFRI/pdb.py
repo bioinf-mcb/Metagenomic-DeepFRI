@@ -37,7 +37,7 @@ def create_pdb_mmseqs():
                        "rb") as f_in, open(uncompressed_path, "wb") as f_out:
             f_out.write(f_in.read())
 
-        tabix_compress(uncompressed_path, compressed_path)
+        tabix_compress(uncompressed_path, compressed_path, force=True)
 
         # remove uncompressed
         uncompressed_path.unlink()
@@ -48,7 +48,7 @@ def create_pdb_mmseqs():
     # check if database exists
     if not pdb100_mmseqs.exists():
         logging.info("Creating MMSeqs2 database from PDB100.")
-        createdb(pdb100_path, pdb100_mmseqs)
+        createdb(compressed_path, pdb100_mmseqs)
         createindex(pdb100_mmseqs)
 
     pdb_db = Database(foldcomp_db=pdb100_path.stem,
