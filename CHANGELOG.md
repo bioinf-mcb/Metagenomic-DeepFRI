@@ -6,7 +6,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [v1.1.1.] - 2024-03-01
+## [v1.1.1] - 2024-03-01
 
 ### Added
 - Automatic setup of PDB database during first run
