@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [v1.1.1] - 2024-03-01
 
 ### Added
+
 - Automatic setup of the PDB database during the first run
 - Automatic parsing of both mmCIF and PDB files
 - Removed `torch` dependency - significant improvement in startup times
