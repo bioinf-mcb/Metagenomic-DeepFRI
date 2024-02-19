@@ -9,15 +9,12 @@ dependencies:
   - biopython
   - mmseqs2=14.7e284
   - pip
-  - pytest
   - python==3.11
   - libdeflate
+  - pyopal~=0.5
   - pip:
-    - pyopal
     - pysam>=0.21.0
     - foldcomp
-    - cython
-    - requests
     # onnx stuff
     - coloredlogs
     - flatbuffers
