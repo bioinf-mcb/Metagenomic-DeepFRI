@@ -5,12 +5,12 @@ from mDeepFRI.bio_utils import insert_gaps
 
 
 class TestBioUtils(unittest.TestCase):
-    def testInsertGaps(self):
+    def test_insert_gaps(self):
         self.assertEqual(insert_gaps('AACT', 'AAT', 'MMDM'), ('AACT', 'AA-T'))
         self.assertEqual(insert_gaps('AAT', 'AATC', 'MMMI'), ('AAT-', 'AATC'))
         self.assertEqual(insert_gaps('AAT', 'FGTC', 'XXMI'), ('AAT-', 'FGTC'))
 
-    def testIdentity(self):
+    def test_identity(self):
         self.assertEqual(round(alignment_identity('AASDS', 'AASDS'), 2), 1)
         self.assertEqual(round(alignment_identity('AASDS', 'ADSDS'), 2), 0.8)
         self.assertEqual(round(alignment_identity('AASSS', 'A-S-S'), 2), 0.6)
