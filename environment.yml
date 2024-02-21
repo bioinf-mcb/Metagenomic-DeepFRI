@@ -10,7 +10,6 @@ dependencies:
   - pip
   - python==3.11
   - libdeflate
-  - libgcc
   - pip:
     - pysam==0.21.0
     - pyopal>=0.5

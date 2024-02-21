@@ -148,7 +148,7 @@ PACKAGES = [SRC_DIR]
 
 install_requires = ["cython", "numpy", "requests"]
 setup_requires = ["cython", "requests", "numpy"]
-extra_compile_args = ["-std=c++17", "-O3"]
+extra_compile_args = ["-std=c++14", "-O3"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
@@ -160,7 +160,7 @@ EXTENSIONS = [
               sources=[SRC_DIR + "/alignment_utils.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=extra_compile_args),
+              extra_compile_args=extra_compile_args.extend("-w")),
 ]
 
 extras = {}
