@@ -132,24 +132,16 @@ class AlignmentResult:
         insert_gaps: Inserts gaps into query and target sequences.
         calculate_identity: Calculates identity between query and target.
     """
-    def __init__(self,
-                 query_name,
-                 query_sequence,
-                 target_name,
-                 target_sequence,
-                 alignment,
-                 gapped_sequence="",
-                 gapped_target="",
-                 identity=None):
+    def __init__(self, query_name, query_sequence, target_name,
+                 target_sequence, alignment):
 
         self.query_name = query_name
         self.query_sequence = query_sequence
         self.target_name = target_name
         self.target_sequence = target_sequence
         self.alignment = alignment
-        self.gapped_sequence = gapped_sequence
-        self.gapped_target = gapped_target
-        self.identity = identity
+        self.insert_gaps()
+        self.calculate_identity()
         self.db_name = None
 
     def __str__(self):
@@ -163,23 +155,10 @@ class AlignmentResult:
     def insert_gaps(self):
         """
         Inserts gaps into query and target sequences.
-
-        Args:
-            None
-        Returns:
-            self
         """
-        seq = list(self.query_sequence)
-        ref = list(self.target_sequence)
-        aln = list(self.alignment)
 
-        for i, a in enumerate(aln):
-            if a == "I":
-                seq.insert(i, "-")
-            elif a == "D":
-                ref.insert(i, "-")
-        self.gapped_sequence = "".join(seq)
-        self.gapped_target = "".join(ref)
+        self.gapped_sequence, self.gapped_target = insert_gaps(
+            self.query_sequence, self.target_sequence, self.alignment)
 
         return self
 

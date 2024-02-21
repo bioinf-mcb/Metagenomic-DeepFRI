@@ -13,6 +13,50 @@ from mDeepFRI.mmseqs import (filter_mmseqs_results, run_mmseqs_search,
 logger = logging.getLogger(__name__)
 
 
+def best_hit_database(query, target_database, aligner):
+    """
+    Find the best hit in the database and return index.
+
+    Args:
+        query (str): The query sequence.
+        target_database (pyopal.Database): The database of target sequences.
+        aligner (pyopal.Aligner): The aligner object.
+
+    Returns:
+        int: The index of the best hit in the database.
+    """
+
+    # Retrieve the best hit
+    results = aligner.align(query,
+                            target_database,
+                            mode="score",
+                            overflow="buckets",
+                            algorithm="nw")
+    best_hit = max(results, key=lambda x: x.score)
+    best_index = best_hit.target_index
+
+    return best_index
+
+
+def align_pairwise(query, target, aligner):
+    """
+    Aligns the query against the target and returns the alignment.
+
+    Args:
+        query (str): The query sequence.
+        target (str): The target sequence.
+        aligner (pyopal.Aligner): The aligner object.
+
+    Returns:
+        pyopal.Alignment: The alignment of the query against the target.
+    """
+    database = pyopal.Database([target])
+    # Align the sequences
+    alignment = aligner.align(query, database, algorithm="nw", mode="full")
+
+    return alignment[0].alignment
+
+
 def align_best_score(query_item: str, database: pyopal.Database,
                      target_names: list, gap_open: int, gap_extend: int,
                      identity_threshold: float):
