@@ -2,23 +2,31 @@ import unittest
 
 import pyopal
 
-from mDeepFRI.alignment import best_hit_database
+from mDeepFRI.alignment import align_pairwise, best_hit_database
 
 
 class TestAlignment(unittest.TestCase):
-    def test_best_hit_database(self):
-        queries = {
-            "query_seq":
-            "MAGFLKVVQLLAKYGSKAVQWAWANKGKILDWLNAGQAIDWVVSKIKQILGIK"
-        }
-        targets = dict(
+    def setUp(self) -> None:
+        self.queries = dict(
+            query_seq="MAGFLKVVQLLAKYGSKAVQWAWANKGKILDWLNAGQAIDWVVS")
+        self.targets = dict(
             seq1="MESILDLQELETSEEESALMAASTVSNNC",
             seq2="MKKAVIVENKGCATCSIGAACLVDGPIPDFEIAGATGLFGLWG",
-            seq3="MAGFLKVVQILAKYGSKAVQWAWANKGKILDWINAGQAIDWVVEKIKQILGIK",
-            seq4="MAGFLKVVQILAKYGSKAVQWAWANKGKILDWINAGQAIDWVVEKIKQILGIK",
+            seq3="MAGFLKVVQILAKYGSKAVQWAWANKGKILDWINAGQAIDWVVE",
+            seq4="MAGFLKVVQILAKYGSKAVQWAWANKGKILDWINAGQAIDWVVE",
         )
-        aligner = pyopal.Aligner()
-        database = pyopal.Database(targets.values())
+        self.aligner = pyopal.Aligner()
+        return
 
-        best_index = best_hit_database(queries["query_seq"], database, aligner)
+    def test_best_hit_database(self):
+        database = pyopal.Database(self.targets.values())
+
+        best_index = best_hit_database(self.queries["query_seq"], database,
+                                       self.aligner)
         self.assertEqual(best_index, 2)
+
+    def test_align_pairwise(self):
+        alignment = align_pairwise(self.queries["query_seq"],
+                                   self.targets["seq3"], self.aligner)
+        self.assertEqual(alignment,
+                         "MMMMMMMMMXMMMMMMMMMMMMMMMMMMMMMMXMMMMMMMMMMX")
