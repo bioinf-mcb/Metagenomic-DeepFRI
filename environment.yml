@@ -11,23 +11,10 @@ dependencies:
   - pip
   - python==3.11
   - libdeflate
-  - pyopal~=0.5
+  - libgcc
   - pip:
-    - pysam>=0.21.0
+    - pysam==0.21.0
+    - pyopal>=0.5
     - foldcomp
     # onnx stuff
-    - coloredlogs
-    - flatbuffers
-    - packaging
-    - protobuf
-    - sympy
-    - --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/
-    - ort_nightly_gpu
-    - --extra-index-url=https://pypi.ngc.nvidia.com
-    - nvidia-cublas==11.5.1.101
-    - nvidia-cublas-cu117==11.10.1.25
-    - nvidia-cuda-runtime-cu114==11.4.148
-    - nvidia-cudnn==8.2.0.51
-    - nvidia-cudnn-cu11==8.5.0.96
-    - nvidia-cufft==10.4.2.58
-    - nvidia-curand==10.2.4.58
+    - onnxruntime-gpu
