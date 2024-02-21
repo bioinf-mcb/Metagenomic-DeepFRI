@@ -5,7 +5,6 @@ channels:
 dependencies:
   - click
   - numpy>=1.19
-  - scipy
   - biopython
   - mmseqs2=14.7e284
   - pip

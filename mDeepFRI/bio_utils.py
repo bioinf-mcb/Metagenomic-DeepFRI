@@ -9,9 +9,8 @@ import numpy as np
 import requests
 from Bio.PDB import MMCIFParser, PDBParser
 from pysam import FastaFile, FastxFile
-from scipy.spatial.distance import pdist, squareform
 
-from mDeepFRI.alignment_utils import alignment_identity
+from mDeepFRI.alignment_utils import alignment_identity, pairwise_sqeuclidean
 
 # copied from Biopython to remove dependency
 protein_letters_1to3 = {
@@ -289,7 +288,7 @@ def calculate_contact_map(coordinates: np.ndarray,
         np.ndarray: Contact map.
     """
 
-    distances = squareform(pdist(coordinates))
+    distances = pairwise_sqeuclidean(coordinates)
     cmap = (distances < threshold).astype(np.int32)
 
     if mode == "sparse":

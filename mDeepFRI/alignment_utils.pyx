@@ -1,4 +1,9 @@
 cimport cython
+
+import numpy as np
+
+cimport numpy as np
+from libc.math cimport sqrt
 from libc.stdlib cimport free, malloc
 from libc.string cimport strlen
 
@@ -35,3 +40,27 @@ def alignment_identity(str query, str target):
         float: Sequence identity between two sequences in an alignment.
     """
     return alignment_sequences_identity(query.encode(), target.encode())
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cpdef pairwise_sqeuclidean(double[:, ::1] X):
+
+    cdef int n = X.shape[0]
+    cdef int m = X.shape[1]
+    cdef int i, j, k
+    cdef double d, diff
+    cdef double[:, ::1] D = np.zeros((n, n), dtype=np.float64)
+
+    with nogil:
+        for i in range(n):
+            for j in range(i + 1, n):
+                d = 0
+                for k in range(m):
+                    diff = X[i, k] - X[j, k]
+                    d += diff * diff
+                D[i, j] = d
+                D[j, i] = d
+
+    return np.asarray(D)
