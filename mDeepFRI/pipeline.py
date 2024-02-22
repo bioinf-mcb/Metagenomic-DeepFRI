@@ -8,7 +8,7 @@ from typing import List, Tuple
 import numpy as np
 
 from mDeepFRI.alignment import run_alignment
-from mDeepFRI.bio_utils import load_query_sequences, retrieve_align_contact_map
+from mDeepFRI.bio_utils import load_fasta_as_dict, retrieve_align_contact_map
 from mDeepFRI.database import build_database
 from mDeepFRI.pdb import create_pdb_mmseqs
 from mDeepFRI.predict import Predictor
@@ -31,10 +31,10 @@ def predict_protein_function(
         deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
         angstrom_contact_threshold: float = 6,
         generate_contacts: int = 2,
-        mmseqs_min_bit_score: float = None,
+        mmseqs_min_bitscore: float = None,
         mmseqs_max_eval: float = 10e-5,
-        mmseqs_min_identity: float = 0.3,
-        top_k: int = 30,
+        mmseqs_min_identity: float = 0.5,
+        top_k: int = 5,
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.5,
@@ -42,7 +42,11 @@ def predict_protein_function(
         overwrite=False,
         threads: int = 1):
 
+    MIN_SEQ_LEN = 60
     MAX_SEQ_LEN = 1000
+    logger.info("DeepFRI protein sequence limit: %i-%i", MIN_SEQ_LEN,
+                MAX_SEQ_LEN)
+
     query_file = pathlib.Path(query_file)
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
@@ -65,15 +69,9 @@ def predict_protein_function(
     # PDB100 database
     logger.info(
         "Creating PDB100 database. This may take a bit during a first run.")
-    # try:
     pdb100 = create_pdb_mmseqs()
     deepfri_dbs.append(pdb100)
     logger.info("PDB100 database created.")
-
-    # except RuntimeError:
-    #     logger.warning(
-    #         "PDB100 server is not responding. Skipping PDB100 database creation."
-    #     )
 
     # design solution
     # database is built in the same directory
@@ -90,18 +88,22 @@ def predict_protein_function(
 
     # SEQUENCE ALIGNMENT
     aligned_queries = {}
-    query_seqs = load_query_sequences(query_file, output_path)
+    query_seqs = load_fasta_as_dict(query_file)
 
     for db in deepfri_dbs:
         aligned = len(aligned_queries)
         logger.info("Aligning %s sequences against %s", len(query_seqs),
                     db.name)
         alignments = run_alignment(query_file, db.mmseqs_db, db.sequence_db,
-                                   output_path, mmseqs_min_bit_score,
+                                   output_path, mmseqs_min_bitscore,
                                    mmseqs_max_eval, mmseqs_min_identity, top_k,
                                    alignment_gap_open,
-                                   alignment_gap_continuation,
-                                   identity_threshold, threads)
+                                   alignment_gap_continuation, threads)
+        # filter alignments by identity
+        alignments = [
+            aln for aln in alignments if aln.identity > identity_threshold
+        ]
+
         # set a db name for alignments
         for aln in alignments:
             aln.db_name = db.name
@@ -142,7 +144,6 @@ def predict_protein_function(
                         len(db_alignments), db.name)
             partial_align = partial(retrieve_align_contact_map,
                                     database=db.foldcomp_db,
-                                    max_seq_len=MAX_SEQ_LEN,
                                     threshold=angstrom_contact_threshold,
                                     generated_contacts=generate_contacts)
 
@@ -150,6 +151,10 @@ def predict_protein_function(
                 partial_cmaps = p.map(partial_align, db_alignments)
 
             aligned_cmaps.extend(partial_cmaps)
+
+    # sort cmaps by length of query sequence
+    aligned_cmaps = sorted(aligned_cmaps,
+                           key=lambda x: len(x[0].query_sequence))
 
     output_file_name = output_path / "results.tsv"
     output_buffer = open(output_file_name, "w", encoding="utf-8")
@@ -180,13 +185,23 @@ def predict_protein_function(
             gcn = Predictor(gcn_path, threads=threads)
 
             for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
+                if len(aln.query_sequence) > MAX_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too long %i",
+                                aln.query_name, len(aln.query_sequence))
+                    continue
+
+                elif len(aln.query_sequence) < MIN_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too short %i",
+                                aln.query_name, len(aln.query_sequence))
+                    continue
+
                 logger.info("Predicting %s; %i/%i", aln.query_name, i + 1,
                             gcn_prots)
                 # running the actual prediction
                 prediction_rows = gcn.predict_function(
                     seqres=aln.query_sequence,
                     cmap=aligned_cmap,
-                    chain=aln.query_name)
+                    chain=str(aln.query_name))
                 # writing the results to the output file
                 for row in prediction_rows:
                     row.extend([net_type, mode])
@@ -202,14 +217,24 @@ def predict_protein_function(
         # CNN for queries without satisfying alignments
         if cnn_prots > 0:
             net_type = "cnn"
-            logging.info("Predicting with CNN: %i proteins", cnn_prots)
+            logger.info("Predicting with CNN: %i proteins", cnn_prots)
             cnn_path = deepfri_models_config[net_type][mode]
             cnn = Predictor(cnn_path, threads=threads)
             for i, query_id in enumerate(unaligned_queries):
-                logging.info("Predicting %s; %i/%i", query_id, i + 1,
-                             cnn_prots)
+                seq = query_seqs[query_id]
+                if len(seq) > MAX_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too long %i", query_id,
+                                len(seq))
+                    continue
+
+                elif len(seq) < MIN_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too short %i", query_id,
+                                len(seq))
+                    continue
+
+                logger.info("Predicting %s; %i/%i", query_id, i + 1, cnn_prots)
                 prediction_rows = cnn.predict_function(
-                    seqres=query_seqs[query_id], chain=query_id)
+                    seqres=query_seqs[query_id], chain=str(query_id))
                 for row in prediction_rows:
                     row.extend([net_type, mode])
                     row.extend([np.nan, np.nan, np.nan])

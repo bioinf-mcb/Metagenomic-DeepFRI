@@ -1,16 +1,79 @@
-import json
-import logging
 from io import StringIO
-from pathlib import Path
 from typing import Dict, List, Tuple
 
 import foldcomp
 import numpy as np
 import requests
+## TODO: replace with biotite.structure
 from Bio.PDB import MMCIFParser, PDBParser
 from pysam import FastaFile, FastxFile
 
 from mDeepFRI.alignment_utils import alignment_identity, pairwise_sqeuclidean
+
+
+class AlignmentResult:
+    """
+    Class for storing pairwise alignment results.
+
+    Attributes:
+        query_name (str): Name of the query sequence.
+        query_sequence (str): Query sequence.
+        target_name (str): Name of the target sequence.
+        target_sequence (str): Target sequence.
+        alignment (str): Alignment string.
+        gapped_sequence (str): Query sequence with gaps.
+        gapped_target (str): Target sequence with gaps.
+        identity (float): Identity between two sequences.
+
+    Methods:
+        insert_gaps: Inserts gaps into query and target sequences.
+        calculate_identity: Calculates identity between query and target.
+    """
+    def __init__(self, query_name, query_sequence, target_name,
+                 target_sequence, alignment):
+
+        self.query_name = query_name
+        self.query_sequence = query_sequence
+        self.target_name = target_name
+        self.target_sequence = target_sequence
+        self.alignment = alignment
+        self.insert_gaps()
+        self.calculate_identity()
+        self.db_name = None
+
+    def __str__(self):
+        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
+               f"identity={self.identity})"
+
+    def __repr__(self):
+        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
+               f"identity={self.identity})"
+
+    def insert_gaps(self):
+        """
+        Inserts gaps into query and target sequences.
+        """
+
+        self.gapped_sequence, self.gapped_target = insert_gaps(
+            self.query_sequence, self.target_sequence, self.alignment)
+
+        return self
+
+    def calculate_identity(self):
+        """
+        Calculates identity between query and target.
+
+        Args:
+            None
+        Returns:
+            self
+        """
+
+        self.identity = alignment_identity(self.gapped_sequence,
+                                           self.gapped_target)
+
+        return self
+
 
 # copied from Biopython to remove dependency
 protein_letters_1to3 = {
@@ -113,71 +176,9 @@ def insert_gaps(sequence: str, reference: str,
     return "".join(sequence), "".join(reference)
 
 
-class AlignmentResult:
-    """
-    Class for storing pairwise alignment results.
-
-    Attributes:
-        query_name (str): Name of the query sequence.
-        query_sequence (str): Query sequence.
-        target_name (str): Name of the target sequence.
-        target_sequence (str): Target sequence.
-        alignment (str): Alignment string.
-        gapped_sequence (str): Query sequence with gaps.
-        gapped_target (str): Target sequence with gaps.
-        identity (float): Identity between two sequences.
-
-    Methods:
-        insert_gaps: Inserts gaps into query and target sequences.
-        calculate_identity: Calculates identity between query and target.
-    """
-    def __init__(self, query_name, query_sequence, target_name,
-                 target_sequence, alignment):
-
-        self.query_name = query_name
-        self.query_sequence = query_sequence
-        self.target_name = target_name
-        self.target_sequence = target_sequence
-        self.alignment = alignment
-        self.insert_gaps()
-        self.calculate_identity()
-        self.db_name = None
-
-    def __str__(self):
-        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
-               f"identity={self.identity})"
-
-    def __repr__(self):
-        return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
-               f"identity={self.identity})"
-
-    def insert_gaps(self):
-        """
-        Inserts gaps into query and target sequences.
-        """
-
-        self.gapped_sequence, self.gapped_target = insert_gaps(
-            self.query_sequence, self.target_sequence, self.alignment)
-
-        return self
-
-    def calculate_identity(self):
-        """
-        Calculates identity between query and target.
-
-        Args:
-            None
-        Returns:
-            self
-        """
-
-        self.identity = alignment_identity(self.gapped_sequence,
-                                           self.gapped_target)
-
-        return self
-
-
-def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
+def load_fasta_as_dict(fasta_file: str,
+                       min_len: int = None,
+                       max_len: int = None) -> Dict[str, str]:
     """
     Load FASTA file as dict of headers to sequences
 
@@ -185,11 +186,12 @@ def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
         fasta_file (str): Path to FASTA file. Can be compressed.
 
     Returns:
-        Dict[str, str]: Dictionary of FASTA entries.
+        Dict[str, str]: Dictionary of FASTA entries sorted by length.
     """
 
     with FastxFile(fasta_file) as fasta:
         fasta_dict = {entry.name: entry.sequence for entry in fasta}
+
     return fasta_dict
 
 
@@ -213,65 +215,6 @@ def retrieve_fasta_entries_as_dict(fasta_file: str,
     return fasta_dict
 
 
-def load_query_sequences(query_file: str, output_path: str) -> Dict[str, str]:
-    """
-    Loads query protein sequences from FASTA file. Filters
-    out sequences that are too short or too long.
-
-    Args:
-        query_file (str): Path to FASTA file with query protein sequences.
-        output_path (str): Path to output folder.
-
-    Returns:
-        query_seqs (dict): Dictionary with query protein headers to sequences.
-    """
-
-    # By DeepFRI design (60, 1000)
-    MIN_PROTEIN_LENGTH = 60
-    MAX_PROTEIN_LENGTH = 1_000
-
-    query_file = Path(query_file)
-    output_path = Path(output_path)
-
-    query_seqs = load_fasta_as_dict(query_file)
-
-    if len(query_seqs) == 0:
-        raise ValueError(
-            f"{query_file} does not contain parsable protein sequences.")
-
-    logging.info("Found total of %i protein sequences in %s", len(query_seqs),
-                 query_file)
-
-    # filter out sequences that are too short or too long
-    prot_len_outliers = {}
-    for prot_id, sequence in query_seqs.items():
-        prot_len = len(sequence)
-        if prot_len > MAX_PROTEIN_LENGTH or prot_len < MIN_PROTEIN_LENGTH:
-            prot_len_outliers[prot_id] = prot_len
-
-    for outlier in prot_len_outliers.keys():
-        query_seqs.pop(outlier)
-
-    # write skipped protein ids to file
-    if len(prot_len_outliers) > 0:
-        logging.info(
-            "Skipping %i proteins due to sequence length outside range %i-%i aa.",
-            len(prot_len_outliers), MIN_PROTEIN_LENGTH, MAX_PROTEIN_LENGTH)
-        logging.info("Skipped protein ids will be saved in " \
-                     "metadata_skipped_ids_length.json.")
-        json.dump(prot_len_outliers,
-                  open(output_path / 'metadata_skipped_ids_due_to_length.json',
-                       "w",
-                       encoding="utf-8"),
-                  indent=4,
-                  sort_keys=True)
-
-    assert len(query_seqs
-               ) > 0, "All proteins were filtered out due to sequence length."
-
-    return query_seqs
-
-
 def calculate_contact_map(coordinates: np.ndarray,
                           threshold=6.0,
                           mode="matrix") -> np.ndarray:
@@ -287,6 +230,8 @@ def calculate_contact_map(coordinates: np.ndarray,
     Returns:
         np.ndarray: Contact map.
     """
+    # squared euclidean is used for efficiency
+    threshold = threshold**2
 
     distances = pairwise_sqeuclidean(coordinates)
     cmap = (distances < threshold).astype(np.int32)

@@ -45,13 +45,13 @@ def alignment_identity(str query, str target):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cpdef pairwise_sqeuclidean(double[:, ::1] X):
+cpdef pairwise_sqeuclidean(float[:, ::1] X):
 
     cdef int n = X.shape[0]
     cdef int m = X.shape[1]
     cdef int i, j, k
-    cdef double d, diff
-    cdef double[:, ::1] D = np.zeros((n, n), dtype=np.float64)
+    cdef float d, diff
+    cdef float[:, ::1] D = np.zeros((n, n), dtype=np.float32)
 
     with nogil:
         for i in range(n):
