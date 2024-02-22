@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import foldcomp
 import numpy as np
 import requests
-## TODO: replace with biotite.structure
+## TODO: replace with biotite
 from Bio.PDB import MMCIFParser, PDBParser
 from pysam import FastaFile, FastxFile
 
@@ -176,9 +176,7 @@ def insert_gaps(sequence: str, reference: str,
     return "".join(sequence), "".join(reference)
 
 
-def load_fasta_as_dict(fasta_file: str,
-                       min_len: int = None,
-                       max_len: int = None) -> Dict[str, str]:
+def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
     """
     Load FASTA file as dict of headers to sequences
 
