@@ -5,8 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.2...HEAD
+
+## [v1.1.2] - 2024-02-22
+[v1.1.2]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.1...v1.1.2
+
+### Added
+- chunked loading of MMSeqs2 preselected targets - improves runtime
+
+### Fixed
+- C++17 lowered to C++14 for compatibility
+- pyopal API v0.5 integrated
+- removed `scipy` distance calculation with function
+- replaced `biopython` with `biotite` for structure manipulation - better runtime and easier deploy
+- tests fixed & added to CI/CD
 
 ## [v1.1.1] - 2024-03-01
+[v1.1.1]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.0.0...v1.1.1
 
 ### Added
 

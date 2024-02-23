@@ -106,10 +106,10 @@ def get_models(ctx, output, version):
     help="Gap fill threshold during contact map alignment.",
 )
 @click.option(
-    "--mmseqs-min-bit-score",
+    "--mmseqs-min-bitscore",
     default=None,
     type=float,
-    help="Minimum bit score for MMseqs2 alignment.",
+    help="Minimum bitscore for MMseqs2 alignment.",
 )
 @click.option(
     "--mmseqs-max-evalue",
@@ -125,7 +125,7 @@ def get_models(ctx, output, version):
 )
 @click.option(
     "--top-k",
-    default=30,
+    default=5,
     type=int,
     help="Number of top MMSeqs2 alignment for"
     "precise pairwise alignment check. Default is 30.",
@@ -172,7 +172,7 @@ def get_models(ctx, output, version):
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
-                     mmseqs_min_bit_score, mmseqs_max_evalue,
+                     mmseqs_min_bitscore, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
                      remove_intermediate, overwrite, threads):
@@ -190,7 +190,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         deepfri_processing_modes=processing_modes,
         angstrom_contact_threshold=angstrom_contact_thresh,
         generate_contacts=generate_contacts,
-        mmseqs_min_bit_score=mmseqs_min_bit_score,
+        mmseqs_min_bitscore=mmseqs_min_bitscore,
         mmseqs_max_eval=mmseqs_max_evalue,
         mmseqs_min_identity=mmseqs_min_identity,
         top_k=top_k,
