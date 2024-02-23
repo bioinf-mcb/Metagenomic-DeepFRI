@@ -4,8 +4,9 @@ from typing import Dict, List, Tuple
 import foldcomp
 import numpy as np
 import requests
-## TODO: replace with biotite
-from Bio.PDB import MMCIFParser, PDBParser
+from biotite.sequence import ProteinSequence
+from biotite.structure.io.pdb import PDBFile
+from biotite.structure.io.pdbx import PDBxFile, get_structure
 from pysam import FastaFile, FastxFile
 
 from mDeepFRI.alignment_utils import alignment_identity, pairwise_sqeuclidean
@@ -73,52 +74,6 @@ class AlignmentResult:
                                            self.gapped_target)
 
         return self
-
-
-# copied from Biopython to remove dependency
-protein_letters_1to3 = {
-    "A": "Ala",
-    "C": "Cys",
-    "D": "Asp",
-    "E": "Glu",
-    "F": "Phe",
-    "G": "Gly",
-    "H": "His",
-    "I": "Ile",
-    "K": "Lys",
-    "L": "Leu",
-    "M": "Met",
-    "N": "Asn",
-    "P": "Pro",
-    "Q": "Gln",
-    "R": "Arg",
-    "S": "Ser",
-    "T": "Thr",
-    "V": "Val",
-    "W": "Trp",
-    "Y": "Tyr",
-}
-protein_letters_1to3_extended = {
-    **protein_letters_1to3,
-    **{
-        "B": "Asx",
-        "X": "Xaa",
-        "Z": "Glx",
-        "J": "Xle",
-        "U": "Sec",
-        "O": "Pyl"
-    },
-}
-
-protein_letters_3to1_extended = {
-    value: key
-    for key, value in protein_letters_1to3_extended.items()
-}
-
-PROTEIN_LETTERS = dict()
-for k, v in protein_letters_3to1_extended.items():
-    PROTEIN_LETTERS[str.upper(k)] = v
-PROTEIN_LETTERS["UNK"] = "X"
 
 
 def seq2onehot(seq: str) -> np.ndarray:
@@ -242,10 +197,8 @@ def calculate_contact_map(coordinates: np.ndarray,
     return cmap
 
 
-def extract_residues_coordinates(
-        structure_string: str,
-        chain: str = None,
-        max_seq_len: int = 1_000) -> Tuple[List, np.ndarray]:
+def extract_residues_coordinates(structure_string: str,
+                                 chain: str = None) -> Tuple[List, np.ndarray]:
     """
     Extracts residues and coordinates from structural file.
     Automatically processes PDB and mmCIF files.
@@ -257,44 +210,25 @@ def extract_residues_coordinates(
     Returns:
         Tuple[List, np.ndarray]: Tuple of residues and coordinates.
     """
-
     try:
-        parser = MMCIFParser()
-        structure = parser.get_structure("", StringIO(structure_string))
-        if chain:
-            structure = structure[0][chain]
+        mmcif = PDBxFile.read(StringIO(structure_string))
+        structure = get_structure(mmcif, model=1)
+    except UnboundLocalError:
+        pdb = PDBFile(StringIO(structure_string))
+        structure = pdb.get_structure()[0]
 
-        residues = list(structure.get_residues())
-        # get CA atom coordinates for mmCIF
-        coords = np.array([
-            atom.get_coord() for atom in structure.get_atoms()
-            if atom.get_name() == "CA"
-        ])
+    protein_chain = structure[structure.chain_id == chain]
+    # extract CA atoms coordinates
+    ca_atoms = protein_chain[protein_chain.atom_name == "CA"]
+    residues = str(ProteinSequence(ca_atoms.res_name))
+    coords = ca_atoms.coord
 
-    except KeyError:
-        parser = PDBParser()
-        structure = parser.get_structure("", StringIO(structure_string))
-        if chain:
-            structure = structure[0][chain]
-
-        residues = [x for x in structure.get_residues()][:max_seq_len]
-        coords = np.array([residue["CA"].get_coord() for residue in residues])
-
-    #     parser = MMCIFParser()
-    #     structure = parser.get_structure("", StringIO(structure_string))
-    #     if chain:
-    #         structure = structure[0][chain]
-
-    #     residues = list(structure.get_residues())
-    #     # get CA atom coordinates for mmCIF
-    #     coords = np.array([atom.get_coord() for atom in structure.get_atoms() if atom.get_name() == "CA"])
     return (residues, coords)
 
 
-def retrieve_structure_features(
-        idx: str,
-        database_path: str = "pdb100",
-        max_seq_len: int = 1_000) -> Tuple[List, np.ndarray]:
+def retrieve_structure_features(idx: str,
+                                database_path: str = "pdb100"
+                                ) -> Tuple[List, np.ndarray]:
     """
     Retrieves structure either from PDB or supplied FoldComp database.
     Extracts sequence and coordinate infromaton.
@@ -329,9 +263,7 @@ def retrieve_structure_features(
                 for _, pdb in db:
                     structure = pdb
 
-    residues, coords = extract_residues_coordinates(structure,
-                                                    chain=chain,
-                                                    max_seq_len=max_seq_len)
+    residues, coords = extract_residues_coordinates(structure, chain=chain)
 
     return (residues, coords)
 
@@ -470,9 +402,7 @@ def retrieve_align_contact_map(
         database = "pdb100"
 
     idx = alignment.target_name.rsplit(".", 1)[0]
-    coordinates = retrieve_structure_features(idx,
-                                              database_path=database,
-                                              max_seq_len=max_seq_len)[1]
+    coordinates = retrieve_structure_features(idx, database_path=database)[1]
 
     cmap = calculate_contact_map(coordinates,
                                  threshold=threshold,

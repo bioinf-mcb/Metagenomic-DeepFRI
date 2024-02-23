@@ -5,7 +5,7 @@ channels:
 dependencies:
   - click
   - numpy>=1.19
-  - biopython
+  - biotite
   - mmseqs2=14.7e284
   - pip
   - python==3.11
@@ -16,3 +16,5 @@ dependencies:
     - foldcomp
     # onnx stuff
     - onnxruntime-gpu
+    # mDeepFRI
+    - mdeepfri

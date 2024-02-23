@@ -33,9 +33,9 @@ cd Metagenomic-DeepFRI
 conda env create --name deepfri --file environment.yml
 conda activate deepfri
 ```
-3. Install `mDeepFRI`
+3. Show help message
 ```{code-block} bash
-pip install .
+mDeepFRI --help
 ```
 
 ## 💡 Usage

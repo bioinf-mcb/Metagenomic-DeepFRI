@@ -13,13 +13,7 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-manylinux_aarch64
-        - cp39-manylinux_aarch64
-        - cp310-manylinux_aarch64
         - cp311-manylinux_aarch64
-        - cp312-manylinux_aarch64
-        - pp38-manylinux_aarch64
-        - pp39-manylinux_aarch64
     steps:
     - uses: actions/checkout@v4
     - name: Set up QEMU
@@ -48,13 +42,7 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-manylinux_x86_64
-        - cp39-manylinux_x86_64
-        - cp310-manylinux_x86_64
         - cp311-manylinux_x86_64
-        - cp312-manylinux_x86_64
-        - pp38-manylinux_x86_64
-        - pp39-manylinux_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -78,13 +66,7 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-macosx_x86_64
-        - cp39-macosx_x86_64
-        - cp310-macosx_x86_64
         - cp311-macosx_x86_64
-        - cp312-macosx_x86_64
-        - pp38-macosx_x86_64
-        - pp39-macosx_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
