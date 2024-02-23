@@ -160,7 +160,7 @@ EXTENSIONS = [
               sources=[SRC_DIR + "/alignment_utils.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=extra_compile_args.extend("-w")),
+              extra_compile_args=extra_compile_args),
 ]
 
 extras = {}
