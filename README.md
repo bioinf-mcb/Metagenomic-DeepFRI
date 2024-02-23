@@ -61,9 +61,8 @@ Other available parameters can be found upon command `mDeepFRI --help`.
 ## ✅ Results
 The output folder will contain:
 1. `{database_name}.search_results.tsv`
-2. `metadata_skipped_ids_due_to_length.json` - too long or too short queries (DeepFRI is designed to predict the function of proteins in the range of 60-1000 aa).
-3. `query.mmseqsDB` + index from MMSeqs2 search.
-4. `results.tsv` - a final output from the DeepFRI model.
+2. `query.mmseqsDB` + index from MMSeqs2 search.
+3. `results.tsv` - a final output from the DeepFRI model.
 
 ### Example output (`results.tsv`)
 |  Protein     | GO_term/EC_numer | Score | Annotation                                   | Neural_net | DeepFRI_mode | DB_hit        | DB_name        |Identity |
