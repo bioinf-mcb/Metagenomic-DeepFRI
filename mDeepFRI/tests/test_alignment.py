@@ -16,17 +16,17 @@ class TestAlignment(unittest.TestCase):
             seq4="MAGFLKVVQILAKYGSKAVQWAWANKGKILDWINAGQAIDWVVE",
         )
         self.aligner = pyopal.Aligner()
-        return
+
+        return super().setUp()
 
     def test_best_hit_database(self):
-        database = pyopal.Database(self.targets.values())
 
-        best_index = best_hit_database(self.queries["query_seq"], database,
-                                       self.aligner)
-        self.assertEqual(best_index, 2)
+        best_hit, _ = best_hit_database(self.queries["query_seq"],
+                                        self.targets)
+        self.assertEqual(best_hit, "seq3")
 
     def test_align_pairwise(self):
         alignment = align_pairwise(self.queries["query_seq"],
-                                   self.targets["seq3"], self.aligner)
+                                   self.targets["seq3"])
         self.assertEqual(alignment,
                          "MMMMMMMMMXMMMMMMMMMMMMMMMMMMMMMMXMMMMMMMMMMX")
