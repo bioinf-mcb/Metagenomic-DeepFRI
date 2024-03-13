@@ -133,16 +133,15 @@ def run_alignment(query_file: str,
                                                     k_best_hits=top_k,
                                                     threads=threads)
 
-    query_seqs = load_fasta_as_dict(query_file)
-
-    unique_queries = defaultdict(list)
-    for result in filtered_mmseqs_results:
-        unique_queries[result[0]].append(result[1])
-
     # if MMSeqs2 alignment is empty
     if filtered_mmseqs_results is None:
-        pass
+        alignments = []
     else:
+        query_seqs = load_fasta_as_dict(query_file)
+        unique_queries = defaultdict(list)
+        for result in filtered_mmseqs_results:
+            unique_queries[result[0]].append(result[1])
+
         target_ids = np.unique(filtered_mmseqs_results["target"]).tolist()
         target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
         # create partial databases
