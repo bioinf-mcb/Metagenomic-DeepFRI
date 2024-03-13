@@ -99,20 +99,24 @@ def predict_protein_function(
                                    mmseqs_max_eval, mmseqs_min_identity, top_k,
                                    alignment_gap_open,
                                    alignment_gap_continuation, threads)
-        # filter alignments by identity
-        alignments = [
-            aln for aln in alignments if aln.identity > identity_threshold
-        ]
+        if alignments:
+            # filter alignments by identity
+            alignments = [
+                aln for aln in alignments if aln.identity > identity_threshold
+            ]
 
-        # set a db name for alignments
-        for aln in alignments:
-            aln.db_name = db.name
-        new_alignments = {
-            aln.query_name: aln
-            for aln in alignments
-            if aln.query_name not in aligned_queries.keys()
-        }
-        aligned_queries.update(new_alignments)
+            # set a db name for alignments
+            for aln in alignments:
+                aln.db_name = db.name
+            new_alignments = {
+                aln.query_name: aln
+                for aln in alignments
+                if aln.query_name not in aligned_queries.keys()
+            }
+            aligned_queries.update(new_alignments)
+        else:
+            logger.info("No alignments found for %s", db.name)
+
         logger.info("Aligned %i sequences.", len(aligned_queries) - aligned)
 
     unaligned_queries = {
