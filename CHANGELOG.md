@@ -5,7 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.3...HEAD
+
+## [v1.1.3] - 2024-02-22
+[v1.1.2]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.2...v1.1.3
+
+### Fixes
+- bug where MMseqs2 returned empty results search [#73](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues/73)
 
 ## [v1.1.2] - 2024-02-22
 [v1.1.2]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.1...v1.1.2

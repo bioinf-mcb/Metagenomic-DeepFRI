@@ -1,6 +1,6 @@
 import os
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 repo_url = "https://huggingface.co/valentynbez/mDeepFRI/resolve/main/"
 
