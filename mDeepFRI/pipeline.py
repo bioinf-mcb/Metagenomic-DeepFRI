@@ -40,11 +40,12 @@ def predict_protein_function(
         identity_threshold: float = 0.5,
         remove_intermediate=False,
         overwrite=False,
-        threads: int = 1):
+        threads: int = 1,
+        skip_pdb: bool = False):
 
     MIN_SEQ_LEN = 60
     MAX_SEQ_LEN = 1000
-    logger.info("DeepFRI protein sequence limit: %i-%i", MIN_SEQ_LEN,
+    logger.info("DeepFRI protein sequence limit: %i-%i aa", MIN_SEQ_LEN,
                 MAX_SEQ_LEN)
 
     query_file = pathlib.Path(query_file)
@@ -67,11 +68,13 @@ def predict_protein_function(
 
     deepfri_dbs = []
     # PDB100 database
-    logger.info(
-        "Creating PDB100 database. This may take a bit during a first run.")
-    pdb100 = create_pdb_mmseqs()
-    deepfri_dbs.append(pdb100)
-    logger.info("PDB100 database created.")
+    if not skip_pdb:
+        logger.info(
+            "Creating PDB100 database. This may take a bit during a first run."
+        )
+        pdb100 = create_pdb_mmseqs()
+        deepfri_dbs.append(pdb100)
+        logger.info("PDB100 database created.")
 
     # design solution
     # database is built in the same directory
@@ -189,13 +192,15 @@ def predict_protein_function(
             gcn = Predictor(gcn_path, threads=threads)
 
             for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
-                if len(aln.query_sequence) > MAX_SEQ_LEN:
-                    logger.info("Skipping %s; sequence too long %i",
+
+                ### PROTEIN LENGTH CHECKS
+                if len(aln.query_sequence) < MIN_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too short %i aa",
                                 aln.query_name, len(aln.query_sequence))
                     continue
 
-                elif len(aln.query_sequence) < MIN_SEQ_LEN:
-                    logger.info("Skipping %s; sequence too short %i",
+                elif len(aln.query_sequence) > MAX_SEQ_LEN:
+                    logger.info("Skipping %s; sequence too long - %i aa",
                                 aln.query_name, len(aln.query_sequence))
                     continue
 

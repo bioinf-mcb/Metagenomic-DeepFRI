@@ -169,13 +169,20 @@ def get_models(ctx, output, version):
     type=int,
     help="Number of threads to use. Default is 1.",
 )
+@click.option(
+    "--skip-pdb",
+    default=False,
+    type=bool,
+    is_flag=True,
+    help="Skip PDB100 database search.",
+)
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
                      mmseqs_min_bitscore, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
-                     remove_intermediate, overwrite, threads):
+                     remove_intermediate, overwrite, threads, skip_pdb):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
 
@@ -199,7 +206,8 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         identity_threshold=alignment_min_identity,
         remove_intermediate=remove_intermediate,
         overwrite=overwrite,
-        threads=threads)
+        threads=threads,
+        skip_pdb=skip_pdb)
 
 
 if __name__ == "__main__":
