@@ -176,13 +176,30 @@ def get_models(ctx, output, version):
     is_flag=True,
     help="Skip PDB100 database search.",
 )
+@click.option(
+    "--min-length",
+    default=60,
+    type=int,
+    help="Minimum length of the protein sequence. Default is 60.\n" \
+         "DANGER: Model behavior was not tested for sequences shorter than 60 amino acids. " \
+         "It might still be useful, interpret results at your own risk;)"
+)
+@click.option(
+    "--max-length",
+    default=1000,
+    type=int,
+    help="Maximum length of the protein sequence. Default is 1000.\n" \
+         "DANGER: Model behavior was not tested for sequences longer than 1000 amino acids. " \
+         "It might still be useful, interpret results at your own risk;)"
+)
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
                      mmseqs_min_bitscore, mmseqs_max_evalue,
                      mmseqs_min_identity, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
-                     remove_intermediate, overwrite, threads, skip_pdb):
+                     remove_intermediate, overwrite, threads, skip_pdb,
+                     min_length, max_length):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
 
@@ -207,7 +224,9 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         remove_intermediate=remove_intermediate,
         overwrite=overwrite,
         threads=threads,
-        skip_pdb=skip_pdb)
+        skip_pdb=skip_pdb,
+        min_length=min_length,
+        max_length=max_length)
 
 
 if __name__ == "__main__":

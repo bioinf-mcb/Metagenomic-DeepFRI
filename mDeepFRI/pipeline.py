@@ -40,10 +40,12 @@ def predict_protein_function(
         remove_intermediate=False,
         overwrite=False,
         threads: int = 1,
-        skip_pdb: bool = False):
+        skip_pdb: bool = False,
+        min_length: int = 60,
+        max_length: int = 1000):
 
-    MIN_SEQ_LEN = 60
-    MAX_SEQ_LEN = 1000
+    MIN_SEQ_LEN = min_length
+    MAX_SEQ_LEN = max_length
     logger.info("DeepFRI protein sequence limit: %i-%i aa.", MIN_SEQ_LEN,
                 MAX_SEQ_LEN)
 
