@@ -5,10 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.4...HEAD
 
-## [v1.1.3] - 2024-02-22
-[v1.1.2]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.2...v1.1.3
+## [v1.1.4] - 2024-03-23
+[v1.1.4]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.3...v1.1.4
+
+### Added
+- `--skip-pdb` flag in case of unexpected PDB bugs
+- user parameter for allowed protein lengths `--min-length` and `--max-length`
+
+### Fixes
+- installation of PDB database
+- alignment of faulty PDB structures
+    - cases are reported via `logging`, require case-by-case investigation
+    - faulty structures are then aligned to a predicted database, which are consistent
+    - around 130/1300 alignments to PDB fail (10%)
+
+## [v1.1.3] - 2024-03-13
+[v1.1.3]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.2...v1.1.3
 
 ### Fixes
 - bug where MMseqs2 returned empty results search [#73](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues/73)
