@@ -22,9 +22,10 @@ def create_pdb_mmseqs():
     PDB100 = "https://wwwuser.gwdg.de/~compbiol/colabfold/pdb100_230517.fasta.gz"
     # check if pdb exists in a build dir
     build_dir = Path(mDeepFRI.__path__[0]).parent
-    pdb100_path = str(build_dir / "pdb100_230517.fasta.gz")
+    pdb100_path = Path(build_dir / "pdb100_230517.fasta.gz")
     # remove additional suffix
-    pdb100_path = Path(pdb100_path.split(".")[0])
+    base, first_ext, second_ext = pdb100_path.name.partition(".")
+    pdb100_path = pdb100_path.with_name(base)
     uncompressed_path = pdb100_path.with_suffix(".fasta")
     compressed_path = pdb100_path.with_suffix(".fasta.gz")
 

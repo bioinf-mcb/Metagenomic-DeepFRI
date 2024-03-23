@@ -1,3 +1,4 @@
+import logging
 from io import StringIO
 from typing import Dict, List, Tuple
 
@@ -10,6 +11,12 @@ from biotite.structure.io.pdbx import PDBxFile, get_structure
 from pysam import FastaFile, FastxFile
 
 from mDeepFRI.alignment_utils import alignment_identity, pairwise_sqeuclidean
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 class AlignmentResult:
@@ -214,12 +221,13 @@ def extract_residues_coordinates(structure_string: str,
         mmcif = PDBxFile.read(StringIO(structure_string))
         structure = get_structure(mmcif, model=1)
     except UnboundLocalError:
-        pdb = PDBFile(StringIO(structure_string))
+        pdb = PDBFile.read(StringIO(structure_string))
         structure = pdb.get_structure()[0]
 
     protein_chain = structure[structure.chain_id == chain]
     # extract CA atoms coordinates
     ca_atoms = protein_chain[protein_chain.atom_name == "CA"]
+
     residues = str(ProteinSequence(ca_atoms.res_name))
     coords = ca_atoms.coord
 
@@ -367,11 +375,9 @@ def align_contact_map(query_alignment: str,
         output_contact_map[i, i] = 1
     # Fill the contacts from the sparse query contact map
     for i, j in sparse_query_contact_map:
-        if i < 0:
-            continue
         if i >= query_index:
             continue
-        # Apply symmetry
+        # Apply symmetryR
         output_contact_map[i, j] = 1
         output_contact_map[j, i] = 1
 
@@ -381,7 +387,6 @@ def align_contact_map(query_alignment: str,
 def retrieve_align_contact_map(
         alignment: AlignmentResult,
         database: str = "pdb100",
-        max_seq_len: int = 1000,
         threshold: float = 6,
         generated_contacts: int = 2) -> Tuple[AlignmentResult, np.ndarray]:
     """
@@ -390,7 +395,6 @@ def retrieve_align_contact_map(
     Args:
         alignment (AlignmentResult): Alignment of query and target sequences.
         database (str): Path to FoldComp database. If empty, the structure will be retrieved from the PDB.
-        max_seq_len (int): Maximum sequence length.
         threshold (float): Distance threshold for contact map.
         generated_contacts (int): Number of generated contacts to add for gapped regions in the query alignment.
 
@@ -402,14 +406,40 @@ def retrieve_align_contact_map(
         database = "pdb100"
 
     idx = alignment.target_name.rsplit(".", 1)[0]
-    coordinates = retrieve_structure_features(idx, database_path=database)[1]
+    try:
+        coordinates = retrieve_structure_features(idx,
+                                                  database_path=database)[1]
 
-    cmap = calculate_contact_map(coordinates,
-                                 threshold=threshold,
-                                 mode="sparse")
+    # catch error for non-standard aminoacids in database
+    except KeyError as e:
+        coordinates = None
+        pdb_id, chain = idx.upper().split("_")
 
-    aligned_cmap = align_contact_map(alignment.gapped_sequence,
-                                     alignment.gapped_target, cmap,
-                                     generated_contacts)
+        logger.warning(
+            f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
+            f"non-standard residue {str(e)} present; {alignment.query_name} alignment skipped."
+        )
+
+    # output of the function might None
+    if coordinates is not None:
+
+        cmap = calculate_contact_map(coordinates,
+                                     threshold=threshold,
+                                     mode="sparse")
+        logger.debug("Aligning contact map for %s against %s.", idx,
+                     alignment.query_name)
+        try:
+            aligned_cmap = align_contact_map(alignment.gapped_sequence,
+                                             alignment.gapped_target, cmap,
+                                             generated_contacts)
+        except KeyError:
+            pdb_id, chain = idx.upper().split("_")
+            logger.warning(
+                f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}] "
+                f"against {alignment.query_name}.")
+            aligned_cmap = None
+
+    else:
+        aligned_cmap = None
 
     return (alignment, aligned_cmap)
