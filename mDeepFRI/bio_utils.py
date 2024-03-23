@@ -270,17 +270,8 @@ def retrieve_structure_features(idx: str,
             with foldcomp.open(database_path, ids=[idx]) as db:
                 for _, pdb in db:
                     structure = pdb
-    try:
-        residues, coords = extract_residues_coordinates(structure, chain=chain)
 
-    # catch error for non-standard residues
-    except KeyError as e:
-        residues, coords = None, None
-        pdb_id, chain = idx.upper().split("_")
-
-        logger.warning(
-            f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
-            f"non-standard residue {str(e)} present")
+    residues, coords = extract_residues_coordinates(structure, chain=chain)
 
     return (residues, coords)
 
@@ -384,8 +375,6 @@ def align_contact_map(query_alignment: str,
         output_contact_map[i, i] = 1
     # Fill the contacts from the sparse query contact map
     for i, j in sparse_query_contact_map:
-        if i > 0:
-            continue
         if i >= query_index:
             continue
         # Apply symmetryR
@@ -417,7 +406,19 @@ def retrieve_align_contact_map(
         database = "pdb100"
 
     idx = alignment.target_name.rsplit(".", 1)[0]
-    coordinates = retrieve_structure_features(idx, database_path=database)[1]
+    try:
+        coordinates = retrieve_structure_features(idx,
+                                                  database_path=database)[1]
+
+    # catch error for non-standard aminoacids in database
+    except KeyError as e:
+        coordinates = None
+        pdb_id, chain = idx.upper().split("_")
+
+        logger.warning(
+            f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
+            f"non-standard residue {str(e)} present; {alignment.query_name} alignment skipped."
+        )
 
     # output of the function might None
     if coordinates is not None:
@@ -425,16 +426,17 @@ def retrieve_align_contact_map(
         cmap = calculate_contact_map(coordinates,
                                      threshold=threshold,
                                      mode="sparse")
-        logger.debug("Aligning contact map for %s against %s", idx,
+        logger.debug("Aligning contact map for %s against %s.", idx,
                      alignment.query_name)
         try:
             aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                              alignment.gapped_target, cmap,
                                              generated_contacts)
         except KeyError:
+            pdb_id, chain = idx.upper().split("_")
             logger.warning(
-                f"Error aligning contact map for {idx} against {alignment.query_name}"
-            )
+                f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}]"
+                f"against {alignment.query_name}.")
             aligned_cmap = None
 
     else:
