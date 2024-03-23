@@ -435,7 +435,7 @@ def retrieve_align_contact_map(
         except KeyError:
             pdb_id, chain = idx.upper().split("_")
             logger.warning(
-                f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}]"
+                f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}] "
                 f"against {alignment.query_name}.")
             aligned_cmap = None
 

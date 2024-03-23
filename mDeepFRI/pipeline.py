@@ -44,7 +44,7 @@ def predict_protein_function(
 
     MIN_SEQ_LEN = 60
     MAX_SEQ_LEN = 1000
-    logger.info("DeepFRI protein sequence limit: %i-%i aa", MIN_SEQ_LEN,
+    logger.info("DeepFRI protein sequence limit: %i-%i aa.", MIN_SEQ_LEN,
                 MAX_SEQ_LEN)
 
     query_file = pathlib.Path(query_file)
@@ -95,7 +95,7 @@ def predict_protein_function(
         # SEQUENCE ALIGNMENT
         # calculate already aligned sequences
         aligned = len(aligned_cmaps)
-        logger.info("Aligning %s sequences against %s", len(query_seqs),
+        logger.info("Aligning %s sequences against %s.", len(query_seqs),
                     db.name)
 
         # align new sequences agains db
@@ -107,7 +107,7 @@ def predict_protein_function(
 
         # if anything aligned
         if not alignments:
-            logger.info("No alignments found for %s", db.name)
+            logger.info("No alignments found for %s.", db.name)
             continue
         # filter alignments by identity
         alignments = [
@@ -115,7 +115,7 @@ def predict_protein_function(
         ]
 
         if not alignments:
-            logger.info("All alignments below identity threshold for %s",
+            logger.info("All alignments below identity threshold for %s.",
                         db.name)
             continue
 
@@ -136,7 +136,7 @@ def predict_protein_function(
         # for this cases we replace closest experimental structure with
         # closest predicted structure if available
         # if no alignments were found - report
-        logger.info("Aligning contact maps for %i proteins against %s",
+        logger.info("Aligning contact maps for %i proteins against %s.",
                     len(new_alignments), db.name)
 
         partial_align = partial(retrieve_align_contact_map,
