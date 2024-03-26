@@ -40,11 +40,17 @@ mDeepFRI --help
 
 ## 💡 Usage
 ### 1. Prepare structural database
-The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databaes.
+
+You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+
+`ATTENTION`: Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
+
 ### 2. Download models
 Two versions of models available:
 - `v1.0` - is the original version from DeepFRI publication.
-- `v1.1` - is a version finetuned on AlphaFold models and Gene Ontology Uniprot annotations.
+- `v1.1` - is a version finetuned on AlphaFold models and machine-generated Gene Ontology Uniprot annotations. You can read details about `v1.1` in [ISMB 2023 presentation by Pawel Szczerbiak](https://docs.google.com/presentation/d/1Pzn_gQH5-dDImpApSoWFQNu3WByFZYWqfesplANK9hI/edit?usp=sharing)
+
 To download models run command:
 ```
 mDeepFRI get-models --output path/to/weights/folder -v {1.0 or 1.1}
@@ -76,7 +82,7 @@ This is an example of protein annotation with the AlphaFold database.
 - GO_term/EC_numer - predicted GO term or EC number (dependent on mode)
 - Score - DeepFRI score, translates to model confidence in prediction. Details in [publication](https://www.nature.com/articles/s41467-021-23303-9).
 - Annotation - annotation from ontology
-- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is employed when structural information is available in the database, allowing for generally more confident predictions.
+- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is used when structural information is available in the database, allowing for generally more confident predictions. When there are no proteins above similarity cut-off (50% identity by default), CNN is used.
 - DeepFRI_mode:
    ```
    mf = molecular_function
@@ -84,6 +90,9 @@ This is an example of protein annotation with the AlphaFold database.
    cc = cellular_component
    ec = enzyme_commission
    ```
+- DB_hit - name of the hit in the database. Empty if no hit was found.
+- DB_name - name of the database. Empty if no hit was found.
+- Identity - sequence identity between query and hit. Empty if no hit was found.
 
 ## ⚙️Features
 ### 1. Prediction modes
