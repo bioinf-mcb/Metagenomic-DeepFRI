@@ -157,52 +157,6 @@ def generate_config_json(weights_path: str, version: Literal["1.0",
         json.dump(config, f, indent=4, sort_keys=True)
 
 
-# def merge_files_binary(file_paths: list, output_path: pathlib.Path) -> None:
-#     """
-#     Merges files in binary format.
-
-#     Args:
-#         file_paths (list): List of paths to merge.
-#         output_path (str): Path to save the merged file.
-
-#     Returns:
-#         None
-#     """
-
-#     with open(output_path, 'wb') as writer:
-#         for input_file in file_paths:
-#             with open(input_file, 'rb') as reader:
-#                 shutil.copyfileobj(reader, writer)
-
-# def search_files_in_paths(paths: list, pattern: str):
-#     """
-#     Searches for files in paths.
-
-#     Args:
-#         paths (list): List of paths to search.
-#         pattern (str): Pattern to search for.
-
-#     Returns:
-#         list: List of files found.
-#     """
-
-#     files = []
-#     for path in paths:
-#         if not path.exists():
-#             print(f"Unable to locate {path}.")
-#             continue
-#         if path.is_dir():
-#             files.extend(list(path.glob("**/*" + pattern)))
-#         else:
-#             if not path.name.endswith(pattern):
-#                 print(
-#                     f"{path} is not an {pattern} file which is excepted format."
-#                 )
-#             else:
-#                 files.append(path)
-#     return files
-
-
 def shutdown(message):
     """
     Terminates program execution with a reason.
