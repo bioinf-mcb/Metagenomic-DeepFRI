@@ -41,9 +41,10 @@ def createdb(sequences_file, db_path):
     run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")
 
 
-def createindex(db_path):
+def createindex(db_path: str, threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
-        run_command(f"mmseqs createindex {db_path} {tmp_path}")
+        run_command(
+            f"mmseqs createindex {db_path} {tmp_path} --threads {threads}")
 
 
 def search(query_db: str, target_db: str, result_db: str, threads: int = 1):
@@ -75,11 +76,13 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     tabix_compress(output_file, str(output_file) + ".gz", force=True)
     # remove unzipped file
     os.remove(output_file)
+
     return Path(str(output_file) + ".gz")
 
 
 def create_target_database(foldcomp_fasta_path: str,
-                           mmseqs_db_path: str) -> None:
+                           mmseqs_db_path: str,
+                           threads: int = 1) -> None:
     """
     Extracts sequences from compressed FoldComp database.
 
@@ -92,7 +95,7 @@ def create_target_database(foldcomp_fasta_path: str,
     """
     createdb(foldcomp_fasta_path, mmseqs_db_path)
     logger.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
-    createindex(mmseqs_db_path)
+    createindex(mmseqs_db_path, threads)
 
 
 def validate_mmseqs_database(database: str):
@@ -117,7 +120,7 @@ def validate_mmseqs_database(database: str):
     is_valid = True
     for ext in mmseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
-            logging.debug(f"{target_db}{ext} is missing.")
+            logger.debug(f"{target_db}{ext} is missing.")
             is_valid = False
             break
 

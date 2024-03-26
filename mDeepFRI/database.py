@@ -85,10 +85,10 @@ def build_database(
     mmseqs_valid = validate_mmseqs_database(mmseqs_path)
     if not mmseqs_valid:
         logger.info("Creating MMSeqs2 database.")
-        create_target_database(output_sequences, mmseqs_path)
+        create_target_database(output_sequences, mmseqs_path, threads)
     elif overwrite or needs_new_mmseqs:
         logger.info("Creating MMSeqs2 database.")
-        create_target_database(output_sequences, mmseqs_path)
+        create_target_database(output_sequences, mmseqs_path, threads)
     else:
         logger.info("Database created at %s", output_path)
         logger.info("Found %s in %s", mmseqs_path, output_path)
