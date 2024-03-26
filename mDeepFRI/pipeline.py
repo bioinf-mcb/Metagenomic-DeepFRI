@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from typing import List, Tuple
 
 import numpy as np
+from tqdm import tqdm
 
 from mDeepFRI.alignment import run_alignment
 from mDeepFRI.bio_utils import load_fasta_as_dict, retrieve_align_contact_map
@@ -46,8 +47,6 @@ def predict_protein_function(
 
     MIN_SEQ_LEN = min_length
     MAX_SEQ_LEN = max_length
-    logger.info("DeepFRI protein sequence limit: %i-%i aa.", MIN_SEQ_LEN,
-                MAX_SEQ_LEN)
 
     query_file = pathlib.Path(query_file)
     weights = pathlib.Path(weights)
@@ -96,7 +95,7 @@ def predict_protein_function(
     for db in deepfri_dbs:
         # SEQUENCE ALIGNMENT
         # calculate already aligned sequences
-        aligned = len(aligned_cmaps)
+        len(aligned_cmaps)
         logger.info("Aligning %s sequences against %s.", len(query_seqs),
                     db.name)
 
@@ -153,9 +152,14 @@ def predict_protein_function(
         # returned as Tuple[AlignmentResult, None] from `retrieve_align_contact_map`
         partial_cmaps = [cmap for cmap in partial_cmaps if cmap[1] is not None]
         aligned_cmaps.extend(partial_cmaps)
-
-    # report alignments for each database
-    logger.info("Aligned %i sequences.", len(aligned_queries) - aligned)
+        aligned_database = round(len(partial_cmaps) / len(query_seqs) * 100, 2)
+        aligned_total = round(len(aligned_cmaps) / len(query_seqs) * 100, 2)
+        logger.info(
+            f"Aligned {len(partial_cmaps)}/{len(query_seqs)} ({aligned_database}% of total) proteins against {db.name}."
+        )
+        logger.info(
+            f"Aligned {len(aligned_cmaps)}/{len(query_seqs)} ({aligned_total}%) proteins in total."
+        )
 
     aligned_queries = [aln.query_name for aln in alignments]
     unaligned_queries = {
@@ -172,6 +176,9 @@ def predict_protein_function(
     # sort cmaps by length of query sequence
     aligned_cmaps = sorted(aligned_cmaps,
                            key=lambda x: len(x[0].query_sequence))
+    # sort unaligned queries by length
+    unaligned_queries = dict(
+        sorted(unaligned_queries.items(), key=lambda x: len(x[1])))
 
     output_file_name = output_path / "results.tsv"
     output_buffer = open(output_file_name, "w", encoding="utf-8")
@@ -202,7 +209,10 @@ def predict_protein_function(
 
             gcn = Predictor(gcn_path, threads=threads)
 
-            for i, (aln, aligned_cmap) in enumerate(aligned_cmaps):
+            for i, (aln,
+                    aligned_cmap) in tqdm(enumerate(aligned_cmaps),
+                                          total=gcn_prots,
+                                          miniters=len(aligned_cmaps) // 10):
 
                 ### PROTEIN LENGTH CHECKS
                 if len(aln.query_sequence) < MIN_SEQ_LEN:
@@ -215,8 +225,8 @@ def predict_protein_function(
                                 aln.query_name, len(aln.query_sequence))
                     continue
 
-                logger.info("Predicting %s; %i/%i", aln.query_name, i + 1,
-                            gcn_prots)
+                logger.debug("Predicting %s; %i/%i", aln.query_name, i + 1,
+                             gcn_prots)
                 # running the actual prediction
                 prediction_rows = gcn.predict_function(
                     seqres=aln.query_sequence,
@@ -241,19 +251,22 @@ def predict_protein_function(
             logger.info("Predicting with CNN: %i proteins", cnn_prots)
             cnn_path = deepfri_models_config[net_type][mode]
             cnn = Predictor(cnn_path, threads=threads)
-            for i, query_id in enumerate(unaligned_queries):
+            for i, query_id in tqdm(enumerate(unaligned_queries),
+                                    total=cnn_prots,
+                                    miniters=len(unaligned_queries) // 10):
                 seq = query_seqs[query_id]
                 if len(seq) > MAX_SEQ_LEN:
-                    logger.info("Skipping %s; sequence too long %i", query_id,
-                                len(seq))
+                    logger.info("Skipping %s; sequence too long %i aa.",
+                                query_id, len(seq))
                     continue
 
                 elif len(seq) < MIN_SEQ_LEN:
-                    logger.info("Skipping %s; sequence too short %i", query_id,
-                                len(seq))
+                    logger.info("Skipping %s; sequence too short %i aa.",
+                                query_id, len(seq))
                     continue
 
-                logger.info("Predicting %s; %i/%i", query_id, i + 1, cnn_prots)
+                logger.debug("Predicting %s; %i/%i", query_id, i + 1,
+                             cnn_prots)
                 prediction_rows = cnn.predict_function(
                     seqres=query_seqs[query_id], chain=str(query_id))
                 for row in prediction_rows:

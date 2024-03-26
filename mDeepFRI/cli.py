@@ -205,6 +205,28 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
 
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
+    # write command parameters to log
+    logger.info("Command parameters:")
+    logger.info("Input:                         %s", input)
+    logger.info("Database:                      %s", db_path)
+    logger.info("Weights:                       %s", weights)
+    logger.info("Output:                        %s", output)
+    logger.info("Processing modes:              %s", processing_modes)
+    logger.info("Angstrom contact threshold:    %s", angstrom_contact_thresh)
+    logger.info("Generate contacts:             %s", generate_contacts)
+    logger.info("MMSeqs2 minimum bitscore:      %s", mmseqs_min_bitscore)
+    logger.info("MMSeqs2 maximum e-value:       %s", mmseqs_max_evalue)
+    logger.info("MMSeqs2 minimum identity:      %s", mmseqs_min_identity)
+    logger.info("Top k results:                 %s", top_k)
+    logger.info("Alignment gap open:            %s", alignment_gap_open)
+    logger.info("Alignment gap extend:          %s", alignment_gap_extend)
+    logger.info("Alignment minimum identity:    %s", alignment_min_identity)
+    logger.info("Remove intermediate:           %s", remove_intermediate)
+    logger.info("Overwrite:                     %s", overwrite)
+    logger.info("Threads:                       %s", threads)
+    logger.info("Skip PDB:                      %s", skip_pdb)
+    logger.info("Minimum length:                %s", min_length)
+    logger.info("Maximum length:                %s", max_length)
 
     predict_protein_function(
         query_file=input,

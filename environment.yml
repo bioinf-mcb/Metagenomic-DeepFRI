@@ -14,6 +14,7 @@ dependencies:
     - pysam==0.21.0
     - pyopal>=0.5
     - foldcomp
+    - tqdm
     # onnx stuff
     - onnxruntime-gpu
     # mDeepFRI
