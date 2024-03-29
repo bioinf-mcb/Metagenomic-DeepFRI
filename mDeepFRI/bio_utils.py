@@ -7,6 +7,7 @@ import numpy as np
 import pysam
 import requests
 from biotite.sequence import ProteinSequence
+from biotite.structure import get_chains
 from biotite.structure.io.pdb import PDBFile
 from biotite.structure.io.pdbx import PDBxFile, get_structure
 from pysam import FastaFile, FastxFile
@@ -184,25 +185,20 @@ def calculate_contact_map(coordinates: np.ndarray,
     return cmap
 
 
-def extract_residues_coordinates(structure_string: str,
-                                 chain: str = None) -> Tuple[List, np.ndarray]:
+def get_residues_coordinates(structure: np.ndarray, chain: str = "A"):
     """
-    Extracts residues and coordinates from structural file.
-    Automatically processes PDB and mmCIF files.
+    Retrieves residues and coordinates from biotite structure.
 
     Args:
-        structure_string (str): Structure file read into string.
-        max_seq_len (int): Maximum sequence length.
+        structure (np.ndarray): Structure file read into string.
 
     Returns:
-        Tuple[List, np.ndarray]: Tuple of residues and coordinates.
+        Tuple[str, np.ndarray]: Tuple of residues and coordinates.
     """
-    try:
-        mmcif = PDBxFile.read(StringIO(structure_string))
-        structure = get_structure(mmcif, model=1)
-    except UnboundLocalError:
-        pdb = PDBFile.read(StringIO(structure_string))
-        structure = pdb.get_structure()[0]
+
+    chains = get_chains(structure)
+    if chain not in chains:
+        raise ValueError(f"Chain {chain} not found in structure.")
 
     protein_chain = structure[structure.chain_id == chain]
     # extract CA atoms coordinates
@@ -214,9 +210,34 @@ def extract_residues_coordinates(structure_string: str,
     return (residues, coords)
 
 
+def extract_residues_coordinates(structure_string: str,
+                                 chain: str = "A") -> Tuple[str, np.ndarray]:
+    """
+    Extracts residues and coordinates from structural string.
+    Automatically processes PDB and mmCIF files.
+
+    Args:
+        structure_string (str): Structure file read into string.
+        max_seq_len (int): Maximum sequence length.
+
+    Returns:
+        Tuple[str, np.ndarray]: Tuple of residues and coordinates.
+    """
+    try:
+        mmcif = PDBxFile.read(StringIO(structure_string))
+        structure = get_structure(mmcif, model=1)
+    except (UnboundLocalError, ValueError):
+        pdb = PDBFile.read(StringIO(structure_string))
+        structure = pdb.get_structure()[0]
+
+    residues, coords = get_residues_coordinates(structure, chain=chain)
+
+    return (residues, coords)
+
+
 def retrieve_structure_features(idx: str,
                                 database_path: str = "pdb100"
-                                ) -> Tuple[List, np.ndarray]:
+                                ) -> Tuple[str, np.ndarray]:
     """
     Retrieves structure either from PDB or supplied FoldComp database.
     Extracts sequence and coordinate infromaton.
@@ -227,7 +248,7 @@ def retrieve_structure_features(idx: str,
         max_seq_len (int): Maximum sequence length.
 
     Returns:
-        Tuple[List, np.ndarray]: Tuple of residues and coordinates.
+        Tuple[str, np.ndarray]: Tuple of residues and coordinates.
     """
     pdb_http = "https://files.rcsb.org/view/{pdb_id}.cif"
 
