@@ -15,7 +15,7 @@ import onnxruntime as rt
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cpdef np.ndarray[int, ndim=2] seq2onehot(str seq):
+cpdef np.ndarray[float, ndim=2] seq2onehot(str seq):
     """
     Converts a protein sequence to 26-dim one-hot encoding.
 
@@ -25,6 +25,8 @@ cpdef np.ndarray[int, ndim=2] seq2onehot(str seq):
     Returns:
         np.ndarray: one-hot encoding of the protein sequence
     """
+    cdef bytes seq_bytes = seq.encode()
+
     cdef bytes chars = b"-DGULNTKHYWCPVSOIEFXQABZRM"
     cdef int vocab_size = len(chars)
     cdef int seq_len = len(seq)
@@ -32,11 +34,13 @@ cpdef np.ndarray[int, ndim=2] seq2onehot(str seq):
     cdef int[:, ::1] onehot_view = np.zeros((seq_len, vocab_size), dtype=np.int32)
 
     for i in range(seq_len):
-        j = chars.find(seq[i].encode())
+        j = chars.find(seq_bytes[i])
         if j != -1:
             onehot_view[i, j] = 1
+        else:
+            raise ValueError(f"Invalid character in sequence: {seq[i]}")
 
-    return np.asarray(onehot_view, dtype=np.int32)
+    return np.asarray(onehot_view, dtype=np.float32)
 
 
 cdef class Predictor(object):
