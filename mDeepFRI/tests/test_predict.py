@@ -23,10 +23,9 @@ class TestSeq2OneHot(unittest.TestCase):
         seq = "-DGU"
         result = seq2onehot(seq)
         self.assertEqual(result.shape, (4, 26))
-        self.assertTrue(
-            np.all(result == np.array([[1, 0, 0, 0] + [0] * 22, [0, 1, 0, 0] +
-                                       [0] * 22, [0, 0, 1, 0] +
-                                       [0] * 22, [0, 0, 0, 1] + [0] * 22])))
+        expected = np.array([[1, 0, 0, 0] + [0] * 22, [0, 1, 0, 0] + [0] * 22,
+                             [0, 0, 1, 0] + [0] * 22, [0, 0, 0, 1] + [0] * 22])
+        self.assertTrue(np.all(result == expected))
 
     def test_invalid_character(self):
         seq = "J"
