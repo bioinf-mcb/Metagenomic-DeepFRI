@@ -155,12 +155,16 @@ EXTENSIONS = [
               sources=[SRC_DIR + "/predict.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=extra_compile_args),
+              extra_compile_args=extra_compile_args,
+              define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
+                             ]),
     Extension("mDeepFRI.alignment_utils",
               sources=[SRC_DIR + "/alignment_utils.pyx"],
               language="c++",
               libraries=["stdc++"],
-              extra_compile_args=extra_compile_args),
+              extra_compile_args=extra_compile_args,
+              define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
+                             ]),
 ]
 
 extras = {}

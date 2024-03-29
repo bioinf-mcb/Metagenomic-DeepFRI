@@ -90,12 +90,29 @@ def predict_protein_function(
         deepfri_dbs.append(db)
 
     query_seqs = load_fasta_as_dict(query_file)
+    # sort dictionary by length
+    query_seqs = dict(sorted(query_seqs.items(), key=lambda x: len(x[1])))
+
+    # filter query seqs and log their sizes
+    to_remove = []
+    for seq in query_seqs:
+        if len(query_seqs[seq]) < MIN_SEQ_LEN:
+            logger.info("Skipping %s; sequence too short %i aa", seq,
+                        len(query_seqs[seq]))
+            to_remove.append(seq)
+        elif len(query_seqs[seq]) > MAX_SEQ_LEN:
+            logger.info("Skipping %s; sequence too long %i aa", seq,
+                        len(query_seqs[seq]))
+            to_remove.append(seq)
+
+    for seq in to_remove:
+        del query_seqs[seq]
+
     aligned_cmaps = []
 
     for db in deepfri_dbs:
         # SEQUENCE ALIGNMENT
         # calculate already aligned sequences
-        len(aligned_cmaps)
         logger.info("Aligning %s sequences against %s.", len(query_seqs),
                     db.name)
 
@@ -128,6 +145,7 @@ def predict_protein_function(
         new_alignments = {
             aln.query_name: aln
             for aln in alignments if aln.query_name not in aligned_queries
+            and aln.query_name in query_seqs
         }
 
         # CONTACT MAP ALIGNMENT

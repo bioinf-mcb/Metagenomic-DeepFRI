@@ -5,14 +5,40 @@ import numpy as np
 
 cimport numpy as np
 
-np.import_array()
+import cython
 
+np.import_array()
 import onnxruntime as rt
 
-from mDeepFRI.bio_utils import seq2onehot
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+@cython.initializedcheck(False)
+cpdef np.ndarray[int, ndim=2] seq2onehot(str seq):
+    """
+    Converts a protein sequence to 26-dim one-hot encoding.
+
+    Args:
+        seq (str): protein sequence
+
+    Returns:
+        np.ndarray: one-hot encoding of the protein sequence
+    """
+    cdef bytes chars = b"-DGULNTKHYWCPVSOIEFXQABZRM"
+    cdef int vocab_size = len(chars)
+    cdef int seq_len = len(seq)
+    cdef int i, j
+    cdef int[:, ::1] onehot_view = np.zeros((seq_len, vocab_size), dtype=np.int32)
+
+    for i in range(seq_len):
+        j = chars.find(seq[i].encode())
+        if j != -1:
+            onehot_view[i, j] = 1
+
+    return np.asarray(onehot_view, dtype=np.int32)
 
 
-## TODO: do not accumulate predictions, write them out to csv asap to avoid unneccessary RAM usage
 cdef class Predictor(object):
     """
     Class for loading trained models and computing GO/EC predictions and class activation maps (CAMs).
