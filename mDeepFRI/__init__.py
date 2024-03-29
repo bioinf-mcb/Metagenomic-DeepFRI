@@ -4,6 +4,13 @@ __version__ = "1.1.4"
 
 repo_url = "https://huggingface.co/valentynbez/mDeepFRI/resolve/main/"
 
+DEEPFRI_MODES = {
+    "bp": "GO Biological Process",
+    "cc": "GO Cellular Component",
+    "mf": "GO Molecular Function",
+    "ec": "Enzyme Commission"
+}
+
 cnn_model_links = {
     "bp": {
         "model": os.path.join(repo_url, "DeepCNN-MERGED_bp.onnx"),

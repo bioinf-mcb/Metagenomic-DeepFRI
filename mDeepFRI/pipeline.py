@@ -8,6 +8,7 @@ from typing import List, Tuple
 import numpy as np
 from tqdm import tqdm
 
+from mDeepFRI import DEEPFRI_MODES
 from mDeepFRI.alignment import run_alignment
 from mDeepFRI.bio_utils import load_fasta_as_dict, retrieve_align_contact_map
 from mDeepFRI.database import build_database
@@ -21,6 +22,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 logger = logging.getLogger(__name__)
+BAR_FORMAT = "{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}], {rate_fmt}{postfix}"
 
 
 def predict_protein_function(
@@ -155,16 +157,21 @@ def predict_protein_function(
         # for this cases we replace closest experimental structure with
         # closest predicted structure if available
         # if no alignments were found - report
-        logger.info("Aligning contact maps for %i proteins against %s.",
-                    len(new_alignments), db.name)
-
         partial_align = partial(retrieve_align_contact_map,
                                 database=db.foldcomp_db,
                                 threshold=angstrom_contact_threshold,
                                 generated_contacts=generate_contacts)
 
         with Pool(threads) as p:
-            partial_cmaps = p.map(partial_align, new_alignments.values())
+            # align with progress bar
+            partial_cmaps = list(
+                tqdm(
+                    p.imap(partial_align, new_alignments.values()),
+                    total=len(new_alignments),
+                    miniters=len(new_alignments) // 10,
+                    desc=f"Aligning contact maps against {db.name}",
+                    bar_format=BAR_FORMAT,
+                ))
 
         # filter errored contact maps
         # returned as Tuple[AlignmentResult, None] from `retrieve_align_contact_map`
@@ -222,15 +229,16 @@ def predict_protein_function(
             logger.info("Processing mode: %s; %i/%i", mode, i + 1,
                         len(deepfri_processing_modes))
             # GCN for queries with aligned contact map
-            logger.info("Predicting with GCN: %i proteins", gcn_prots)
             gcn_path = deepfri_models_config[net_type][mode]
 
             gcn = Predictor(gcn_path, threads=threads)
 
-            for i, (aln,
-                    aligned_cmap) in tqdm(enumerate(aligned_cmaps),
-                                          total=gcn_prots,
-                                          miniters=len(aligned_cmaps) // 10):
+            for i, (aln, aligned_cmap) in tqdm(
+                    enumerate(aligned_cmaps),
+                    total=gcn_prots,
+                    miniters=len(aligned_cmaps) // 10,
+                    desc=f"Predicting with GCN ({DEEPFRI_MODES[mode]})",
+                    bar_format=BAR_FORMAT):
 
                 ### PROTEIN LENGTH CHECKS
                 if len(aln.query_sequence) < MIN_SEQ_LEN:
@@ -269,9 +277,13 @@ def predict_protein_function(
             logger.info("Predicting with CNN: %i proteins", cnn_prots)
             cnn_path = deepfri_models_config[net_type][mode]
             cnn = Predictor(cnn_path, threads=threads)
-            for i, query_id in tqdm(enumerate(unaligned_queries),
-                                    total=cnn_prots,
-                                    miniters=len(unaligned_queries) // 10):
+            for i, query_id in tqdm(
+                    enumerate(unaligned_queries),
+                    total=cnn_prots,
+                    miniters=len(unaligned_queries) // 10,
+                    desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
+                    bar_format=BAR_FORMAT):
+
                 seq = query_seqs[query_id]
                 if len(seq) > MAX_SEQ_LEN:
                     logger.info("Skipping %s; sequence too long %i aa.",
