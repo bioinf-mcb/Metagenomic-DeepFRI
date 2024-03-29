@@ -6,7 +6,7 @@ dependencies:
   - click
   - numpy>=1.19
   - biotite
-  - mmseqs2=14.7e284
+  - mmseqs2==15.6f452
   - pip
   - python==3.11
   - libdeflate
