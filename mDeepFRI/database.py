@@ -1,4 +1,3 @@
-# Create logger
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -84,10 +83,10 @@ def build_database(
     mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
     mmseqs_valid = validate_mmseqs_database(mmseqs_path)
     if not mmseqs_valid:
-        logger.info("Creating MMSeqs2 database.")
+        logger.info("Creating and indexing MMSeqs2 database.")
         create_target_database(output_sequences, mmseqs_path, threads)
     elif overwrite or needs_new_mmseqs:
-        logger.info("Creating MMSeqs2 database.")
+        logger.info("Creating and indexing MMSeqs2 database.")
         create_target_database(output_sequences, mmseqs_path, threads)
     else:
         logger.info("Database created at %s", output_path)

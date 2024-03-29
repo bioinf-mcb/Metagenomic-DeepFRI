@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 
 import foldcomp
 import numpy as np
+import pysam
 import requests
 from biotite.sequence import ProteinSequence
 from biotite.structure.io.pdb import PDBFile
@@ -83,34 +84,6 @@ class AlignmentResult:
         return self
 
 
-def seq2onehot(seq: str) -> np.ndarray:
-    """Create 26-dim one-hot encoding of a protein sequence.
-
-    Args:
-        seq (str): Protein sequence.
-
-    Returns:
-        np.ndarray: One-hot encoding of protein sequence.
-    """
-
-    chars = [
-        '-', 'D', 'G', 'U', 'L', 'N', 'T', 'K', 'H', 'Y', 'W', 'C', 'P', 'V',
-        'S', 'O', 'I', 'E', 'F', 'X', 'Q', 'A', 'B', 'Z', 'R', 'M'
-    ]
-    vocab_size = len(chars)
-    vocab_embed = dict(zip(chars, range(vocab_size)))
-
-    # Convert vocab to one-hot
-    vocab_one_hot = np.zeros((vocab_size, vocab_size), int)
-    for _, val in vocab_embed.items():
-        vocab_one_hot[val, val] = 1
-
-    embed_x = [vocab_embed[v] for v in seq]
-    seqs_x = np.array([vocab_one_hot[j, :] for j in embed_x])
-
-    return seqs_x
-
-
 def insert_gaps(sequence: str, reference: str,
                 alignment_string: str) -> Tuple[str, str]:
     """
@@ -169,9 +142,16 @@ def retrieve_fasta_entries_as_dict(fasta_file: str,
     """
 
     fasta_dict = dict()
+    # silence pysam warnings for duplicate sequences
+    verb = pysam.set_verbosity(0)
+
     with FastaFile(fasta_file) as fasta:
         for name in entries:
             fasta_dict[name] = fasta.fetch(name)
+
+    # reset verbosity
+    pysam.set_verbosity(verb)
+
     return fasta_dict
 
 

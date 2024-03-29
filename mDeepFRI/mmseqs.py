@@ -67,15 +67,29 @@ def extract_fasta_foldcomp(foldcomp_db: str,
     Extracts FASTA from database
     """
     foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
+    database_name = Path(foldcomp_db).stem
 
     # run command
     run_command(
         f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
     )
+
+    if database_name == "highquality_clust30":
+        # use sed to correct the headers
+        os.system(
+            fr"sed -i 's/^>\(ESMFOLD V0 PREDICTION FOR \)\(.*\)/>\2/' {output_file}"
+        )
+
     # gzip fasta file
     tabix_compress(output_file, str(output_file) + ".gz", force=True)
     # remove unzipped file
     os.remove(output_file)
+    # remove possible previous index, might lead to errror
+    try:
+        os.remove(str(output_file) + ".gz.fai")
+        os.remove(str(output_file) + ".gz.gzi")
+    except FileNotFoundError:
+        pass
 
     return Path(str(output_file) + ".gz")
 
@@ -94,7 +108,6 @@ def create_target_database(foldcomp_fasta_path: str,
         None
     """
     createdb(foldcomp_fasta_path, mmseqs_db_path)
-    logger.info("Indexing new target mmseqs2 database %s", mmseqs_db_path)
     createindex(mmseqs_db_path, threads)
 
 
@@ -213,6 +226,7 @@ def filter_mmseqs_results(results_file: str,
 
         final_database = np.concatenate(top_k_chunks)
 
+        ## TODO: move logging module a level up
         logger.info("%i pairs after filtering with k=%i best hits.",
                     final_database.shape[0], k_best_hits)
 
