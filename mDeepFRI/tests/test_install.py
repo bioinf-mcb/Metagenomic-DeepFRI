@@ -4,7 +4,6 @@ from pathlib import Path
 import mDeepFRI
 
 
-# is a tricky test, will fail if ran from a wrong directory
 def test_foldcomp_download():
     """
     Test if foldcomp binary was downloaded properly
