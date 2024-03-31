@@ -42,7 +42,7 @@ mDeepFRI --help
 ### 1. Prepare structural database
 The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databaes.
 
-You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be create and indexed. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
 
 Tested databases:
 - `afdb_swissprot`
@@ -56,8 +56,6 @@ Tested databases:
 
 
 `ATTENTION:` Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
-
-During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be create and indexed.
 
 `ATTENTION:` database creation is a very sensitive step which relies on external software. If pipeline is interrupted during this step, the databases might be corrupted. If you are not sure about your database, rerun the pipeline with `--overwrite` flag - it will rerun database creation process.
 
