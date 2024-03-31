@@ -43,6 +43,7 @@ mDeepFRI --help
 The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databaes.
 
 You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+
 Tested databases:
 - `afdb_swissprot`
 - `afdb_swissprot_v4`
