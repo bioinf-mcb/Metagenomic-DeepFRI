@@ -17,6 +17,8 @@ MMSEQS_COLUMN_NAMES = [
     "e_value", "bit_score"
 ]
 
+ESM_DATABASES = ["highquality_clust30", "esmatlas", "esmatlas_v2023_02"]
+
 logging.basicConfig(
     level=logging.DEBUG,
     format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
@@ -74,7 +76,7 @@ def extract_fasta_foldcomp(foldcomp_db: str,
         f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
     )
 
-    if database_name == "highquality_clust30":
+    if database_name in ESM_DATABASES:
         # use sed to correct the headers
         os.system(
             fr"sed -i 's/^>\(ESMFOLD V0 PREDICTION FOR \)\(.*\)/>\2/' {output_file}"

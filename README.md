@@ -42,7 +42,16 @@ mDeepFRI --help
 ### 1. Prepare structural database
 The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databaes.
 
-You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). The app was tested with `afdb_swissprot_v4`. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+Tested databases:
+- `afdb_swissprot`
+- `afdb_swissprot_v4`
+- `afdb_rep_v4`
+- `afdb_rep_dark_v4`
+- `afdb_uniprot_v4`
+- `esmatlas`
+- `esmatlas_v2023_02`
+- `highquality_clust30`
 
 `ATTENTION`: Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
 
