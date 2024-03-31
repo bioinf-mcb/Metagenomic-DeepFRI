@@ -53,6 +53,7 @@ Tested databases:
 - `esmatlas_v2023_02`
 - `highquality_clust30`
 
+
 `ATTENTION`: Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
 
 During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be create and indexed.
