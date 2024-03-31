@@ -54,11 +54,11 @@ Tested databases:
 - `highquality_clust30`
 
 
-`ATTENTION`: Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
+`ATTENTION:` Please, do not rename downloaded databases. `FoldComp` has certain inconsistencies in the way FASTA sequences are extracted ([example](https://github.com/steineggerlab/foldcomp/issues/51)), therefore pipeline was tweaked for each database. If database you need does not work, please report in [issues](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/issues) and we will add it as soon as possible. Sorry for the inconvenience.
 
 During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be create and indexed.
 
-`ATTENTION`: database creation is a very sensitive step which relies on external software. If pipeline is interrupted during this step, the databases might be corrupted. If you are not sure about your database, rerun the pipeline with `--overwrite` flag - it will rerun database creation process.
+`ATTENTION:` database creation is a very sensitive step which relies on external software. If pipeline is interrupted during this step, the databases might be corrupted. If you are not sure about your database, rerun the pipeline with `--overwrite` flag - it will rerun database creation process.
 
 ### 2. Download models
 Two versions of models available:
