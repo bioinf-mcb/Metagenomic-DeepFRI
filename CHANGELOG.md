@@ -5,7 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...HEAD
+
+## [1.1.5] - 2024-04-01
+[1.1.5]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.4...v1.1.5
+
+### Added
+- improved logging
+- support for ESM databases (closes #80)
+
+### Changed
+- retrieval of structures from PDB & FoldComp databases
+- optimized contact map alignment via Cython - improved search in large databases (ESM)
+
 
 ## [v1.1.4] - 2024-03-23
 [v1.1.4]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.3...v1.1.4

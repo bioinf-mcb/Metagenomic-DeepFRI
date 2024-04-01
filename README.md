@@ -23,17 +23,18 @@ Metagenomic-DeepFRI addresses such need, building upon efficient libraries. It i
 
 ## 🔧 Installation
 
-1. Clone repo locally
+1. Download environment YAML.
 ```{code-block} bash
-git clone https://github.com/bioinf-mcb/Metagenomic-DeepFRI
-cd Metagenomic-DeepFRI
+wget https://raw.githubusercontent.com/bioinf-mcb/Metagenomic-DeepFRI/main/environment.yml
 ```
-2. Setup conda environment
+2. Setup conda environment and actiate it.
 ```{code-block} bash
 conda env create --name deepfri --file environment.yml
 conda activate deepfri
+# Optional cleanup
+rm environment.yml
 ```
-3. Show help message
+3. Run and view the help message.
 ```{code-block} bash
 mDeepFRI --help
 ```
