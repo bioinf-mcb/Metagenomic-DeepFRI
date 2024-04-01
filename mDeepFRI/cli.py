@@ -64,7 +64,7 @@ def get_models(ctx, output, version):
 @click.option(
     "-d",
     "--db-path",
-    required=True,
+    required=False,
     type=click.Path(exists=True),
     multiple=True,
     help="Path to a structures database compessed with FoldComp.",
