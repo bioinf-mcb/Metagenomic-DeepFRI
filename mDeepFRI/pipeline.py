@@ -339,19 +339,6 @@ def predict_protein_function(
 
     output_buffer.close()
 
-    # sort predictions by protein name and score
-    with open(output_file_name, "r", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter="\t")
-        header = next(reader)
-        # row[0] - protein name
-        # row[2] - DeepFRI score
-        rows = sorted(reader, key=lambda row: (str(row[0]), -float(row[2])))
-
-    with open(output_file_name, "w", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(header)
-        writer.writerows(rows)
-
     if remove_intermediate:
         for db in deepfri_dbs:
             remove_intermediate_files([db.sequence_db, db.mmseqs_db])
