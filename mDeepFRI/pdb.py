@@ -1,10 +1,14 @@
 import gzip
 import logging
 from pathlib import Path
+from typing import Tuple
 
+import numpy as np
+import requests
 from pysam import tabix_compress
 
 import mDeepFRI
+from mDeepFRI.bio_utils import extract_residues_coordinates
 from mDeepFRI.database import Database
 from mDeepFRI.mmseqs import createdb, createindex
 from mDeepFRI.utils import download_file
@@ -18,6 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 def create_pdb_mmseqs():
+    """
+    Downloads PDB100 database and creates an MMSeqs2 database from it.
+
+    Args:
+        None
+
+    Returns:
+        Database: PDB100 database.
+    """
 
     PDB100 = "https://wwwuser.gwdg.de/~compbiol/colabfold/pdb100_230517.fasta.gz"
     # check if pdb exists in a build dir
@@ -57,3 +70,52 @@ def create_pdb_mmseqs():
                       mmseqs_db=pdb100_mmseqs)
 
     return pdb_db
+
+
+def get_pdb_structure(pdb_id: str) -> str:
+    """
+    Get PDB structure from the RCSB PDB database.
+
+    Args:
+        pdb_id (str): PDB ID.
+
+    Returns:
+        str: PDB structure in mmCIF format as a string.
+
+    """
+
+    pdb_http = "https://files.rcsb.org/view/{pdb_id}.cif"
+    pdb_id = pdb_id.lower()
+    url = pdb_http.format(pdb_id=pdb_id)
+    structure = requests.get(url).text
+    return structure
+
+
+def get_pdb_seq_coords(pdb_id_chain: str,
+                       query_name: str) -> Tuple[str, np.ndarray]:
+    """
+    Get a sequence and coordinates of a protein chain from the PDB database.
+
+    Args:
+        pdb_id_chain (str): PDB ID and chain identifier separated by an underscore.
+        query_name (str): Name of the query sequence. Not essential, used for logging.
+
+    Returns:
+        Tuple[str, np.ndarray]: A tuple containing a sequence and coordinates of a protein chain.
+    """
+    pdb_id, chain = pdb_id_chain.split("_")
+    structure = get_pdb_structure(pdb_id)
+
+    try:
+        sequence, coords = extract_residues_coordinates(structure,
+                                                        chain=chain,
+                                                        filetype="mmcif")
+    except KeyError as e:
+        sequence, coords = None, None
+        pdb_id = pdb_id.upper()
+        logger.warning(
+            f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
+            f"non-standard residue {str(e)} present; {query_name} alignment skipped."
+        )
+
+    return sequence, coords

@@ -1,11 +1,10 @@
 import logging
 from io import StringIO
-from typing import Dict, List, Tuple
+from typing import Dict, List, Literal, Tuple
 
 import foldcomp
 import numpy as np
 import pysam
-import requests
 from biotite.sequence import ProteinSequence
 from biotite.structure import get_chains
 from biotite.structure.io.pdb import PDBFile
@@ -35,6 +34,7 @@ class AlignmentResult:
         gapped_sequence (str): Query sequence with gaps.
         gapped_target (str): Target sequence with gaps.
         identity (float): Identity between two sequences.
+        coords (np.ndarray): Coordinates of the C-alpha atoms in structure.
 
     Methods:
         insert_gaps: Inserts gaps into query and target sequences.
@@ -51,6 +51,7 @@ class AlignmentResult:
         self.insert_gaps()
         self.calculate_identity()
         self.db_name = None
+        self.coords = None
 
     def __str__(self):
         return f"AlignmentResult(query_name={self.query_name}, target_name={self.target_name}, " \
@@ -211,8 +212,10 @@ def get_residues_coordinates(structure: np.ndarray, chain: str = "A"):
     return (residues, coords)
 
 
-def extract_residues_coordinates(structure_string: str,
-                                 chain: str = "A") -> Tuple[str, np.ndarray]:
+def extract_residues_coordinates(
+        structure_string: str,
+        chain: str = "A",
+        filetype: Literal["mmcif", "pdb"] = "mmcif") -> Tuple[str, np.ndarray]:
     """
     Extracts residues and coordinates from structural string.
     Automatically processes PDB and mmCIF files.
@@ -224,62 +227,65 @@ def extract_residues_coordinates(structure_string: str,
     Returns:
         Tuple[str, np.ndarray]: Tuple of residues and coordinates.
     """
-    try:
+    if filetype == "mmcif":
         mmcif = PDBxFile.read(StringIO(structure_string))
         structure = get_structure(mmcif, model=1)
-    except (UnboundLocalError, ValueError):
+    elif filetype == "pdb":
         pdb = PDBFile.read(StringIO(structure_string))
         structure = pdb.get_structure()[0]
+    else:
+        raise NotImplementedError(f"Filetype {filetype} not supported.")
 
     residues, coords = get_residues_coordinates(structure, chain=chain)
 
     return (residues, coords)
 
 
-def retrieve_structure_features(idx: str,
-                                database_path: str = "pdb100"
-                                ) -> Tuple[str, np.ndarray]:
+def foldcomp_sniff_suffix(idx: str, database_path: str) -> str:
+    """
+    Sniff suffix for FoldComp database.
+
+    Args:
+        idx (str): Protein ID.
+        database_path (str): Path to FoldComp database.
+
+    Returns:
+        str: Suffix for the database ids.
+    """
+    with foldcomp.open(database_path, ids=[idx]) as db:
+        for _, structure in db:
+            suffix = None
+    if "structure" not in locals():
+        idx = idx + ".pdb"
+        with foldcomp.open(database_path, ids=[idx]) as db:
+            for _, structure in db:
+                suffix = ".pdb"
+
+    return suffix
+
+
+def get_foldcomp_structures(ids: List[str], database_path: str) -> List[str]:
     """
     Retrieves structure either from PDB or supplied FoldComp database.
     Extracts sequence and coordinate infromaton.
 
     Args:
-        idx (str): Index of structure.
+        ids (List[str]): List of protein ids.
         database_path (str): Path to FoldComp database. If empty, the structure will be retrieved from the PDB.
-        max_seq_len (int): Maximum sequence length.
 
     Returns:
-        Tuple[str, np.ndarray]: Tuple of residues and coordinates.
+        List[str]: List of structures.
     """
-    pdb_http = "https://files.rcsb.org/view/{pdb_id}.cif"
+    structures = []
+    with foldcomp.open(database_path, ids=ids) as db:
+        for _, pdb in db:
+            structures.append(pdb)
 
-    if database_path == "pdb100":
-        pdb_id, chain = idx.split("_")
-        pdb_id = pdb_id.lower()
-        url = pdb_http.format(pdb_id=pdb_id)
-        structure = requests.get(url).text
-
-    else:
-        with foldcomp.open(database_path, ids=[idx]) as db:
-            for _, pdb in db:
-                structure = pdb
-
-        # issue with FoldComp inconsistency
-        # https://github.com/steineggerlab/foldcomp/issues/45
-        if "structure" not in locals():
-            idx = idx + ".pdb"
-            with foldcomp.open(database_path, ids=[idx]) as db:
-                for _, pdb in db:
-                    structure = pdb
-
-    residues, coords = extract_residues_coordinates(structure)
-
-    return (residues, coords)
+    return structures
 
 
-def retrieve_align_contact_map(
+def build_align_contact_map(
         alignment: AlignmentResult,
-        database: str = "pdb100",
         threshold: float = 6,
         generated_contacts: int = 2) -> Tuple[AlignmentResult, np.ndarray]:
     """
@@ -294,28 +300,9 @@ def retrieve_align_contact_map(
     Returns:
         Tuple[AlignmentResult, np.ndarray]: Tuple of alignment and contact map.
     """
-
-    if "pdb" in str(database):
-        database = "pdb100"
-
     idx = alignment.target_name.rsplit(".", 1)[0]
-    try:
-        coordinates = retrieve_structure_features(idx,
-                                                  database_path=database)[1]
-
-    # catch error for non-standard aminoacids in database
-    except KeyError as e:
-        coordinates = None
-        pdb_id, chain = idx.upper().split("_")
-
-        logger.warning(
-            f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
-            f"non-standard residue {str(e)} present; {alignment.query_name} alignment skipped."
-        )
-
-    # output of the function might None
+    coordinates = alignment.coords
     if coordinates is not None:
-
         cmap = calculate_contact_map(coordinates,
                                      threshold=threshold,
                                      mode="sparse")
@@ -325,7 +312,7 @@ def retrieve_align_contact_map(
             aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                              alignment.gapped_target, cmap,
                                              generated_contacts)
-        except KeyError:
+        except IndexError:
             pdb_id, chain = idx.upper().split("_")
             logger.warning(
                 f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}] "

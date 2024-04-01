@@ -5,14 +5,17 @@ from functools import partial
 from multiprocessing import Pool
 from typing import List, Tuple
 
+import foldcomp
 import numpy as np
 from tqdm import tqdm
 
 from mDeepFRI import DEEPFRI_MODES
 from mDeepFRI.alignment import run_alignment
-from mDeepFRI.bio_utils import load_fasta_as_dict, retrieve_align_contact_map
+from mDeepFRI.bio_utils import (build_align_contact_map,
+                                extract_residues_coordinates,
+                                foldcomp_sniff_suffix, load_fasta_as_dict)
 from mDeepFRI.database import build_database
-from mDeepFRI.pdb import create_pdb_mmseqs
+from mDeepFRI.pdb import create_pdb_mmseqs, get_pdb_seq_coords
 from mDeepFRI.predict import Predictor
 from mDeepFRI.utils import load_deepfri_config, remove_intermediate_files
 
@@ -157,8 +160,36 @@ def predict_protein_function(
         # for this cases we replace closest experimental structure with
         # closest predicted structure if available
         # if no alignments were found - report
-        partial_align = partial(retrieve_align_contact_map,
-                                database=db.foldcomp_db,
+
+        query_ids = [aln.query_name for aln in new_alignments.values()]
+        target_ids = [
+            aln.target_name.rsplit(".", 1)[0]
+            for aln in new_alignments.values()
+        ]
+
+        # extract structural information
+        # in form of C-alpha coordinates
+        if "pdb100" in db.name:
+            with Pool(threads) as p:
+                iterable = zip(target_ids, query_ids)
+                _, coords = zip(*p.starmap(get_pdb_seq_coords, iterable))
+
+        else:
+            suffix = foldcomp_sniff_suffix(target_ids[0], db.foldcomp_db)
+            if suffix:
+                target_ids = [f"{t}{suffix}" for t in target_ids]
+
+            # extracting coordinates from FoldComp
+            with foldcomp.open(db.foldcomp_db, ids=target_ids) as struct_db:
+                coords = [
+                    extract_residues_coordinates(struct, filetype="pdb")[1]
+                    for _, struct in struct_db
+                ]
+
+        for aln, coord in zip(new_alignments.values(), coords):
+            aln.coords = coord
+
+        partial_align = partial(build_align_contact_map,
                                 threshold=angstrom_contact_threshold,
                                 generated_contacts=generate_contacts)
 
@@ -226,8 +257,8 @@ def predict_protein_function(
         gcn_prots = len(aligned_cmaps)
         if gcn_prots > 0:
             net_type = "gcn"
-            logger.info("Processing mode: %s; %i/%i", mode, i + 1,
-                        len(deepfri_processing_modes))
+            logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode],
+                        i + 1, len(deepfri_processing_modes))
             # GCN for queries with aligned contact map
             gcn_path = deepfri_models_config[net_type][mode]
 
