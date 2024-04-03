@@ -4,14 +4,14 @@
 ## 🔍 Overview
 Proteins perform most of the work of living cells. Amino acid sequence and structural features of proteins determine a wide range of functions: from binding specificity and conferring mechanical stability, to catalysis of biochemical reactions, transport, and signal transduction.
 DeepFRI is a neural network designed to predict protein function within the framework of the Gene Ontology (GO). The exponential growth in the number of available protein sequences, driven by advancements in low-cost sequencing technologies and computational methods (e.g. gene prediction), has resulted in a pressing need for efficient software to facilitate the annotation of protein databases.
-Metagenomic-DeepFRI addresses such need, building upon efficient libraries. It incorporates novel databases of predicted structures (AlphaFold, ESMFold, MIP, etc.) and improves runtimes of DeepFRI by [2-12 times](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/weight_convert/onnx_vs_tf2.png)!
+Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It incorporates novel databases of predicted structures (AlphaFold, ESMFold, MIP, etc.) and improves runtimes of DeepFRI by [2-12 times](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/weight_convert/onnx_vs_tf2.png)!
 
 ### 📋 Pipeline stages
 
-1. Search proteins similar to query in PDB and supplied `FoldComp` databases with `MMSeqs2`.
+1. Search proteins similar to query in PDB and supply `FoldComp` databases with `MMSeqs2`.
 2. Find the best alignment among `MMSeqs2` hits using `PyOpal`.
 3. Align target protein contact map to query protein with unknown structure.
-4. Run `DeepFRI` with structure if it was found in database, otherwise run `DeepFRI` with sequence only.
+4. Run `DeepFRI` with the structure if found in the database, otherwise run `DeepFRI` with sequence only.
 
 ### 🛠️ Built With
 
@@ -27,7 +27,7 @@ Metagenomic-DeepFRI addresses such need, building upon efficient libraries. It i
 ```{code-block} bash
 wget https://raw.githubusercontent.com/bioinf-mcb/Metagenomic-DeepFRI/main/environment.yml
 ```
-2. Setup conda environment and actiate it.
+2. Setup conda environment and activate it.
 ```{code-block} bash
 conda env create --name deepfri --file environment.yml
 conda activate deepfri
@@ -42,9 +42,9 @@ mDeepFRI --help
 ## 💡 Usage
 ### 1. Prepare structural database
 #### 1.1 Existing `FoldComp` databases
-The PDB database will be automatically downloaded and installed during first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databaes.
+The PDB database will be automatically downloaded and installed during the first run of `mDeepFRI`. The PDB suffers from formatting inconsistencies, therefore during PDB alignment around 10% will fail and will be reported via `WARNING`. We suggest coupling PDB search with predicted databases, as it massively improves the structural coverage of the protein universe. A good protein structure allows DeepFRI to annotate the function in more detail. However, the sequence branch of the model has the largest weight, thus even if the predicted structure is erroneous, it will have a minor effect on the prediction. The details can be found in [the original manuscript, fig. 2A](https://www.nature.com/articles/s41467-021-23303-9/figures/2).
 
-You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be create and indexed. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
+You can download additional databases from [website](https://foldcomp.steineggerlab.workers.dev/). During a first run, FASTA sequences will be extracted from `FoldComp` database and `MMseqs2` database will be created and indexed. You can use different databases, but be mindful that computation time might increase exponentially with the size of the database.
 
 Tested databases:
 - `afdb_swissprot`
