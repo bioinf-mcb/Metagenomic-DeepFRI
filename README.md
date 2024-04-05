@@ -12,6 +12,7 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 2. Find the best alignment among `MMSeqs2` hits using `PyOpal`.
 3. Align target protein contact map to query protein with unknown structure.
 4. Run `DeepFRI` with the structure if found in the database, otherwise run `DeepFRI` with sequence only.
+
 ![image.png](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/docs/source/_static/images/mdeepfri-design.drawio.png)
 
 ### 🛠️ Built With
