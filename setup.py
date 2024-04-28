@@ -3,7 +3,6 @@ import os
 import re
 import shutil
 import tarfile
-from distutils.util import convert_path
 from pathlib import Path
 
 import numpy as np
@@ -60,11 +59,6 @@ FOLDCOMP_BINARIES = {
     "macos": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz",
     "windows": "https://mmseqs.com/foldcomp/foldcomp-windows-x64.zip"
 }
-
-main_ns = {}
-ver_path = convert_path('mDeepFRI/__init__.py')
-with open(ver_path) as ver_file:
-    exec(ver_file.read(), main_ns)
 
 
 def read(fname):
@@ -171,38 +165,11 @@ extras = {}
 extras["dev"] = ["pre-commit"]
 
 setup(
-    name="mDeepFRI",
-    version=main_ns['__version__'],
-    description=
-    "Pipeline for searching and aligning contact maps for proteins, then running DeepFri's GCN.",
-    long_description=read("README.md"),
-    long_description_content_type='text/markdown',
-    keywords="protein function metagenomics deep neural network",
-    author=" Valentyn Bezshapkin, Piotr Kucharski",
-    author_email=
-    "valentyn.bezshapkin@micro.biol.ethz.ch, soliareofastorauj@gmail.com",
-    url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
-    download_url="https://github.com/bioinf-mcb/Metagenomic-DeepFRI",
     include_package_data=True,
-    entry_points={
-        "console_scripts": [
-            "mDeepFRI = mDeepFRI.cli:main",
-        ],
-    },
     ext_modules=EXTENSIONS,
     include_dirs=[np.get_include()],
     extras_require=extras,
     install_requires=install_requires,
     cmdclass={'build_ext': build_ext},
-    license="BSD-3-Clause",
     packages=find_packages(),
-    classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering :: Bio-Informatics',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Operating System :: OS Independent',
-    ],
 )
