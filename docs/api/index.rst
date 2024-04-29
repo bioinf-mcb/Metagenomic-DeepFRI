@@ -13,7 +13,7 @@ API Reference
 .. only:: html
 
     MMSeqs
-    -------
+    ------
 
     .. autosummary::
         :nosignatures:
