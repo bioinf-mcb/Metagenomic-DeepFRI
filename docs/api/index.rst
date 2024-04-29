@@ -10,10 +10,10 @@ API Reference
 
 .. only:: html
 
-    QueryFile
+    MMSeqs
     ---------
 
     .. autosummary::
         :nosignatures:
 
-        mDeepFRI.mmseqs.QueryFile
+        pyhmmer.mmseqs.QueryFile

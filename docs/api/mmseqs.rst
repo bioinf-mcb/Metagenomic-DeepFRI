@@ -1,9 +1,9 @@
 QueryFile
 ==========
 
-.. currentmodule:: mDeepFRI
+.. currentmodule:: mDeepFRI.mmseqs
 
 
-.. autoclass:: mDeepFRI.QueryFile
+.. autoclass:: mDeepFRI.mmseqs.QueryFile
    :special-members: __init__
    :members:
