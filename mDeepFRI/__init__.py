@@ -1,7 +1,7 @@
 import os
 
 __version__ = "1.1.5"
-__author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch"
+__author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
 __licencse__ = "BSD-3-Clause"
 
 repo_url = "https://huggingface.co/valentynbez/mDeepFRI/resolve/main/"
