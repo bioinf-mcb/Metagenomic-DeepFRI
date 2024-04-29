@@ -2,7 +2,7 @@
 setuptools >=46.4
 cython ~=3.0
 pysam ~=0.21
-pyopal ~-=0.5
+pyopal ~=0.5
 numpy ~=1.19
 tqdm
 foldcomp
