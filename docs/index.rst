@@ -51,11 +51,11 @@ Hey, want to contribute to the project and become a co-author?
 
 .. list-table::
 
-    * - .. image :: _static/images/mcb_logo_en_v2.jpg
+    * - .. image :: _images/mcb_logo_en_v2.jpg
           :align: center
-      - .. image :: _static/images/flatiron_logo.png
+      - .. image :: _images/flatiron_logo.png
           :align: center
-    * - .. image :: _static/images/full_col2x-100.jpg
+    * - .. image :: _images/full_col2x-100.jpg
           :align: center
           :width: 70 %
       -
