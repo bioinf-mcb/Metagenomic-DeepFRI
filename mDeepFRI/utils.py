@@ -11,8 +11,6 @@ from typing import Iterable, Literal
 
 import requests
 
-from mDeepFRI import cnn_model_links, gcn_model_links
-
 
 def run_command(command, timeout=None):
     """
@@ -82,6 +80,7 @@ def download_model_weights(output_path: str,
     Returns:
         None
     """
+    from mDeepFRI import cnn_model_links, gcn_model_links
 
     output_path = Path(output_path)
     try:
