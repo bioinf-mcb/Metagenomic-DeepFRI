@@ -14,8 +14,6 @@ import re
 import semantic_version
 import sphinx_bootstrap_theme
 
-import mDeepFRI
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -25,6 +23,7 @@ docssrc_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(docssrc_dir)
 
 # -- Project information -----------------------------------------------------
+import mDeepFRI  # noqa: E402
 
 project = mDeepFRI.__name__
 author = re.match('(.*) <.*>', mDeepFRI.__author__).group(1)
