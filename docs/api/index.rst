@@ -8,12 +8,14 @@ API Reference
 
 .. currentmodule:: mDeepFRI
 
+.. automodule:: mDeepFRI
+
 .. only:: html
 
     MMSeqs
-    ---------
+    -------
 
     .. autosummary::
         :nosignatures:
 
-        pyhmmer.mmseqs.QueryFile
+        mDeepFRI.mmseqs.QueryFile
