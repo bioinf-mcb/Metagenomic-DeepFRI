@@ -12,6 +12,7 @@ import os
 import re
 
 import semantic_version
+import sphinx_bootstrap_theme
 
 import mDeepFRI
 
@@ -58,9 +59,20 @@ def setup(app):
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser', 'sphinxawesome_theme', 'sphinx.ext.intersphinx',
-    'sphinx.ext.duration', 'sphinx.ext.doctest', 'sphinx.ext.autodoc',
-    'sphinxcontrib.bibtex'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
+    # "sphinx.ext.imgconverter",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.todo",
+    "sphinx.ext.extlinks",
+    "sphinxcontrib.jquery",
+    "sphinx_bootstrap_theme",
+    "nbsphinx",
+    "recommonmark",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 bibtex_bibfiles = ['_static/references.bib']
@@ -79,6 +91,9 @@ exclude_patterns = ['build']
 # a list of builtin themes.
 # https://bootswatch.com/
 html_theme = "bootstrap"
+
+# Add any paths that contain custom themes here, relative to this directory.
+html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 html_theme_options = {
     # Bootswatch (http://bootswatch.com/) theme.
