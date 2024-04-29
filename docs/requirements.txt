@@ -1,6 +1,14 @@
 # build dependencies
 setuptools >=46.4
 cython ~=3.0
+pysam ~=0.21
+pyopal ~-=0.5
+numpy ~=1.19
+tqdm
+foldcomp
+biotite
+
+
 
 # sphinx documentation dependencies
 semantic_version ~=2.8
