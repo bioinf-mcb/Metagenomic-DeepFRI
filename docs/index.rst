@@ -13,41 +13,13 @@ Hey, want to contribute to the project and become a co-author?
 
 **Contribute to our code** and help us improve it! Or **present us your use-case**, show benefits and pitfalls (additional points for benchmarking against other software).
 
-**Intereseted?** Refer to :doc:`contributions section <contributing>` for more information.
-
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Getting started
-
-   installation.md
-   deepfri
-
+Library
+-------
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Using Metagenomic-DeepFRI
+   :maxdepth: 2
 
-   usage.md
-   output.md
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Use cases
-
-   examples/index.rst
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: About
-
-   contributing
-
-   references
+   API Reference <api/index>
 
 .. list-table::
 
