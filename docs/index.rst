@@ -13,6 +13,7 @@ Setup
 1. Download environment YAML.
 
 .. code:: console
+
     wget https://raw.githubusercontent.com/bioinf-mcb/Metagenomic-DeepFRI/main/environment.yml
 
 2. Setup conda environment and activate it.
