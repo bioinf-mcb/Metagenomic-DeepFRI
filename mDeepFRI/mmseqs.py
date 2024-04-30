@@ -51,28 +51,6 @@ def _createindex(db_path: str, threads: int = 1):
             f"mmseqs createindex {db_path} {tmp_path} --threads {threads}")
 
 
-def create_target_database(fasta_path: str,
-                           mmseqs_db_path: str,
-                           index: bool = True,
-                           threads: int = 1) -> None:
-    """
-    Extracts sequences from compressed FoldComp database.
-
-    Args:
-        fasta_path (str): Path to FoldComp database.
-        mmseqs_db_path (str): Path to new MMSeqs database.
-        index (bool): Create index for MMSeqs database.
-        threads (int): Number of threads to use.
-
-
-    Returns:
-        None
-    """
-    _createdb(fasta_path, mmseqs_db_path)
-    if index:
-        _createindex(mmseqs_db_path, threads)
-
-
 def _search(query_db: str,
             target_db: str,
             result_db: str,
@@ -375,7 +353,7 @@ class QueryFile:
                eval: float = 10e-5,
                sensitivity: Annotated[float,
                                       ValueRange(min=1.0, max=7.5)] = 5.7,
-               index_target: bool = True,
+               index_target: bool = False,
                threads: int = 1):
         """
         Queries sequences against MMSeqs2 database. The search results are stored in a tabular format.
@@ -414,7 +392,7 @@ class QueryFile:
 
             # create query db
             input_db_path = Path(tmp_path) / "query.mmseqsDB"
-            _createdb(fasta_path, input_db_path, index=False)
+            _createdb(fasta_path, input_db_path)
 
             # create target db
             with open(database_path, "r") as f:
@@ -422,7 +400,10 @@ class QueryFile:
 
             if first_line.startswith(">"):
                 target_db_path = Path(database_path).with_suffix(".mmseqsDB")
-                _createdb(database_path, target_db_path, index=index_target)
+                _createdb(database_path, target_db_path)
+                if index_target:
+                    _createindex(target_db_path, threads)
+
             else:
                 target_db_path = database_path
 
@@ -504,46 +485,6 @@ def validate_mmseqs_database(database: str):
 
     return is_valid
 
-
-# def run_mmseqs_search(query_file: str,
-#                       target_db: str,
-#                       output_path: str,
-#                       mmseqs_max_evalue: float = 10e-5,
-#                       threads: int = 1) -> Path:
-#     """Creates a database from query sequences and runs mmseqs2 search against database.
-
-#     Args:
-#         query_file (str): Path to query FASTA file.
-#         target_db (str): Path to target MMSeqs2 database.
-#         output_path (str): Path to output folder.
-#         mmseqs_min_evalue (float): Minimum e-value for MMSeqs2 search.
-#         threads (int): Number of threads to use.
-
-#     Returns:
-#         output_file (pathlib.Path): Path to MMSeqs2 search results.
-#     """
-#     query_file = Path(query_file)
-#     target_db = Path(target_db)
-#     output_path = Path(output_path)
-
-#     output_path.mkdir(parents=True, exist_ok=True)
-#     output_file = output_path / Path(target_db.stem + ".search_results.tsv")
-#     query_db = str(output_path / 'query.mmseqsDB')
-#     createdb(query_file, query_db)
-
-#     with tempfile.TemporaryDirectory() as tmp_path:
-
-#         result_db = str(Path(tmp_path) / 'search_resultDB')
-#         search(query_db,
-#                target_db,
-#                result_db,
-#                mmseqs_max_evalue,
-#                threads=threads)
-
-#         # Convert results to tabular format
-#         convertalis(query_db, target_db, result_db, output_file)
-
-#     return output_file
 
 # def filter_mmseqs_results(results_file: str,
 #                           min_bit_score: float = None,
