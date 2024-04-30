@@ -51,21 +51,26 @@ def _createindex(db_path: str, threads: int = 1):
             f"mmseqs createindex {db_path} {tmp_path} --threads {threads}")
 
 
-def create_target_database(foldcomp_fasta_path: str,
+def create_target_database(fasta_path: str,
                            mmseqs_db_path: str,
+                           index: bool = True,
                            threads: int = 1) -> None:
     """
     Extracts sequences from compressed FoldComp database.
 
     Args:
-        foldcomp_db_path (str): Path to FoldComp database.
-        new_db_path (str): Path to new MMSeqs database.
+        fasta_path (str): Path to FoldComp database.
+        mmseqs_db_path (str): Path to new MMSeqs database.
+        index (bool): Create index for MMSeqs database.
+        threads (int): Number of threads to use.
+
 
     Returns:
         None
     """
-    _createdb(foldcomp_fasta_path, mmseqs_db_path)
-    _createindex(mmseqs_db_path, threads)
+    _createdb(fasta_path, mmseqs_db_path)
+    if index:
+        _createindex(mmseqs_db_path, threads)
 
 
 def _search(query_db: str,
@@ -222,12 +227,6 @@ class QueryFile:
         sequences (Dict[str, str]): Dictionary with sequence IDs as keys and sequences as values.
         too_long (List[str]): List of sequence IDs that were too long.
         too_short (List[str]): List of sequence IDs that were too short.
-
-    Methods:
-        load_sequences: Load sequences from FASTA file.
-        filter_sequences: Filter sequences by length.
-        search: Search sequences in MMSeqs2 database.
-
     """
     def __init__(self, filepath: str) -> None:
         self.filepath: str = filepath
@@ -380,6 +379,7 @@ class QueryFile:
                eval: float = 10e-5,
                sensitivity: Annotated[float,
                                       ValueRange(min=1.0, max=7.5)] = 5.7,
+               index_target: bool = True,
                threads: int = 1):
         """
         Queries sequences against MMSeqs2 database. The search results are stored in a tabular format.
@@ -388,6 +388,7 @@ class QueryFile:
             database_path (str): Path to MMSeqs2 database or database FASTA.
             eval (float): Maximum e-value for MMSeqs2 search.
             sensitivity (float): Sensitivity value for MMSeqs2 search.
+            index_target (bool): Create index for target database. Advised for repeated searches.
             threads (int): Number of threads to use.
 
         Returns:
@@ -415,19 +416,32 @@ class QueryFile:
             else:
                 fasta_path = self.filepath
 
+            # create query db
             input_db_path = Path(tmp_path) / "query.mmseqsDB"
-            _createdb(fasta_path, input_db_path)
+            _createdb(fasta_path, input_db_path, index=False)
+
+            # create target db
+            with open(database_path, "r") as f:
+                first_line = f.readline()
+
+            if first_line.startswith(">"):
+                target_db_path = Path(database_path).with_suffix(".mmseqsDB")
+                _createdb(database_path, target_db_path, index=index_target)
+            else:
+                target_db_path = database_path
 
             result_db = Path(tmp_path) / "search_resultDB"
-            _search(input_db_path, database_path, result_db, eval, sensitivity,
-                    threads)
+            _search(input_db_path, target_db_path, result_db, eval,
+                    sensitivity, threads)
 
             output_file = Path(tmp_path) / "search_results.tsv"
-            _convertalis(input_db_path, database_path, result_db, output_file)
+            _convertalis(input_db_path, target_db_path, result_db, output_file)
 
-            result = MMSeqsSearchResult.from_filepath(output_file,
-                                                      query_fasta=fasta_path,
-                                                      database=database_path)
+            result = MMSeqsSearchResult.from_filepath(
+                output_file,
+                query_fasta=fasta_path,
+                database=target_db_path,
+            )
 
         return result
 

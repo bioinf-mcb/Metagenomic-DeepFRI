@@ -19,3 +19,4 @@ API Reference
         :nosignatures:
 
         mDeepFRI.mmseqs.QueryFile
+        mDeepFRI.mmseqs.MMSeqsSearchResult
