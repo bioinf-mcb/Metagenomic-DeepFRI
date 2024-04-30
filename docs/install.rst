@@ -4,7 +4,7 @@ Installation
 .. hint::
 
     Windows OS is not supported. Consider using a Python
-    inside `Windows Subsystem for Linux <https://learn.microsoft.com/en-us/windows/wsl/install>`_
+    inside `Windows Subsystem for Linux <https://learn.microsoft.com/en-us/windows/wsl/install>`_.
 
 1. Download environment YAML.
 
