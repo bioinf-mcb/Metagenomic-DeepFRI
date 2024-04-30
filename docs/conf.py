@@ -28,7 +28,7 @@ import mDeepFRI  # noqa: E402
 project = mDeepFRI.__name__
 author = re.match('(.*) <.*>', mDeepFRI.__author__).group(1)
 year = datetime.date.today().year
-copyright = '{}, {}'.format("2020" if year == 2020 else "2020-{}".format(year),
+copyright = '{}, {}'.format("2022" if year == 2022 else "2020-{}".format(year),
                             author)
 
 # extract the semantic version
