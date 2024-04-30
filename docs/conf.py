@@ -117,7 +117,7 @@ html_theme_options = {
     # A list of tuples containing pages or urls to link to.
     "navbar_links":
     [("GitHub", cfgparser.get("metadata", "url").strip(), True)] +
-    [(k, v, True) for k, v in project_urls.items() if k in {"PyPI"}],
+    [(k, v, True) for k, v in project_urls.items() if k in {"Zenodo", "PyPI"}],
     "admonition_use_panel":
     True,
 }

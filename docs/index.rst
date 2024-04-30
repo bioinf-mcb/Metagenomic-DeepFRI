@@ -7,11 +7,20 @@ Metagenomic-DeepFRI is a deep learning-based software for functional annotation 
 It combines both protein sequence and structure information for function prediction. It is a joint project of the `Systems Biology Research Group, Center for Computational Biology, Flatiron Institute, New York, USA <https://www.simonsfoundation.org/flatiron/center-for-computational-biology/>`_
 and `Structural and Functional Genomics Lab, Małopolska Center of Biotechnology UJ, Krakow, Poland <https://www.tomaszlab.org>`_.
 
+Setup
+-----
 
-Hey, want to contribute to the project and become a co-author?
-**************************************************************
+1. Download environment YAML.
+.. code:: console
+    wget https://raw.githubusercontent.com/bioinf-mcb/Metagenomic-DeepFRI/main/environment.yml
 
-**Contribute to our code** and help us improve it! Or **present us your use-case**, show benefits and pitfalls (additional points for benchmarking against other software).
+2. Setup conda environment and activate it.
+.. code:: console
+
+    conda env create --name deepfri --file environment.yml
+    conda activate deepfri
+    # Optional cleanup
+    rm environment.yml
 
 Library
 -------
@@ -19,7 +28,7 @@ Library
 .. toctree::
    :maxdepth: 2
 
-    Installation <instal>
+    Installation <install>
     API Reference <api/index>
     Examples <examples/index>
 
