@@ -124,10 +124,6 @@ class MMSeqsSearchResult(np.recarray):
         database (str): Path to MMSeqs2 database.
         columns (np.array): Array with column names.
 
-    Methods:
-        save: Save search results to TSV file.
-        from_filepath: Load search results from TSV file.
-
     Example:
 
             >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
