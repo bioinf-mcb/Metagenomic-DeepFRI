@@ -5,7 +5,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Dict, List, Literal
+from typing import Annotated, Dict, Iterable, List, Literal
 
 import numpy as np
 from pysam import FastaFile, FastxFile, tabix_compress
@@ -148,12 +148,14 @@ class MMSeqsSearchResult(np.recarray):
     def columns(self):
         return np.array(self.data.dtype.names)
 
-    def save(self, filepath):
+    def save(self, filepath, filetype: Literal["tsv", "npz"] = "tsv"):
         """
-        Save search results to TSV file.
+        Save search results to TSV or NumPy compressed file. NPZ does not
+        preserve information about query file and database.
 
         Args:
             filepath (str): Path to output file.
+            filetype (str): File type to save. Options: "tsv" or "npz".
 
         Returns:
             None
@@ -165,18 +167,42 @@ class MMSeqsSearchResult(np.recarray):
             >>> result.save("path/to/file.tsv")
         """
 
-        with open(filepath, "w", newline="") as f:
-            # write comments
-            f.write(f"#Query:{self.query_fasta}\n")
-            f.write(f"#Database:{self.database}\n")
-            # write tsv
-            writer = csv.writer(f, delimiter="\t")
-            writer.writerow(self.dtype.names)
-            for row in self:
-                writer.writerow(row)
+        if filetype == "tsv":
+            with open(filepath, "w", newline="") as f:
+                # write comments
+                f.write(f"#Query:{self.query_fasta}\n")
+                f.write(f"#Database:{self.database}\n")
+                # write tsv
+                writer = csv.writer(f, delimiter="\t")
+                writer.writerow(self.dtype.names)
+                for row in self:
+                    writer.writerow(row)
+
+        elif filetype == "npz":
+            np.savez_compressed(filepath, self.data)
+
+        else:
+            raise ValueError("File type should be 'tsv' or 'npz'.")
 
     @classmethod
     def from_filepath(cls, filepath, query_fasta=None, database=None):
+        """
+        Load search results from TSV file.
+
+        Args:
+            filepath (str): Path to TSV file from convertalis.
+            query_fasta (str): Path to query FASTA file (optional).
+            database (str): Path to MMSeqs2 database (optional).
+
+        Returns:
+            MMSeqsSearchResult: MMSeqs2 search results.
+
+        Example:
+
+                >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
+                >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+        """
+
         data = np.recfromcsv(filepath,
                              delimiter="\t",
                              encoding="utf-8",
@@ -200,17 +226,10 @@ class QueryFile:
     Methods:
         load_sequences: Load sequences from FASTA file.
         filter_sequences: Filter sequences by length.
-        search: Search sequences in MMSeqs2.
+        search: Search sequences in MMSeqs2 database.
 
-    Example:
-
-        >>> from mDeepFRI.mmseqs import QueryFile
-        >>> query_file = QueryFile("path/to/file.fasta")
-        >>> query_file.load_sequences()
-        >>> query_file.filter_sequences(min_length=50, max_length=200)
-        >>> query_file.search("path/to/database", max_eval=10e-5)
     """
-    def __init__(self, filepath) -> None:
+    def __init__(self, filepath: str) -> None:
         self.filepath: str = filepath
         self.sequences: Dict[str, str] = {}
         self.too_long: List[str] = []
@@ -222,13 +241,13 @@ class QueryFile:
     def __str__(self) -> str:
         return f"QueryFile(filepath={self.filepath})"
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         self.sequences[key] = value
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> None:
         return self.sequences[key]
 
-    def load_sequences(self):
+    def load_sequences(self) -> None:
         """
         Load sequences from FASTA file. Sequences are stored in a dictionary with sequence
         IDs as keys and sequences as values.
@@ -250,7 +269,7 @@ class QueryFile:
             for entry in f:
                 self.sequences[entry.name] = entry.sequence
 
-    def load_ids(self, ids: List[str]) -> None:
+    def load_ids(self, ids: Iterable[str]) -> None:
         """
         Load sequences by ID from FASTA file. The file is indexed with `samtools faidx`
         to speed up the process. Sequences are stored in a dictionary with
@@ -358,7 +377,7 @@ class QueryFile:
 
     def search(self,
                database_path: str,
-               max_eval: float = 10e-5,
+               eval: float = 10e-5,
                sensitivity: Annotated[float,
                                       ValueRange(min=1.0, max=7.5)] = 5.7,
                threads: int = 1):
@@ -367,9 +386,20 @@ class QueryFile:
 
         Args:
             database_path (str): Path to MMSeqs2 database or database FASTA.
-            max_eval (float): Maximum e-value for MMSeqs2 search.
+            eval (float): Maximum e-value for MMSeqs2 search.
             sensitivity (float): Sensitivity value for MMSeqs2 search.
             threads (int): Number of threads to use.
+
+        Returns:
+            result (MMSeqsSearchResult): MMSeqs2 search results.
+
+        Example:
+
+                >>> from mDeepFRI.mmseqs import QueryFile
+                >>> query_file = QueryFile("path/to/file.fasta")
+                >>> query_file.load_sequences()
+                >>> query_file.filter_sequences(min_length=50, max_length=200)
+                >>> result = query_file.search("path/to/database")
         """
         # check sensitivity values
         if not 1.0 <= sensitivity <= 7.5:
@@ -389,8 +419,8 @@ class QueryFile:
             _createdb(fasta_path, input_db_path)
 
             result_db = Path(tmp_path) / "search_resultDB"
-            _search(input_db_path, database_path, result_db, max_eval,
-                    sensitivity, threads)
+            _search(input_db_path, database_path, result_db, eval, sensitivity,
+                    threads)
 
             output_file = Path(tmp_path) / "search_results.tsv"
             _convertalis(input_db_path, database_path, result_db, output_file)

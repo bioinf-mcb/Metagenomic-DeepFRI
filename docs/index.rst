@@ -19,7 +19,9 @@ Library
 .. toctree::
    :maxdepth: 2
 
-   API Reference <api/index>
+    Installation <instal>
+    API Reference <api/index>
+    Examples <examples/index>
 
 .. list-table::
 
