@@ -142,7 +142,7 @@ PACKAGES = [SRC_DIR]
 
 install_requires = ["cython", "numpy", "requests"]
 setup_requires = ["cython", "requests", "numpy"]
-extra_compile_args = ["-std=c++14", "-O3"]
+extra_compile_args = ["-O3"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
