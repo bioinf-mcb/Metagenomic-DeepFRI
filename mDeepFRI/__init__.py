@@ -1,6 +1,6 @@
 import os
 
-__version__ = "1.1.5"
+__version__ = "1.1.6"
 __author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
 __licencse__ = "BSD-3-Clause"
 
