@@ -1,9 +1,10 @@
 import csv
 import gzip
-import logging
 import os
 import tempfile
 from dataclasses import dataclass
+from functools import partial
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import Annotated, Dict, Iterable, List, Literal
 
@@ -12,15 +13,6 @@ from pysam import FastaFile, FastxFile, tabix_compress
 
 import mDeepFRI
 from mDeepFRI.utils import run_command
-
-ESM_DATABASES = ["highquality_clust30", "esmatlas", "esmatlas_v2023_02"]
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,8 +23,8 @@ class ValueRange:
 
 def _createdb(sequences_file, db_path):
     """
-    Converts FASTA file to a DB format needed for MMseqs2.
-    This should generate five files,
+    Converts FASTA file to a DB format needed for MMseqs2 search/
+    This function should generate five files,
     e.g. queryDB, queryDB_h and its corresponding index file queryDB.index,
     queryDB_h.index and queryDB.lookup from the FASTA QUERY.fasta input sequences.
 
@@ -42,6 +34,7 @@ def _createdb(sequences_file, db_path):
     Returns:
         None
     """
+
     run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")
 
 
@@ -112,19 +105,19 @@ class MMSeqsSearchResult(np.recarray):
             >>> # save results
             >>> result.save("path/to/file.tsv")
     """
-    def __init__(self, data, query_fasta=None, database=None):
-        self.data = data
-        self.query_fasta = Path(query_fasta).resolve()
-        self.database = Path(database).resolve()
+    def __init__(self, result_arr, query_fasta=None, database=None):
+        self.result_arr = result_arr
+        self.query_fasta = Path(query_fasta).resolve() if query_fasta else None
+        self.database = Path(database).resolve() if database else None
 
-    def __new__(cls, data, query_fasta=None, database=None):
-        obj = np.asarray(data).view(cls)
+    def __new__(cls, result_arr, query_fasta=None, database=None):
+        obj = np.asarray(result_arr).view(cls)
         obj.query_fasta = query_fasta
         obj.database = database
         return obj
 
     @property
-    def columns(self):
+    def columns(self) -> np.ndarray:
         return np.array(self.data.dtype.names)
 
     def save(self, filepath, filetype: Literal["tsv", "npz"] = "tsv"):
@@ -158,13 +151,67 @@ class MMSeqsSearchResult(np.recarray):
                     writer.writerow(row)
 
         elif filetype == "npz":
-            np.savez_compressed(filepath, self.data)
+            np.savez_compressed(filepath, self.result_arr)
 
         else:
             raise ValueError("File type should be 'tsv' or 'npz'.")
 
+    def apply_filters(self,
+                      min_cov: float = 0.0,
+                      min_ident: float = 0.0,
+                      min_bits: float = 0) -> None:
+        """
+        Filter search results optionally by coverage, identity and bit score.
+
+        Args:
+            min_cov (float): Minimum coverage of query and target sequences.
+            min_ident (float): Minimum identity of query and target sequences.
+            min_bits (float): Minimum bit score.
+
+        Returns:
+            None
+        """
+
+        self.result_arr = self.result_arr[(self.result_arr["qcov"] >= min_cov)
+                                          &
+                                          (self.result_arr["tcov"] >= min_cov)]
+        self.result_arr = self.result_arr[
+            self.result_arr["fident"] >= min_ident]
+        self.result_arr = self.result_arr[self.result_arr["bits"] >= min_bits]
+
+    def select_best_matches(self,
+                            k: int = 5,
+                            threads: int = 1) -> "MMSeqsSearchResult":
+        """
+        Selects k best matches for each query sequence based on bit score and identity.
+
+        Args:
+            k (int): Number of best matches to select.
+            threads (int): Number of threads to use.
+
+        Returns:
+            MMSeqsSearchResult: MMSeqs2 search results with best matches.
+        """
+        def select_top_k(query, db, k=30):
+            return db[db["query"] == query][:k]
+
+        # sort by bit score
+        self.result_arr.sort(order=["query", "bits", "fident"],
+                             kind="quicksort")
+        select_top = partial(select_top_k, db=self.result_arr[::-1], k=k)
+        # select k best hits
+        top_k = []
+        with ThreadPool(threads) as p:
+            top_k = p.map(select_top, np.unique(self.result_arr["query"]))
+
+        return MMSeqsSearchResult(np.concatenate(top_k), self.query_fasta,
+                                  self.database)
+
     @classmethod
-    def from_filepath(cls, filepath, query_fasta=None, database=None):
+    def from_filepath(cls,
+                      filepath,
+                      query_fasta=None,
+                      database=None) -> "MMSeqsSearchResult":
         """
         Load search results from TSV file.
 
@@ -182,11 +229,11 @@ class MMSeqsSearchResult(np.recarray):
                 >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
         """
 
-        data = np.recfromcsv(filepath,
-                             delimiter="\t",
-                             encoding="utf-8",
-                             names=True)
-        return cls(data, query_fasta, database)
+        result_arr = np.recfromcsv(filepath,
+                                   delimiter="\t",
+                                   encoding="utf-8",
+                                   names=True)
+        return cls(result_arr, query_fasta, database)
 
 
 class QueryFile:
@@ -220,29 +267,7 @@ class QueryFile:
     def __getitem__(self, key) -> None:
         return self.sequences[key]
 
-    def load_sequences(self) -> None:
-        """
-        Load sequences from FASTA file. Sequences are stored in a dictionary with sequence
-        IDs as keys and sequences as values.
-
-        Note:
-            This method should be called only if maniuplating sequences directly is needed.
-
-        Returns:
-            None
-
-        Example:
-
-            >>> from mDeepFRI.mmseqs import QueryFile
-            >>> query_file = QueryFile("path/to/file.fasta")
-            >>> query_file.load_sequences()
-        """
-
-        with FastxFile(self.filepath) as f:
-            for entry in f:
-                self.sequences[entry.name] = entry.sequence
-
-    def load_ids(self, ids: Iterable[str]) -> None:
+    def _load_ids(self, ids: Iterable[str]) -> None:
         """
         Load sequences by ID from FASTA file. The file is indexed with `samtools faidx`
         to speed up the process. Sequences are stored in a dictionary with
@@ -297,6 +322,57 @@ class QueryFile:
                         f"Sequence with ID {seq_id} not found in {self.filepath}"
                     )
 
+    def load_sequences(self, ids: Iterable[str] = None) -> None:
+        """
+        Load sequences from FASTA file. Sequences are stored in a dictionary with sequence
+        IDs as keys and sequences as values.
+
+
+
+        Note:
+            This method should be called only if maniuplating sequences directly is needed.
+
+        Returns:
+            None
+
+        Example:
+
+            >>> from mDeepFRI.mmseqs import QueryFile
+            >>> query_file = QueryFile("path/to/file.fasta")
+            >>> query_file.load_sequences()
+        """
+
+        if ids:
+            self._load_ids(ids)
+        else:
+            with FastxFile(self.filepath) as f:
+                for entry in f:
+                    self.sequences[entry.name] = entry.sequence
+
+    def remove_sequences(self, ids: List[str]):
+        """
+        Remove sequences by ID.
+
+        Args:
+            ids (List[str]): List of sequence IDs to remove.
+
+        Returns:
+            None
+
+        Example:
+
+            >>> from mDeepFRI.mmseqs import QueryFile
+            >>> query_file = QueryFile("path/to/file.fasta")
+            >>> query_file.load_sequences()
+            >>> query_file.remove_sequences(["seq1", "seq2"])
+        """
+        for seq_id in ids:
+            try:
+                self.sequences.pop(seq_id, None)
+            except KeyError:
+                raise ValueError(
+                    f"Sequence with ID {seq_id} not found in {self.filepath}")
+
     def filter_sequences(self, min_length: int = None, max_length: int = None):
         """
         Filter sequences by length.
@@ -327,22 +403,14 @@ class QueryFile:
                 k: v
                 for k, v in filtered_sequences.items() if len(v) >= min_length
             }
-            if not filtered_sequences:
-                raise ValueError(
-                    "No sequences left after filtering by minimum sequence length."
-                )
-            self.too_long = list(
-                set(self.sequences.keys()) - set(filtered_sequences.keys()))
+        self.too_long = list(
+            set(self.sequences.keys()) - set(filtered_sequences.keys()))
 
         if max_length:
             filtered_sequences = {
                 k: v
                 for k, v in filtered_sequences.items() if len(v) <= max_length
             }
-            if not filtered_sequences:
-                raise ValueError(
-                    "No sequences left after filtering by maximum sequence length."
-                )
             self.too_short = list(
                 set(self.sequences.keys()) - set(filtered_sequences.keys()))
 
@@ -380,7 +448,7 @@ class QueryFile:
         if not 1.0 <= sensitivity <= 7.5:
             raise ValueError(
                 "Sensitivity value should be between 1.0 and 7.5.")
-
+        print(self.sequences)
         with tempfile.TemporaryDirectory() as tmp_path:
             if self.sequences:
                 fasta_path = Path(tmp_path) / "filtered_query.fa"
@@ -426,9 +494,20 @@ class QueryFile:
 def extract_fasta_foldcomp(foldcomp_db: str,
                            output_file: str,
                            threads: int = 1):
+
+    ESM_DATABASES = ["highquality_clust30", "esmatlas", "esmatlas_v2023_02"]
     """
-    Extracts FASTA from database
+    Extracts FASTA from Foldcomp database and compresses it using block gzip.
+
+    Args:
+        foldcomp_db (str): Path to Foldcomp database.
+        output_file (str): Path to output FASTA file.
+        threads (int): Number of threads to use.
+
+    Returns:
+        output_file (str): Path to gzipped FASTA file.
     """
+
     foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
     database_name = Path(foldcomp_db).stem
 
@@ -479,62 +558,7 @@ def validate_mmseqs_database(database: str):
     is_valid = True
     for ext in mmseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
-            logger.debug(f"{target_db}{ext} is missing.")
             is_valid = False
             break
 
     return is_valid
-
-
-# def filter_mmseqs_results(results_file: str,
-#                           min_bit_score: float = None,
-#                           min_identity: float = None,
-#                           k_best_hits: int = 5,
-#                           threads: int = 1) -> np.recarray:
-#     """
-#     Filters MMSeqs results retrieving only k best hits based on identity
-#     above specified thresholds. Allows number of paiwise alignments
-#     in the next step of pipeline.
-
-#     Args:
-#         results_file (pathlib.Path): Path to MMSeqs2 search results.
-#         min_bit_score (float): Minimum bit score.
-#         min_identity (float): Minimum identity.
-#         k_best_hits (int): Number of best hits to keep.
-#         threads (int): Number of threads to use.
-
-#     Returns:
-#         output (numpy.recarray): Filtered results.
-#     """
-#     def select_top_k(query, db, k=30):
-#         return db[db["query"] == query][:k]
-
-#     output = np.recfromcsv(results_file,
-#                            delimiter="\t",
-#                            encoding="utf-8",
-#                            names=MMSEQS_COLUMN_NAMES)
-
-#     # check if output is not empty
-#     if output.size == 0:
-#         final_database = None
-
-#     else:
-#         # MMSeqs2 alginment filters
-#         if min_identity:
-#             output = output[output['identity'] >= min_identity]
-#         if min_bit_score:
-#             output = output[output['bit_score'] >= min_bit_score]
-
-#         # Get k best hits
-#         output.sort(order=["query", "identity", "e_value"], kind="quicksort")
-#         top_k_db = partial(select_top_k, db=output[::-1], k=k_best_hits)
-#         with ThreadPool(threads) as pool:
-#             top_k_chunks = pool.map(top_k_db, np.unique(output["query"]))
-
-#         final_database = np.concatenate(top_k_chunks)
-
-#         ## TODO: move logging module a level up
-#         logger.info("%i pairs after filtering with k=%i best hits.",
-#                     final_database.shape[0], k_best_hits)
-
-#     return final_database

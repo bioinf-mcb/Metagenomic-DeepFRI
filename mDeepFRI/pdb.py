@@ -10,7 +10,7 @@ from pysam import tabix_compress
 import mDeepFRI
 from mDeepFRI.bio_utils import extract_residues_coordinates
 from mDeepFRI.database import Database
-from mDeepFRI.mmseqs import createdb, createindex
+from mDeepFRI.mmseqs import _createdb, _createindex
 from mDeepFRI.utils import download_file
 
 logging.basicConfig(
@@ -21,12 +21,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_pdb_mmseqs():
+def create_pdb_mmseqs(threads: int = 1):
     """
     Downloads PDB100 database and creates an MMSeqs2 database from it.
 
     Args:
-        None
+        threads (int): Number of threads to use.
 
     Returns:
         Database: PDB100 database.
@@ -62,8 +62,8 @@ def create_pdb_mmseqs():
     # check if database exists
     if not pdb100_mmseqs.exists():
         logging.info("Creating MMSeqs2 database from PDB100.")
-        createdb(compressed_path, pdb100_mmseqs)
-        createindex(pdb100_mmseqs)
+        _createdb(compressed_path, pdb100_mmseqs)
+        _createindex(pdb100_mmseqs, threads=threads)
 
     pdb_db = Database(foldcomp_db=pdb100_path.stem,
                       sequence_db=compressed_path,
