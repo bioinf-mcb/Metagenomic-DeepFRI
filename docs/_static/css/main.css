@@ -30,20 +30,18 @@ body {
 
   /* Links */
 
-  ul.nav li a, ul.nav li a:visited {
-    color: #3498db!important; /* a soft blue for default links */
+  ul.nav a:hover { color: #2980b9 !important; }
+
+  a:hover {
+    color: #2980b9; /* a slightly darker blue for hover links */
   }
 
-  ul.nav li a:hover, ul.nav li a:active {
-    color: #2980b9!important; /* a slightly darker blue for hover and active links */
+  a:active {
+    color: #23527c; /* a deeper blue for active links */
   }
 
-  ul.nav li.active a {
-    color: #23527c!important; /* a deeper blue for active links */
-  }
-
-  nav ul li a:hover {
-    color: #2773a5; /* a nice blue-green for hover links in nav */
+  a:visited {
+    color: #6495ed; /* a soft, muted blue for visited links */
   }
 
   /* Code and References */
@@ -51,7 +49,7 @@ body {
   .field-list a.reference {
     font-weight: bold;
     font-size: 90%;
-    color: #c7254e; /* keep the same color for references */
+    color: #e74c3c; /* keep the same color for references */
     box-sizing: border-box;
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
     background-color: #f9f9f9; /* add a light gray background to references */
