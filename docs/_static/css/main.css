@@ -30,10 +30,20 @@ body {
 
   /* Links */
 
-  ul.nav a:hover { color: #2980b9 !important; }
+  a.navbar-brand:hover {
+    color: #2773a5!important; /* a soft blue-green for hover links */
+  }
+
+  ul.nav a:hover {
+    color: #2773a5!important;
+  }
+
+  ul.nav a:visited {
+    color: #3498db!important; /* a soft blue for visited links */
+  }
 
   a:hover {
-    color: #2980b9; /* a slightly darker blue for hover links */
+    color: #2773a5; /* a soft blue-green for hover links */
   }
 
   a:active {
@@ -41,7 +51,7 @@ body {
   }
 
   a:visited {
-    color: #6495ed; /* a soft, muted blue for visited links */
+    color: #3498db; /* a soft blue for visited links */
   }
 
   /* Code and References */
