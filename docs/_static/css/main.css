@@ -30,17 +30,20 @@ body {
 
   /* Links */
 
-  a:link {
-    color: #0c88f4;/* keep the same link color as Flatly */
+  ul.nav li a, ul.nav li a:visited {
+    color: #3498db!important; /* a soft blue for default links */
   }
 
-  a:hover {
-    color: #2773a5; /* darker blue on hover */
+  ul.nav li a:hover, ul.nav li a:active {
+    color: #2980b9!important; /* a slightly darker blue for hover and active links */
   }
 
-  .nav-tabs > li > a:hover {
-    background-color: #2773a5; /* correct color for tab label on hover */
-    border-color: #2773a5;
+  ul.nav li.active a {
+    color: #23527c!important; /* a deeper blue for active links */
+  }
+
+  nav ul li a:hover {
+    color: #2773a5; /* a nice blue-green for hover links in nav */
   }
 
   /* Code and References */
