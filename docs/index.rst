@@ -1,6 +1,6 @@
 
-Metagenomic-DeepFRI: Scalable Structure-Based Functional Annotation for Metagenomic Data |Stars|
-================================================================================================
+Welcome to Metagenomic-DeepFRI's documentation! |Stars|
+=======================================================
 
 .. |Stars| image:: https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star
    :target: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers
@@ -23,6 +23,7 @@ enabling inference of the functional capabilities of of proteins in metagenomic 
 By integrating these features, Metagenomic-DeepFRI offers a powerful solution for functional annotation of metagenomic data, facilitating an understanding of microbial communities and their roles in various ecosystems.
 
 **Metagenomic-DeepFRI** is a joint project between research institutions:
+
 * `Structural and Functional Genomics Lab, Sano Centre for Computational Medicine, Krakow, Poland <https://www.tomaszlab.org>`_
 * `Systems Biology Research Group, Center for Computational Biology, Flatiron Institute, New York, USA <https://www.simonsfoundation.org/flatiron/center-for-computational-biology/>`_
 
