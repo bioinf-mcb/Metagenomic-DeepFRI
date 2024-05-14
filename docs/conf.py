@@ -71,7 +71,7 @@ extensions = [
     "sphinx_bootstrap_theme",
     "nbsphinx",
     "recommonmark",
-    "sphinx_click.ext",
+    "sphinx_click",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
 
