@@ -9,7 +9,7 @@ Metagenomic-DeepFRI: Scalable Structure-Based Functional Annotation for Metageno
 ----------------------------------------------------------------------------------------
 
 Protein function is intricately linked to its 3-dimensional conformation, often likened to a lock and key relationship.
- Metagenomic-DeepFRI is a pioneering tool that brings the power of structure-based functional annotation to metagenomic data, enabling researchers to uncover the functional potential of microbial communities.
+Metagenomic-DeepFRI is a pioneering tool that brings the power of structure-based functional annotation to metagenomic data, enabling researchers to uncover the functional potential of microbial communities.
 
 **Key Features**
 
