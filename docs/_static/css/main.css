@@ -30,13 +30,6 @@ body {
 
   /* Links */
 
-  /* regular hyperlink color  */
-    a {
-        color: #3498db!important; /* blue for links */
-        text-decoration: none; /* remove underline from links */
-
-    }
-
   /* Code and References */
 
   .field-list a.reference {
