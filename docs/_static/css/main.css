@@ -30,28 +30,30 @@ body {
 
   /* Links */
 
-  a.navbar-brand:hover {
-    color: #2773a5!important; /* a soft blue-green for hover links */
+/* Links */
+
+a.navbar-brand:hover {
+    color: #66d9ef!important; /* a soft blue-green for hover links */
+  }
+
+a.navbar-brand:visited {
+    color: #8bc34a!important; /* a muted green for visited links */
   }
 
   ul.nav a:hover {
-    color: #2773a5!important;
+    color: #66d9ef!important;
   }
 
   ul.nav a:visited {
-    color: #3498db!important; /* a soft blue for visited links */
+    color: #8bc34a!important; /* a muted green for visited links */
   }
 
   a:hover {
-    color: #2773a5; /* a soft blue-green for hover links */
-  }
-
-  a:active {
-    color: #23527c; /* a deeper blue for active links */
+    color: #66d9ef; /* a soft blue-green for hover links */
   }
 
   a:visited {
-    color: #3498db; /* a soft blue for visited links */
+    color: #8bc34a; /* a muted green for visited links */
   }
 
   /* Code and References */
