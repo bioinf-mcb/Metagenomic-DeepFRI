@@ -31,11 +31,16 @@ body {
   /* Links */
 
   a:link {
-    color: #3498db; /* keep the same link color as Flatly */
+    color: #0c88f4;/* keep the same link color as Flatly */
   }
 
   a:hover {
-    color: #2980b9; /* darker blue on hover */
+    color: #2773a5; /* darker blue on hover */
+  }
+
+  .nav-tabs > li > a:hover {
+    background-color: #2773a5; /* correct color for tab label on hover */
+    border-color: #2773a5;
   }
 
   /* Code and References */
