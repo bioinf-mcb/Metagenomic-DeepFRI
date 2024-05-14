@@ -30,32 +30,6 @@ body {
 
   /* Links */
 
-/* Links */
-
-a.navbar-brand:hover {
-    color: #66d9ef!important; /* a soft blue-green for hover links */
-  }
-
-a.navbar-brand:visited {
-    color: #8bc34a!important; /* a muted green for visited links */
-  }
-
-  ul.nav a:hover {
-    color: #66d9ef!important;
-  }
-
-  ul.nav a:visited {
-    color: #8bc34a!important; /* a muted green for visited links */
-  }
-
-  a:hover {
-    color: #66d9ef; /* a soft blue-green for hover links */
-  }
-
-  a:visited {
-    color: #8bc34a; /* a muted green for visited links */
-  }
-
   /* Code and References */
 
   .field-list a.reference {
