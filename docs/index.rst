@@ -5,16 +5,23 @@ Welcome to Metagenomic-DeepFRI's documentation! |Stars|
 .. |Stars| image:: https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star
    :target: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers
 
-Overview
---------
+Metagenomic-DeepFRI: Scalable Structure-Based Functional Annotation for Metagenomic Data
+----------------------------------------------------------------------------------------
 
-Protein function is strongly dependent on 3-dimensional confirmation of the protein, making protein targets resemble a lock and the key.
-**Metagenomic-DeepFRI** scales the first structure-based functional annotation method to metagenomic data.
-It encorporates massive datasets of predicted structures conviniently compressed by `FoldComp <https://github.com/steineggerlab/foldcomp/>`_, searches for the best
-template protein via `MMSeqs2 <https://github.com/soedinglab/MMseqs2>`_, identifies differences between template and target with the help of alignment and predicts protein function
-version of `DeepFRI <https://github.com/flatironinstitute/DeepFRI>`_.
-It is a joint project of the `Systems Biology Research Group, Center for Computational Biology, Flatiron Institute, New York, USA <https://www.simonsfoundation.org/flatiron/center-for-computational-biology/>`_
-and `Structural and Functional Genomics Lab, Sano Centre for Computational Medicine, Krakow, Poland <https://www.tomaszlab.org>`_.
+Protein function is intricately linked to its 3-dimensional conformation, often likened to a lock and key relationship.
+ Metagenomic-DeepFRI is a pioneering tool that brings the power of structure-based functional annotation to metagenomic data, enabling researchers to uncover the functional potential of microbial communities.
+
+**Key Features**
+
+1. Scalable structure prediction: Leveraging the compression capabilities of `FoldComp <https://github.com/steineggerlab/foldcomp/>`_, Metagenomic-DeepFRI efficiently handles massive datasets of predicted protein structures.
+2. Structural template identification: The tool utilizes MMSeqs2 <https://github.com/soedinglab/MMseqs2>_ to identify the best template protein for functional annotation.
+3. Functional prediction: Building upon the DeepFRI <https://github.com/flatironinstitute/DeepFRI>_ framework, Metagenomic-DeepFRI predicts protein function with high accuracy,
+enabling inference of the functional capabilities of of proteins in metagenomic datasets.
+
+By integrating these features, Metagenomic-DeepFRI offers a powerful solution for functional annotation of metagenomic data, facilitating an understanding of microbial communities and their roles in various ecosystems.
+**Metagenomic-DeepFRI** is a joint project between research institutions:
+- `Structural and Functional Genomics Lab, Sano Centre for Computational Medicine, Krakow, Poland <https://www.tomaszlab.org>`_
+- `Systems Biology Research Group, Center for Computational Biology, Flatiron Institute, New York, USA <https://www.simonsfoundation.org/flatiron/center-for-computational-biology/>`_
 
 Setup
 -----
