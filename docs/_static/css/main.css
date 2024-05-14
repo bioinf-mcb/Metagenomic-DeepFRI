@@ -1,31 +1,74 @@
-p {
+/* Typography */
+
+body {
+    font-size: 18px; /* increase font size for better readability */
+    line-height: 1.5; /* improve line spacing */
+  }
+
+  p {
     text-align: justify;
-}
+    margin-bottom: 20px; /* add space between paragraphs */
+  }
 
-a:link {
-    color: #3498db
-}
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+    color: #2c3e50; /* darker blue for headings */
+    margin-bottom: 10px; /* add space between headings and content */
+  }
 
-/* a.reference strong {
+  /* Links */
+
+  a:link {
+    color: #3498db; /* keep the same link color as Flatly */
+    text-decoration: underline; /* add underline to links */
+  }
+
+  a:hover {
+    color: #2980b9; /* darker blue on hover */
+  }
+
+  /* Code and References */
+
+  .field-list a.reference {
     font-weight: bold;
     font-size: 90%;
-    color: #c7254e;
+    color: #c7254e; /* keep the same color for references */
     box-sizing: border-box;
-    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
-} */
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    background-color: #f9f9f9; /* add a light gray background to references */
+    padding: 2px 4px; /* add some padding to references */
+    border-radius: 3px; /* add a subtle border radius to references */
+  }
 
-.field-list a.reference {
-    font-weight: bold;
-    font-size: 90%;
-    color: #c7254e;
-    box-sizing: border-box;
-    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
-}
+  .code {
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    background-color: #f9f9f9; /* add a light gray background to code blocks */
+    padding: 10px; /* add some padding to code blocks */
+    border-radius: 3px; /* add a subtle border radius to code blocks */
+  }
 
-.class dd {
-    margin-left: 2%
-}
+  /* Lists and Definitions */
 
-.exception dd {
-    margin-left: 2%
-}
+  .class dd,.exception dd {
+    margin-left: 2%; /* keep the same margin for definitions */
+    padding-bottom: 10px; /* add some space between definitions */
+  }
+
+  dl {
+    margin-bottom: 20px; /* add space between lists and other content */
+  }
+
+  /* Other */
+
+  hr {
+    border-top: 1px solid #ddd; /* add a subtle horizontal rule */
+    margin: 20px 0; /* add space around horizontal rules */
+  }
+
+  /* Responsive design */
+
+  @media (max-width: 768px) {
+    body {
+      font-size: 16px; /* reduce font size on smaller screens */
+    }
+  }
