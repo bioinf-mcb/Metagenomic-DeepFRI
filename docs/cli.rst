@@ -1,6 +1,6 @@
 Command Line Interface (CLI)
 ============================
 
-.. click:: cli:main
+.. click:: module:parser
    :prog: mDeepFRI
    :nested: full
