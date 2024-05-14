@@ -1,13 +1,8 @@
 /* Typography */
 
 body {
-    font-size: 18px; /* increase font size for better readability */
-    line-height: 1.5; /* improve line spacing */
-  }
-
-  p {
-    text-align: justify;
-    margin-bottom: 20px; /* add space between paragraphs */
+    font-size: 16px; /* a comfortable font size for body text */
+    line-height: 1.5; /* maintain a good line spacing */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -16,11 +11,27 @@ body {
     margin-bottom: 10px; /* add space between headings and content */
   }
 
+  h1 {
+    font-size: 24px; /* a clear hierarchy for headings */
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  h3 {
+    font-size: 18px;
+  }
+
+  p {
+    text-align: justify;
+    margin-bottom: 15px; /* add space between paragraphs */
+  }
+
   /* Links */
 
   a:link {
     color: #3498db; /* keep the same link color as Flatly */
-    text-decoration: underline; /* add underline to links */
   }
 
   a:hover {
@@ -69,6 +80,6 @@ body {
 
   @media (max-width: 768px) {
     body {
-      font-size: 16px; /* reduce font size on smaller screens */
+      font-size: 14px; /* reduce font size on smaller screens */
     }
   }
