@@ -79,26 +79,26 @@ def _convertalis(
         f"--format-output {args}")
 
 
-class MMSeqsSearchResult(np.recarray):
+class MMseqsResult(np.recarray):
     """
-    Class for handling MMSeqs2 search results. The results are stored in a TSV file.
+    Class for handling MMseqs2 search results. The results are stored in a TSV file.
     Inherits from numpy.recarray.
 
     Args:
-        data (np.recarray): MMSeqs2 search results.
+        data (np.recarray): MMseqs2 search results.
         query_fasta (str): Path to query FASTA file.
-        database (str): Path to MMSeqs2 database.
+        database (str): Path to MMseqs2 database.
 
     Attributes:
-        data (np.recarray): MMSeqs2 search results.
+        data (np.recarray): MMseqs2 search results.
         query_fasta (str): Path to query FASTA file.
-        database (str): Path to MMSeqs2 database.
+        database (str): Path to MMseqs2 database.
         columns (np.array): Array with column names.
 
     Example:
 
-            >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
-            >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
             >>> # sort file by identity and select seq1 hits only
             >>> result[::-1].sort(order=["fident"])
             >>> seq1_hits = result[result["query"] == "seq1"]
@@ -133,8 +133,8 @@ class MMSeqsSearchResult(np.recarray):
 
         Example:
 
-            >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
-            >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
             >>> result.save("path/to/file.tsv")
         """
         # append query file column to the result array
@@ -167,7 +167,7 @@ class MMSeqsSearchResult(np.recarray):
     def apply_filters(self,
                       min_cov: float = 0.0,
                       min_ident: float = 0.0,
-                      min_bits: float = 0) -> "MMSeqsSearchResult":
+                      min_bits: float = 0) -> "MMseqsResult":
         """
         Filter search results optionally by coverage, identity and bit score.
 
@@ -177,11 +177,11 @@ class MMSeqsSearchResult(np.recarray):
             min_bits (float): Minimum bit score.
 
         Returns:
-            MMSeqsSearchResult: Filtered MMSeqs2 search results.
+            MMseqsResult: Filtered MMseqs2 search results.
 
         Example:
-            >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
-            >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
             >>> filtered = result.apply_filters(min_cov=30, min_ident=0.4, min_bits=50)
         """
 
@@ -192,12 +192,9 @@ class MMSeqsSearchResult(np.recarray):
             self.result_arr["fident"] >= min_ident]
         self.result_arr = self.result_arr[self.result_arr["bits"] >= min_bits]
 
-        return MMSeqsSearchResult(self.result_arr, self.query_fasta,
-                                  self.database)
+        return MMseqsResult(self.result_arr, self.query_fasta, self.database)
 
-    def select_best_matches(self,
-                            k: int = 5,
-                            threads: int = 1) -> "MMSeqsSearchResult":
+    def get_best_matches(self, k: int = 5, threads: int = 1) -> "MMseqsResult":
         """
         Selects k best matches for each query sequence based on bit score and identity.
 
@@ -206,7 +203,7 @@ class MMSeqsSearchResult(np.recarray):
             threads (int): Number of threads to use.
 
         Returns:
-            MMSeqsSearchResult: MMSeqs2 search results with best matches.
+            MMseqsResult: MMseqs2 search results with best matches.
         """
         def select_top_k(query, db, k=30):
             return db[db["query"] == query][:k]
@@ -220,29 +217,29 @@ class MMSeqsSearchResult(np.recarray):
         with ThreadPool(threads) as p:
             top_k = p.map(select_top, np.unique(self.result_arr["query"]))
 
-        return MMSeqsSearchResult(np.concatenate(top_k), self.query_fasta,
-                                  self.database)
+        return MMseqsResult(np.concatenate(top_k), self.query_fasta,
+                            self.database)
 
     @classmethod
     def from_filepath(cls,
                       filepath,
                       query_fasta=None,
-                      database=None) -> "MMSeqsSearchResult":
+                      database=None) -> "MMseqsResult":
         """
         Load search results from TSV file.
 
         Args:
             filepath (str): Path to TSV file from convertalis.
             query_fasta (str): Path to query FASTA file (optional).
-            database (str): Path to MMSeqs2 database (optional).
+            database (str): Path to MMseqs2 database (optional).
 
         Returns:
-            MMSeqsSearchResult: MMSeqs2 search results.
+            MMseqsResult: MMseqs2 search results.
 
         Example:
 
-                >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
-                >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+                >>> from mDeepFRI.mmseqs import MMseqsResult
+                >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
         """
 
         result_arr = np.recfromcsv(filepath,
@@ -254,7 +251,7 @@ class MMSeqsSearchResult(np.recarray):
 
 class QueryFile:
     """
-    Class for handling FASTA files with sequences to query against MMSeqs2 database.
+    Class for handling FASTA files with sequences to query against MMseqs2 database.
 
     Args:
         filepath (str): Path to FASTA file.
@@ -409,17 +406,17 @@ class QueryFile:
                index_target: bool = False,
                threads: int = 1):
         """
-        Queries sequences against MMSeqs2 database. The search results are stored in a tabular format.
+        Queries sequences against MMseqs2 database. The search results are stored in a tabular format.
 
         Args:
-            database_path (str): Path to MMSeqs2 database or database FASTA.
-            eval (float): Maximum e-value for MMSeqs2 search.
-            sensitivity (float): Sensitivity value for MMSeqs2 search.
+            database_path (str): Path to MMseqs2 database or database FASTA.
+            eval (float): Maximum e-value for MMseqs2 search.
+            sensitivity (float): Sensitivity value for MMseqs2 search.
             index_target (bool): Create index for target database. Advised for repeated searches.
             threads (int): Number of threads to use.
 
         Returns:
-            MMSeqsSearchResult: MMSeqs2 search results.
+            MMseqsResult: MMseqs2 search results.
 
         Example:
 
@@ -467,7 +464,7 @@ class QueryFile:
             output_file = Path(tmp_path) / "search_results.tsv"
             _convertalis(input_db_path, target_db_path, result_db, output_file)
 
-            result = MMSeqsSearchResult.from_filepath(
+            result = MMseqsResult.from_filepath(
                 output_file,
                 query_fasta=fasta_path,
                 database=target_db_path,
@@ -523,25 +520,25 @@ def extract_fasta_foldcomp(foldcomp_db: str,
 
 def validate_mmseqs_database(database: str):
     """
-    Check if MMSeqs2 database is intact.
+    Check if MMseqs2 database is intact.
 
     Args:
-        database (str): Path to MMSeqs2 database.
+        database (str): Path to MMseqs2 database.
 
     Returns:
         bool: True if database is intact.
 
     """
 
-    # Verify all the files for MMSeqs2 database
-    mmseqs2_ext = [
+    # Verify all the files for MMseqs2 database
+    MMseqs2_ext = [
         ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx",
         ".idx.index", ".idx.dbtype", ".lookup", ".source"
     ]
 
     target_db = Path(database)
     is_valid = True
-    for ext in mmseqs2_ext:
+    for ext in MMseqs2_ext:
         if not os.path.isfile(f"{target_db}{ext}"):
             is_valid = False
             break

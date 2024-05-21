@@ -108,7 +108,6 @@ def download_model_weights(output_path: str,
             download_file(url, output_path / url.split("/")[-1])
 
 
-## TODO: automatical generation of a config JSON
 def generate_config_json(weights_path: str, version: Literal["1.0",
                                                              "1.1"]) -> None:
     """
