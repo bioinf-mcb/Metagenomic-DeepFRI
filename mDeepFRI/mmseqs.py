@@ -1,5 +1,4 @@
 import csv
-import gzip
 import os
 import tempfile
 from dataclasses import dataclass
@@ -10,10 +9,10 @@ from typing import Annotated, Dict, Iterable, List, Literal
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
-from pysam import FastaFile, FastxFile, tabix_compress
+from pysam import FastxFile, tabix_compress
 
 import mDeepFRI
-from mDeepFRI.utils import run_command
+from mDeepFRI.utils import retrieve_fasta_entries_as_dict, run_command
 
 
 @dataclass
@@ -263,8 +262,6 @@ class QueryFile:
     Attributes:
         filepath (str): Path to FASTA file.
         sequences (Dict[str, str]): Dictionary with sequence IDs as keys and sequences as values.
-        too_long (List[str]): List of sequence IDs that were too long.
-        too_short (List[str]): List of sequence IDs that were too short.
     """
     def __init__(self, filepath: str) -> None:
         self.filepath: str = filepath
@@ -313,30 +310,7 @@ class QueryFile:
         filepath = Path(self.filepath)
         if not filepath.exists():
             raise FileNotFoundError(f"File {self.filepath} not found.")
-
-        try:
-            fasta = FastaFile(self.filepath)
-        # catch gzipped files and recompress with bgzip
-        except OSError:
-            # unzip file
-            with gzip.open(self.filepath, "rt") as f:
-                content = f.read()
-            # write to new file
-            new_filepath = Path(self.filepath).parent / Path(
-                self.filepath).stem
-            with open(new_filepath, "w") as f:
-                f.write(content)
-                # index file
-                tabix_compress(new_filepath, new_filepath + ".gz", force=True)
-
-        with fasta:
-            for seq_id in ids:
-                try:
-                    self.sequences[seq_id] = fasta.fetch(seq_id)
-                except KeyError:
-                    raise ValueError(
-                        f"Sequence with ID {seq_id} not found in {self.filepath}"
-                    )
+        self.sequences = retrieve_fasta_entries_as_dict(filepath, ids)
 
     def load_sequences(self, ids: Iterable[str] = None) -> None:
         """
@@ -445,7 +419,7 @@ class QueryFile:
             threads (int): Number of threads to use.
 
         Returns:
-            result (MMSeqsSearchResult): MMSeqs2 search results.
+            MMSeqsSearchResult: MMSeqs2 search results.
 
         Example:
 
@@ -516,7 +490,7 @@ def extract_fasta_foldcomp(foldcomp_db: str,
         threads (int): Number of threads to use.
 
     Returns:
-        output_file (str): Path to gzipped FASTA file.
+        str: Path to gzipped FASTA file.
     """
 
     foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
@@ -555,7 +529,7 @@ def validate_mmseqs_database(database: str):
         database (str): Path to MMSeqs2 database.
 
     Returns:
-        is_valid (bool): True if database is intact.
+        bool: True if database is intact.
 
     """
 

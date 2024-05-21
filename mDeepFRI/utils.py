@@ -1,3 +1,4 @@
+import gzip
 import json
 import logging
 import re
@@ -7,9 +8,11 @@ import subprocess
 import sys
 from glob import glob
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Dict, Iterable, List, Literal
 
+import pysam
 import requests
+from pysam import FastaFile, FastxFile, tabix_compress
 
 
 def run_command(command, timeout=None):
@@ -219,3 +222,67 @@ def load_deepfri_config(weights: str) -> dict:
             models_config[net][model_type] = str(model_name.absolute())
 
     return models_config
+
+
+def load_fasta_as_dict(fasta_file: str) -> Dict[str, str]:
+    """
+    Load FASTA file as dict of headers to sequences
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries sorted by length.
+    """
+
+    with FastxFile(fasta_file) as fasta:
+        fasta_dict = {entry.name: entry.sequence for entry in fasta}
+
+    return fasta_dict
+
+
+def retrieve_fasta_entries_as_dict(fasta_file: str,
+                                   entries: List[str]) -> Dict[str, str]:
+    """
+    Retrieve selected FASTA entries as dict
+
+    Args:
+        fasta_file (str): Path to FASTA file. Can be compressed.
+        entries (List[str]): List of entries to retrieve.
+
+    Returns:
+        Dict[str, str]: Dictionary of FASTA entries.
+    """
+
+    fasta_dict = dict()
+    # silence pysam warnings for duplicate sequences
+    verb = pysam.set_verbosity(0)
+
+    try:
+        fasta_handle = FastaFile(fasta_file)
+
+    # catch gzipped files and recompress with bgzip
+    except OSError:
+        # unzip file
+        with gzip.open(fasta_file, "rt") as f:
+            content = f.read()
+        # write to new file
+        new_filepath = Path(fasta_file).parent / Path(fasta_file).stem
+        with open(new_filepath, "w") as f:
+            f.write(content)
+            new_archive = str(new_filepath) + ".gz"
+            tabix_compress(new_filepath, new_archive, force=True)
+        fasta_handle = FastaFile(new_archive)
+
+    with fasta_handle:
+        for seq_id in entries:
+            try:
+                fasta_dict[seq_id] = fasta_handle.fetch(seq_id)
+            except KeyError:
+                raise ValueError(
+                    f"Sequence with ID {seq_id} not found in {fasta_file}")
+
+    # reset verbosity
+    pysam.set_verbosity(verb)
+
+    return fasta_dict
