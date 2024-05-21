@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Dict, Iterable, List, Literal
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from pysam import FastaFile, FastxFile, tabix_compress
 
 import mDeepFRI
@@ -118,12 +119,11 @@ class MMSeqsSearchResult(np.recarray):
 
     @property
     def columns(self) -> np.ndarray:
-        return np.array(self.data.dtype.names)
+        return np.array(self.result_arr.dtype.names)
 
     def save(self, filepath, filetype: Literal["tsv", "npz"] = "tsv"):
         """
-        Save search results to TSV or NumPy compressed file. NPZ does not
-        preserve information about query file and database.
+        Save search results to TSV or NumPy compressed file.
 
         Args:
             filepath (str): Path to output file.
@@ -138,16 +138,25 @@ class MMSeqsSearchResult(np.recarray):
             >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
             >>> result.save("path/to/file.tsv")
         """
+        # append query file column to the result array
+        if self.query_fasta:
+            query_col = np.array([self.query_fasta] * len(self.result_arr),
+                                 dtype="U")
+            self.result_arr = rfn.append_fields(self, "query_fasta", query_col)
+
+        # append database column to the result array
+        if self.database:
+            db_col = np.array([self.database] * len(self.result_arr),
+                              dtype="U")
+            self.result_arr = rfn.append_fields(self.result_arr, "database",
+                                                db_col)
 
         if filetype == "tsv":
             with open(filepath, "w", newline="") as f:
-                # write comments
-                f.write(f"#Query:{self.query_fasta}\n")
-                f.write(f"#Database:{self.database}\n")
                 # write tsv
                 writer = csv.writer(f, delimiter="\t")
-                writer.writerow(self.dtype.names)
-                for row in self:
+                writer.writerow(self.result_arr.dtype.names)
+                for row in self.result_arr:
                     writer.writerow(row)
 
         elif filetype == "npz":
@@ -159,7 +168,7 @@ class MMSeqsSearchResult(np.recarray):
     def apply_filters(self,
                       min_cov: float = 0.0,
                       min_ident: float = 0.0,
-                      min_bits: float = 0) -> None:
+                      min_bits: float = 0) -> "MMSeqsSearchResult":
         """
         Filter search results optionally by coverage, identity and bit score.
 
@@ -169,7 +178,12 @@ class MMSeqsSearchResult(np.recarray):
             min_bits (float): Minimum bit score.
 
         Returns:
-            None
+            MMSeqsSearchResult: Filtered MMSeqs2 search results.
+
+        Example:
+            >>> from mDeepFRI.mmseqs import MMSeqsSearchResult
+            >>> result = MMSeqsSearchResult.from_filepath("path/to/file.tsv")
+            >>> filtered = result.apply_filters(min_cov=30, min_ident=0.4, min_bits=50)
         """
 
         self.result_arr = self.result_arr[(self.result_arr["qcov"] >= min_cov)
@@ -178,6 +192,9 @@ class MMSeqsSearchResult(np.recarray):
         self.result_arr = self.result_arr[
             self.result_arr["fident"] >= min_ident]
         self.result_arr = self.result_arr[self.result_arr["bits"] >= min_bits]
+
+        return MMSeqsSearchResult(self.result_arr, self.query_fasta,
+                                  self.database)
 
     def select_best_matches(self,
                             k: int = 5,
@@ -252,8 +269,7 @@ class QueryFile:
     def __init__(self, filepath: str) -> None:
         self.filepath: str = filepath
         self.sequences: Dict[str, str] = {}
-        self.too_long: List[str] = []
-        self.too_short: List[str] = []
+        self.filtered_out: List[str] = []
 
     def __repr__(self) -> str:
         return f"QueryFile(filepath={self.filepath})"
@@ -267,7 +283,7 @@ class QueryFile:
     def __getitem__(self, key) -> None:
         return self.sequences[key]
 
-    def _load_ids(self, ids: Iterable[str]) -> None:
+    def load_ids(self, ids: Iterable[str]) -> None:
         """
         Load sequences by ID from FASTA file. The file is indexed with `samtools faidx`
         to speed up the process. Sequences are stored in a dictionary with
@@ -343,7 +359,7 @@ class QueryFile:
         """
 
         if ids:
-            self._load_ids(ids)
+            self.load_ids(ids)
         else:
             with FastxFile(self.filepath) as f:
                 for entry in f:
@@ -373,13 +389,12 @@ class QueryFile:
                 raise ValueError(
                     f"Sequence with ID {seq_id} not found in {self.filepath}")
 
-    def filter_sequences(self, min_length: int = None, max_length: int = None):
+    def filter_sequences(self, condition: callable = None):
         """
-        Filter sequences by length.
+        Filter sequences by a custom condition.
 
         Args:
-            min_length (int): Minimum sequence length.
-            max_length (int): Maximum sequence length.
+            condition (callable): A lambda function that takes a sequence as input and returns a boolean value.
 
         Returns:
             None
@@ -389,7 +404,9 @@ class QueryFile:
             >>> from mDeepFRI.mmseqs import QueryFile
             >>> query_file = QueryFile("path/to/file.fasta")
             >>> query_file.load_sequences()
-            >>> query_file.filter_sequences(min_length=50, max_length=200)
+            >>> query_file.filter_sequences(lambda seq: 50 <= len(seq) <= 200)
+            >>> query_file.filter_sequences(lambda seq: 'ATG' in seq)  # filter by presence of 'ATG' motif
+            >>> query_file.filter_sequences(lambda seq: seq.count('N') < 5) # filter by number of 'N' characters
         """
         # check if sequences were loaded
         if not self.sequences:
@@ -398,21 +415,15 @@ class QueryFile:
             )
 
         filtered_sequences = self.sequences.copy()
-        if min_length:
+        if condition:
             filtered_sequences = {
                 k: v
-                for k, v in filtered_sequences.items() if len(v) >= min_length
+                for k, v in filtered_sequences.items() if condition(v)
             }
-        self.too_long = list(
-            set(self.sequences.keys()) - set(filtered_sequences.keys()))
-
-        if max_length:
-            filtered_sequences = {
-                k: v
-                for k, v in filtered_sequences.items() if len(v) <= max_length
-            }
-            self.too_short = list(
+            self.filtered_out = list(
                 set(self.sequences.keys()) - set(filtered_sequences.keys()))
+        else:
+            self.filtered_out = []
 
         self.sequences = filtered_sequences
 
@@ -448,7 +459,7 @@ class QueryFile:
         if not 1.0 <= sensitivity <= 7.5:
             raise ValueError(
                 "Sensitivity value should be between 1.0 and 7.5.")
-        print(self.sequences)
+
         with tempfile.TemporaryDirectory() as tmp_path:
             if self.sequences:
                 fasta_path = Path(tmp_path) / "filtered_query.fa"

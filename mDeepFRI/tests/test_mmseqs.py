@@ -1,120 +1,157 @@
-import gzip
+import os
 import unittest
 from pathlib import Path
-from unittest import mock
+from tempfile import TemporaryDirectory
 
-from mDeepFRI.mmseqs import QueryFile
+import numpy as np
+
+from mDeepFRI.mmseqs import MMSeqsSearchResult, QueryFile
+from mDeepFRI.pdb import create_pdb_mmseqs
 
 
 class TestQueryFile(unittest.TestCase):
     def setUp(self):
-        self.filepath = "mDeepFRI/tests/data/test.fa"
-        # create empty file
-        Path(self.filepath).touch()
-        self.query_file = QueryFile(self.filepath)
-
-    def test_load_sequences(self):
-        # Mock the FastxFile
-        with mock.patch("mDeepFRI.mmseqs.FastxFile") as mock_fastx_file:
-            mock_entry1 = mock.MagicMock()
-            mock_entry1.name = "seq1"
-            mock_entry1.sequence = "ATCG"
-            mock_entry2 = mock.MagicMock()
-            mock_entry2.name = "seq2"
-            mock_entry2.sequence = "CGTA"
-            mock_fastx_file.return_value.__enter__.return_value = [
-                mock_entry1, mock_entry2
-            ]
-
-            self.query_file.load_sequences()
-            expected_sequences = {"seq1": "ATCG", "seq2": "CGTA"}
-            self.assertEqual(self.query_file.sequences, expected_sequences)
-
-    def test_load_ids(self):
-        # Mock the FastaFile
-        with mock.patch("mDeepFRI.mmseqs.FastaFile") as mock_fasta_file:
-            mock_fasta_file.return_value.fetch.side_effect = ["ATCG", "CGTA"]
-            self.query_file.load_ids(["seq1", "seq2"])
-            expected_sequences = {"seq1": "ATCG", "seq2": "CGTA"}
-            self.assertEqual(self.query_file.sequences, expected_sequences)
-
-    def test_load_ids_gzip(self):
-        # gzip a filepath
-        gzip_filepath = self.filepath + ".gz"
-        with open(self.filepath, "rb") as f_in:
-            with gzip.open(gzip_filepath, "wb") as f_out:
-                f_out.writelines(f_in)
-        self.query_file.filepath = gzip_filepath
-
-        # Mock the FastaFile
-        with mock.patch("mDeepFRI.mmseqs.FastaFile") as mock_fasta_file:
-            mock_fasta_file.return_value.fetch.side_effect = ["ATCG", "CGTA"]
-            self.query_file.load_ids(["seq1", "seq2"])
-            expected_sequences = {"seq1": "ATCG", "seq2": "CGTA"}
-            self.assertEqual(self.query_file.sequences, expected_sequences)
-
-        # reset filepath
-        self.query_file.filepath = self.filepath
-        # delete gzip file
-        Path(gzip_filepath).unlink()
-
-    def test_load_ids_not_found(self):
-        # Test for FileNotFoundError
-        with self.assertRaises(FileNotFoundError):
-            self.query_file.filepath = "path/to/non-existent.fasta"
-            self.query_file.load_ids(["seq1", "seq2"])
-
-    def test_load_ids_invalid_id(self):
-        # Test for ValueError
-        with mock.patch("mDeepFRI.mmseqs.FastaFile") as mock_fasta_file:
-            mock_fasta_file.return_value.fetch.side_effect = KeyError
-            with self.assertRaises(ValueError):
-                self.query_file.load_ids(["seq1", "seq2"])
-
-    def test_filter_sequences_min_length(self):
-        self.query_file.sequences = {"seq1": "ATCG", "seq2": "CGTAY"}
-
-        # Test min_length
-        self.query_file.filter_sequences(min_length=5)
-        expected_sequences = {"seq2": "CGTAY"}
-        self.assertEqual(self.query_file.sequences, expected_sequences)
-        self.assertEqual(self.query_file.too_long, ["seq1"])
-
-    def test_filter_sequences_max_length(self):
-        self.query_file.sequences = {"seq1": "ATCG", "seq2": "CGTAY"}
-        # Test max_length
-        self.query_file.filter_sequences(max_length=4)
-        expected_sequences = {"seq1": "ATCG"}
-        self.assertEqual(self.query_file.sequences, expected_sequences)
-        self.assertEqual(self.query_file.too_short, ["seq2"])
-
-    def test_filter_sequences_empty(self):
-        # Test empty sequences
-        self.query_file.sequences = {}
-        with self.assertRaises(ValueError):
-            self.query_file.filter_sequences(min_length=5)
-
-    # @mock.patch("mDeepFRI.mmseqs._createdb")
-    # @mock.patch("mDeepFRI.mmseqs._createindex")
-    # @mock.patch("mDeepFRI.mmseqs._search")
-    # @mock.patch("mDeepFRI.mmseqs._convertalis")
-    # def test_search(self, mock_convertalis, mock_search, mock_createindex, mock_createdb):
-    #     self.query_file.sequences = {"seq1": "ATCG", "seq2": "CGTA"}
-
-    #     # Test with valid sensitivity value
-    #     self.query_file.search("path/to/database", sensitivity=5.0)
-
-    #     # Test with invalid sensitivity value
-    #     with self.assertRaises(ValueError):
-    #         self.query_file.search("path/to/database", sensitivity=8.0)
-
-    #     # Test with empty sequences
-    #     self.query_file.sequences = {}
-    #     with mock.mock_open(self.filepath, "r"):
-    #         self.query_file.search("path/to/database")
+        self.temp_dir = TemporaryDirectory()
+        self.fasta_file = os.path.join(self.temp_dir.name, "test.fasta")
+        self.database = create_pdb_mmseqs()
+        with open(self.fasta_file, "w") as f:
+            f.write(">seq1\nATGC\n>seq2\nNNNNNCATGC\n>seq3\nATGCATGCATGC\n" \
+                    ">seq4\nAAAAAAAAAACT")
 
     def tearDown(self):
-        Path(self.filepath).unlink()
+        self.temp_dir.cleanup()
+
+    def test_init(self):
+        query_file = QueryFile(self.fasta_file)
+        self.assertEqual(query_file.filepath, self.fasta_file)
+        self.assertEqual(query_file.sequences, {})
+
+    def test_load_ids(self):
+        query_file = QueryFile(self.fasta_file)
+        query_file.load_ids(["seq1", "seq2"])
+        self.assertEqual(len(query_file.sequences), 2)
+        self.assertIn("seq1", query_file.sequences)
+        self.assertIn("seq2", query_file.sequences)
+
+    def test_load_sequences(self):
+        query_file = QueryFile(self.fasta_file)
+        query_file.load_sequences()
+        self.assertEqual(len(query_file.sequences), 4)
+        self.assertIn("seq1", query_file.sequences)
+        self.assertIn("seq2", query_file.sequences)
+        self.assertIn("seq3", query_file.sequences)
+        self.assertIn("seq4", query_file.sequences)
+
+    def test_remove_sequences(self):
+        query_file = QueryFile(self.fasta_file)
+        query_file.load_sequences()
+        query_file.remove_sequences(["seq1", "seq2"])
+        self.assertEqual(len(query_file.sequences), 2)
+        self.assertNotIn("seq1", query_file.sequences)
+        self.assertNotIn("seq2", query_file.sequences)
+        self.assertIn("seq3", query_file.sequences)
+        self.assertIn("seq4", query_file.sequences)
+
+    def test_filter_sequences(self):
+        query_file = QueryFile(self.fasta_file)
+        query_file.load_sequences()
+        query_file.filter_sequences(lambda seq: len(seq) <= 10)
+        self.assertEqual(len(query_file.sequences), 2)
+        self.assertIn("seq1", query_file.sequences)
+        self.assertIn("seq2", query_file.sequences)
+
+        query_file.filter_sequences(lambda seq: 'ATG' in seq)
+        self.assertEqual(len(query_file.sequences), 2)
+        self.assertIn("seq1", query_file.sequences)
+        self.assertIn("seq2", query_file.sequences)
+
+        query_file.filter_sequences(lambda seq: seq.count('N') < 5)
+        self.assertEqual(len(query_file.sequences), 1)
+        self.assertIn("seq1", query_file.sequences)
+        self.assertNotIn("seq3", query_file.sequences)
+
+    def test_search(self):
+        query_file = QueryFile(self.fasta_file)
+        query_file.load_sequences()
+        result = query_file.search(self.database.mmseqs_db)
+        self.assertIsInstance(result, MMSeqsSearchResult)
+        self.assertIsNotNone(result.query_fasta)
+        self.assertIsNotNone(result.database)
+
+
+class TestMMSeqsSearchResult(unittest.TestCase):
+    def setUp(self):
+        self.data = np.rec.array([
+            ("seq1", "target1", 10, 20, 0.3, 40, 1e-3),
+            ("seq1", "target2", 20, 30, 0.4, 50, 1e-4),
+            ("seq2", "target3", 30, 40, 0.5, 60, 1e-5),
+            ("seq2", "target4", 40, 50, 0.6, 70, 1e-6),
+            ("seq3", "target5", 50, 60, 0.7, 80, 1e-7),
+        ],
+                                 dtype=[("query", "U10"), ("target", "U10"),
+                                        ("qcov", int), ("tcov", int),
+                                        ("fident", float), ("bits", float),
+                                        ("evalue", float)])
+        self.query_fasta = Path("path/to/query.fasta").resolve()
+        self.database = Path("path/to/database").resolve()
+        self.result = MMSeqsSearchResult(self.data, self.query_fasta,
+                                         self.database)
+
+    def test_init(self):
+        self.assertIsInstance(self.result, MMSeqsSearchResult)
+        self.assertEqual(self.result.query_fasta,
+                         Path(self.query_fasta).resolve())
+        self.assertEqual(self.result.database, Path(self.database).resolve())
+
+    def test_columns(self):
+        np.array_equal(
+            self.result.columns,
+            np.array([
+                "query", "target", "qcov", "tcov", "fident", "bits", "evalue"
+            ]))
+
+    def test_save_tsv(self):
+        filepath = "test.tsv"
+        self.result.save(filepath)
+        with open(filepath, "r") as f:
+            lines = f.readlines()
+            self.assertEqual(
+                lines[0],
+                "query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\tquery_fasta\tdatabase\n"
+            )
+            self.assertEqual(
+                lines[1],
+                f"seq1\ttarget1\t10\t20\t0.3\t40.0\t{float(1e-03)}\t{self.query_fasta}\t{self.database}\n"
+            )
+
+    def test_save_npz(self):
+        filepath = "test.npz"
+        self.result.save(filepath, filetype="npz")
+        loaded_data = np.load(filepath)
+        self.assertTrue(
+            np.array_equal(loaded_data["arr_0"], self.result.result_arr))
+
+    def test_apply_filters(self):
+        filtered = self.result.apply_filters(min_cov=30,
+                                             min_ident=0.4,
+                                             min_bits=50)
+        self.assertEqual(len(filtered), 3)
+
+    def test_select_best_matches(self):
+        best_matches = self.result.select_best_matches(k=2)
+        self.assertEqual(len(best_matches), 5)
+
+    def test_from_filepath(self):
+        filepath = "test.tsv"
+        with open(filepath, "w", newline="") as f:
+            f.write("query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\n")
+            f.write(f"seq1\ttarget1\t10\t20\t0.3\t40.0\t{float(1e-03)}\n")
+            f.write(f"seq1\ttarget2\t20\t30\t0.4\t50.0\t{float(1e-04)}\n")
+        result = MMSeqsSearchResult.from_filepath(filepath, self.query_fasta,
+                                                  self.database)
+        self.assertIsInstance(result, MMSeqsSearchResult)
+        self.assertEqual(result.query_fasta, Path(self.query_fasta).resolve())
+        self.assertEqual(result.database, Path(self.database).resolve())
 
 
 if __name__ == "__main__":
