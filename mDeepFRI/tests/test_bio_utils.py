@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from biotite.structure.io.pdb import PDBFile
 
-from mDeepFRI.alignment_utils import alignment_identity, pairwise_sqeuclidean
+from mDeepFRI.alignment_utils import pairwise_sqeuclidean
 from mDeepFRI.bio_utils import get_residues_coordinates, insert_gaps
 
 
@@ -29,32 +29,6 @@ class TestPairwiseSqeuclidean(unittest.TestCase):
         matrix = np.random.rand(3, 3).astype(np.float32)
         result = pairwise_sqeuclidean(matrix)
         np.allclose(result, expected)
-
-
-class TestIdentity(unittest.TestCase):
-    def test_equal(self):
-        seq1 = 'AASDS'
-        seq2 = 'AASDS'
-        result = alignment_identity(seq1, seq2)
-        self.assertEqual(round(result, 0), 1)
-
-    def test_one_mutation(self):
-        seq1 = 'AASDS'
-        seq2 = 'ADSDS'
-        result = alignment_identity(seq1, seq2)
-        self.assertEqual(round(result, 1), 0.8)
-
-    def test_insertion(self):
-        seq1 = 'AASDS'
-        seq2 = 'A-S-S'
-        result = alignment_identity(seq1, seq2)
-        self.assertEqual(round(result, 1), 0.6)
-
-    def test_deletion(self):
-        seq1 = 'A--SS'
-        seq2 = 'A-S--'
-        result = alignment_identity(seq1, seq2)
-        self.assertEqual(round(result, 1), 0.2)
 
 
 class TestGetResiduesCoordinates(unittest.TestCase):

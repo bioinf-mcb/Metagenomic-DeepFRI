@@ -30,8 +30,7 @@ UsageError.show = _show_usage_error
 @click.group()
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(version=__version__)
-@click.pass_context
-def main(ctx, debug):
+def main(debug):
     """mDeepFRI"""
 
     loggers = [
@@ -57,8 +56,7 @@ def main(ctx, debug):
               type=click.Choice(["1.0", "1.1"]),
               help="Version of the model.")
 @main.command
-@click.pass_context
-def get_models(ctx, output, version):
+def get_models(output, version):
     """Download model weights for mDeepFRI."""
 
     logger.info("Downloading DeepFRI models.")
@@ -165,14 +163,30 @@ def get_models(ctx, output, version):
     is_flag=True,
     help="Skip PDB100 database search.",
 )
-@click.pass_context
-def search_databases(ctx, input, output, db_path, min_length, max_length,
-                     min_bits, max_eval, min_ident, min_coverage, top_k,
-                     overwrite, threads, skip_pdb):
+def search_databases(input, output, db_path, min_length, max_length, min_bits,
+                     max_eval, min_ident, min_coverage, top_k, overwrite,
+                     threads, skip_pdb):
     """
     Hierarchically search FoldComp databases for similar proteins with
     MMSeqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
     """
+
+    # collect all params into dict
+    # ctx.obj = {
+    #     "input": input,
+    #     "output": output,
+    #     "db_path": db_path,
+    #     "min_length": min_length,
+    #     "max_length": max_length,
+    #     "min_bits": min_bits,
+    #     "max_eval": max_eval,
+    #     "min_ident": min_ident,
+    #     "min_coverage": min_coverage,
+    #     "top_k": top_k,
+    #     "overwrite": overwrite,
+    #     "threads": threads,
+    #     "skip_pdb": skip_pdb
+    # }
 
     hierarchical_database_search(query_file=input,
                                  databases=db_path,

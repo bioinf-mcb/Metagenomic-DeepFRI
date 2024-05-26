@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
-from mDeepFRI.mmseqs import MMSeqsSearchResult, QueryFile
+from mDeepFRI.mmseqs import MMseqsResult, QueryFile
 from mDeepFRI.pdb import create_pdb_mmseqs
 
 
@@ -74,12 +74,12 @@ class TestQueryFile(unittest.TestCase):
         query_file = QueryFile(self.fasta_file)
         query_file.load_sequences()
         result = query_file.search(self.database.mmseqs_db)
-        self.assertIsInstance(result, MMSeqsSearchResult)
+        self.assertIsInstance(result, MMseqsResult)
         self.assertIsNotNone(result.query_fasta)
         self.assertIsNotNone(result.database)
 
 
-class TestMMSeqsSearchResult(unittest.TestCase):
+class TestMMseqsResult(unittest.TestCase):
     def setUp(self):
         self.data = np.rec.array([
             ("seq1", "target1", 10, 20, 0.3, 40, 1e-3),
@@ -94,11 +94,10 @@ class TestMMSeqsSearchResult(unittest.TestCase):
                                         ("evalue", float)])
         self.query_fasta = Path("path/to/query.fasta").resolve()
         self.database = Path("path/to/database").resolve()
-        self.result = MMSeqsSearchResult(self.data, self.query_fasta,
-                                         self.database)
+        self.result = MMseqsResult(self.data, self.query_fasta, self.database)
 
     def test_init(self):
-        self.assertIsInstance(self.result, MMSeqsSearchResult)
+        self.assertIsInstance(self.result, MMseqsResult)
         self.assertEqual(self.result.query_fasta,
                          Path(self.query_fasta).resolve())
         self.assertEqual(self.result.database, Path(self.database).resolve())
@@ -117,7 +116,7 @@ class TestMMSeqsSearchResult(unittest.TestCase):
             lines = f.readlines()
             self.assertEqual(
                 lines[0],
-                "query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\tquery_fasta\tdatabase\n"
+                "query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\tquery_file\tdatabase_file\n"
             )
             self.assertEqual(
                 lines[1],
@@ -137,19 +136,19 @@ class TestMMSeqsSearchResult(unittest.TestCase):
                                              min_bits=50)
         self.assertEqual(len(filtered), 3)
 
-    def test_select_best_matches(self):
-        best_matches = self.result.select_best_matches(k=2)
+    def test_find_best_matches(self):
+        best_matches = self.result.find_best_matches(k=2)
         self.assertEqual(len(best_matches), 5)
 
-    def test_from_filepath(self):
+    def test_from_mmseqs_result(self):
         filepath = "test.tsv"
         with open(filepath, "w", newline="") as f:
             f.write("query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\n")
             f.write(f"seq1\ttarget1\t10\t20\t0.3\t40.0\t{float(1e-03)}\n")
             f.write(f"seq1\ttarget2\t20\t30\t0.4\t50.0\t{float(1e-04)}\n")
-        result = MMSeqsSearchResult.from_filepath(filepath, self.query_fasta,
-                                                  self.database)
-        self.assertIsInstance(result, MMSeqsSearchResult)
+        result = MMseqsResult.from_mmseqs_result(filepath, self.query_fasta,
+                                                 self.database)
+        self.assertIsInstance(result, MMseqsResult)
         self.assertEqual(result.query_fasta, Path(self.query_fasta).resolve())
         self.assertEqual(result.database, Path(self.database).resolve())
 

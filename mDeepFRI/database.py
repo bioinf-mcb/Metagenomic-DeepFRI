@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Iterable
 
 from mDeepFRI.mmseqs import (QueryFile, _createdb, _createindex,
-                             extract_fasta_foldcomp, validate_mmseqs_database)
+                             extract_fasta_foldcomp)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -71,12 +71,7 @@ def build_database(
 
     # create mmseqs db
     mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
-    mmseqs_valid = validate_mmseqs_database(mmseqs_path)
-    if not mmseqs_valid:
-        logger.info("Creating and indexing MMSeqs2 database.")
-        _createdb(output_sequences, mmseqs_path)
-        _createindex(mmseqs_path, threads)
-    elif overwrite or needs_new_mmseqs:
+    if overwrite or needs_new_mmseqs:
         logger.info("Creating and indexing MMSeqs2 daStabase.")
         _createdb(output_sequences, mmseqs_path)
         _createindex(mmseqs_path, threads)

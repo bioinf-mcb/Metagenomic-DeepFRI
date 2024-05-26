@@ -98,7 +98,7 @@ class MMseqsResult(np.recarray):
     Example:
 
             >>> from mDeepFRI.mmseqs import MMseqsResult
-            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
             >>> # sort file by identity and select seq1 hits only
             >>> result[::-1].sort(order=["fident"])
             >>> seq1_hits = result[result["query"] == "seq1"]
@@ -115,6 +115,27 @@ class MMseqsResult(np.recarray):
         obj.query_fasta = query_fasta
         obj.database = database
         return obj
+
+    def apply_mask(self, mask: np.ndarray):
+        """
+        Query search results.
+
+        Args:
+            mask (np.ndarray): Boolean mask.
+
+        Returns:
+            MMseqsResult: MMseqs2 search results.
+
+        Example:
+
+                >>> from mDeepFRI.mmseqs import MMseqsResult
+                >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
+                >>> mask = result["fident"] > 0.5
+                >>> filtered = result.apply_mask(mask)
+        """
+
+        return MMseqsResult(self.result_arr[mask], self.query_fasta,
+                            self.database)
 
     @property
     def columns(self) -> np.ndarray:
@@ -134,21 +155,21 @@ class MMseqsResult(np.recarray):
         Example:
 
             >>> from mDeepFRI.mmseqs import MMseqsResult
-            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
             >>> result.save("path/to/file.tsv")
         """
         # append query file column to the result array
         if self.query_fasta:
             query_col = np.array([self.query_fasta] * len(self.result_arr),
                                  dtype="U")
-            self.result_arr = rfn.append_fields(self, "query_fasta", query_col)
+            self.result_arr = rfn.append_fields(self, "query_file", query_col)
 
         # append database column to the result array
         if self.database:
             db_col = np.array([self.database] * len(self.result_arr),
                               dtype="U")
-            self.result_arr = rfn.append_fields(self.result_arr, "database",
-                                                db_col)
+            self.result_arr = rfn.append_fields(self.result_arr,
+                                                "database_file", db_col)
 
         if filetype == "tsv":
             with open(filepath, "w", newline="") as f:
@@ -181,20 +202,18 @@ class MMseqsResult(np.recarray):
 
         Example:
             >>> from mDeepFRI.mmseqs import MMseqsResult
-            >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
             >>> filtered = result.apply_filters(min_cov=30, min_ident=0.4, min_bits=50)
         """
 
-        self.result_arr = self.result_arr[(self.result_arr["qcov"] >= min_cov)
-                                          &
-                                          (self.result_arr["tcov"] >= min_cov)]
-        self.result_arr = self.result_arr[
-            self.result_arr["fident"] >= min_ident]
-        self.result_arr = self.result_arr[self.result_arr["bits"] >= min_bits]
+        mask = (self.result_arr["qcov"] >= min_cov) & (self.result_arr["tcov"] >= min_cov) & \
+                (self.result_arr["fident"] >= min_ident) & (self.result_arr["bits"] >= min_bits)
 
-        return MMseqsResult(self.result_arr, self.query_fasta, self.database)
+        return self.apply_mask(mask)
 
-    def get_best_matches(self, k: int = 5, threads: int = 1) -> "MMseqsResult":
+    def find_best_matches(self,
+                          k: int = 5,
+                          threads: int = 1) -> "MMseqsResult":
         """
         Selects k best matches for each query sequence based on bit score and identity.
 
@@ -220,11 +239,60 @@ class MMseqsResult(np.recarray):
         return MMseqsResult(np.concatenate(top_k), self.query_fasta,
                             self.database)
 
+    def get_queries(self):
+        """
+        Get unique query sequences.
+
+        Returns:
+            List[str]: List of unique query sequences.
+
+        Example:
+
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
+            >>> queries = result.get_queries()
+        """
+        return np.unique(self.result_arr["query"])
+
+    def get_targets(self):
+        """
+        Get unique target sequences.
+
+        Returns:
+            List[str]: List of unique target sequences.
+
+        Example:
+
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
+            >>> targets = result.get_targets()
+        """
+        return np.unique(self.result_arr["target"])
+
+    def get_query_targets(self, query: str):
+        """
+        Get target sequences for a specified query.
+
+        Args:
+            query (str): Query sequence ID.
+
+        Returns:
+            List[str]: List of target sequences for the query.
+
+        Example:
+
+            >>> from mDeepFRI.mmseqs import MMseqsResult
+            >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
+            >>> targets = result.get_query_to_target("seq1")
+        """
+        return np.unique(
+            self.result_arr[self.result_arr["query"] == query]["target"])
+
     @classmethod
-    def from_filepath(cls,
-                      filepath,
-                      query_fasta=None,
-                      database=None) -> "MMseqsResult":
+    def from_mmseqs_result(cls,
+                           filepath,
+                           query_fasta=None,
+                           database=None) -> "MMseqsResult":
         """
         Load search results from TSV file.
 
@@ -239,7 +307,7 @@ class MMseqsResult(np.recarray):
         Example:
 
                 >>> from mDeepFRI.mmseqs import MMseqsResult
-                >>> result = MMseqsResult.from_filepath("path/to/file.tsv")
+                >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
         """
 
         result_arr = np.recfromcsv(filepath,
@@ -247,6 +315,32 @@ class MMseqsResult(np.recarray):
                                    encoding="utf-8",
                                    names=True)
         return cls(result_arr, query_fasta, database)
+
+    @classmethod
+    def from_best_matches(cls, filepath: str):
+        """
+        Load best matches from TSV file.
+
+        Args:
+            filepath (str): Path to TSV file with best matches.
+
+        Returns:
+            MMseqsResult: MMseqs2 search results.
+
+        Example:
+
+                >>> from mDeepFRI.mmseqs import MMseqsResult
+                >>> result = MMseqsResult.from_best_matches("path/to/file.tsv")
+        """
+        result_arr = np.recfromcsv(filepath,
+                                   delimiter="\t",
+                                   encoding="utf-8",
+                                   names=True)
+
+        query_file = np.unique(result_arr["query_file"])[0]
+        database = np.unique(result_arr["database_file"])[0]
+
+        return cls(result_arr, query_file, database)
 
 
 class QueryFile:
@@ -404,6 +498,7 @@ class QueryFile:
                sensitivity: Annotated[float,
                                       ValueRange(min=1.0, max=7.5)] = 5.7,
                index_target: bool = False,
+               tmpdir=None,
                threads: int = 1):
         """
         Queries sequences against MMseqs2 database. The search results are stored in a tabular format.
@@ -413,6 +508,8 @@ class QueryFile:
             eval (float): Maximum e-value for MMseqs2 search.
             sensitivity (float): Sensitivity value for MMseqs2 search.
             index_target (bool): Create index for target database. Advised for repeated searches.
+            tmpdir (str): Path to temporary directory. MMseqs2 creates a lot of temporary files.
+                          For large queries, needs to be set to a directory with enough space.
             threads (int): Number of threads to use.
 
         Returns:
@@ -431,7 +528,7 @@ class QueryFile:
             raise ValueError(
                 "Sensitivity value should be between 1.0 and 7.5.")
 
-        with tempfile.TemporaryDirectory() as tmp_path:
+        with tempfile.TemporaryDirectory(dir=tmpdir) as tmp_path:
             if self.sequences:
                 fasta_path = Path(tmp_path) / "filtered_query.fa"
                 with open(fasta_path, "w") as f:
@@ -464,7 +561,7 @@ class QueryFile:
             output_file = Path(tmp_path) / "search_results.tsv"
             _convertalis(input_db_path, target_db_path, result_db, output_file)
 
-            result = MMseqsResult.from_filepath(
+            result = MMseqsResult.from_mmseqs_result(
                 output_file,
                 query_fasta=fasta_path,
                 database=target_db_path,
@@ -516,31 +613,3 @@ def extract_fasta_foldcomp(foldcomp_db: str,
         pass
 
     return Path(str(output_file) + ".gz")
-
-
-def validate_mmseqs_database(database: str):
-    """
-    Check if MMseqs2 database is intact.
-
-    Args:
-        database (str): Path to MMseqs2 database.
-
-    Returns:
-        bool: True if database is intact.
-
-    """
-
-    # Verify all the files for MMseqs2 database
-    MMseqs2_ext = [
-        ".index", ".dbtype", "_h", "_h.index", "_h.dbtype", ".idx",
-        ".idx.index", ".idx.dbtype", ".lookup", ".source"
-    ]
-
-    target_db = Path(database)
-    is_valid = True
-    for ext in MMseqs2_ext:
-        if not os.path.isfile(f"{target_db}{ext}"):
-            is_valid = False
-            break
-
-    return is_valid
