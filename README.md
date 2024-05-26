@@ -13,7 +13,7 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 3. Align target protein contact map to query protein with unknown structure.
 4. Run `DeepFRI` with the structure if found in the database, otherwise run `DeepFRI` with sequence only.
 
-![image.png](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/docs/source/_static/images/mdeepfri-design.drawio.png)
+![image.png](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/docs/_images/mdeepfri-design.drawio.png)
 
 ### 🛠️ Built With
 
