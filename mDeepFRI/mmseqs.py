@@ -357,7 +357,7 @@ class QueryFile:
     def __init__(self, filepath: str) -> None:
         self.filepath: str = filepath
         self.sequences: Dict[str, str] = {}
-        self.filtered_out: List[str] = []
+        self.filtered_out: Dict[str, str] = {}
 
     def __repr__(self) -> str:
         return f"QueryFile(filepath={self.filepath})"
@@ -491,12 +491,14 @@ class QueryFile:
                 k: v
                 for k, v in filtered_sequences.items() if condition(v)
             }
-            self.filtered_out = list(
-                set(self.sequences.keys()) - set(filtered_sequences.keys()))
-        else:
-            self.filtered_out = []
+            for seq_id, seq in self.sequences.items():
+                if seq_id not in filtered_sequences:
+                    self.filtered_out[seq_id] = seq
 
         self.sequences = filtered_sequences
+
+        if not self.sequences:
+            raise ValueError("No sequences left after filtering.")
 
     def search(self,
                database_path: str,
@@ -548,10 +550,10 @@ class QueryFile:
             _createdb(fasta_path, input_db_path)
 
             # create target db
-            with open(database_path, "r") as f:
+            with open(database_path, "rb") as f:
                 first_line = f.readline()
 
-            if first_line.startswith(">"):
+            if first_line.startswith(b">"):
                 target_db_path = Path(database_path).with_suffix(".mmseqsDB")
                 _createdb(database_path, target_db_path)
                 if index_target:
