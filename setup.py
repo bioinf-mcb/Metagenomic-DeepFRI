@@ -152,8 +152,8 @@ EXTENSIONS = [
               extra_compile_args=extra_compile_args,
               define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
                              ]),
-    Extension("mDeepFRI.alignment_utils",
-              sources=[SRC_DIR + "/alignment_utils.pyx"],
+    Extension("mDeepFRI.contact_map_utils",
+              sources=[SRC_DIR + "/contact_map_utils.pyx"],
               language="c++",
               libraries=["stdc++"],
               extra_compile_args=extra_compile_args,
