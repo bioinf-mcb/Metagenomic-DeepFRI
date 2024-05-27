@@ -1,4 +1,5 @@
 import logging
+import sys
 from io import StringIO
 from typing import List, Literal, Tuple
 
@@ -12,11 +13,14 @@ from biotite.structure.io.pdbx import PDBxFile, get_structure
 from mDeepFRI.alignment import AlignmentResult
 from mDeepFRI.alignment_utils import align_contact_map, pairwise_sqeuclidean
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # https://github.com/openmm/pdbfixer/blob/master/pdbfixer/pdbfixer.py
 substitutions = {
