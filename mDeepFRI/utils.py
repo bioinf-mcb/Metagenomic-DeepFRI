@@ -1,11 +1,10 @@
 import gzip
 import json
-import logging
 import re
-import shlex
 import shutil
 import subprocess
 import sys
+import warnings
 from glob import glob
 from pathlib import Path
 from typing import Dict, Iterable, List, Literal
@@ -27,11 +26,10 @@ def run_command(command):
         str: Command output.
     """
 
-    command_parts = shlex.split(command)
-
-    process = subprocess.Popen(command_parts,
+    process = subprocess.Popen(command,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT,
+                               shell=True,
                                universal_newlines=True)
 
     while True:
@@ -43,8 +41,7 @@ def run_command(command):
     process.wait()
     if process.returncode != 0:
         raise RuntimeError(
-            f"Command '{' '.join(command_parts)}' failed with exit code {process.returncode}"
-        )
+            f"Command {command} failed with exit code {process.returncode}")
 
 
 def download_file(url, path):
@@ -94,12 +91,10 @@ def download_model_weights(output_path: str,
         output_path.mkdir()
 
     for mode in gcn_model_links[version]:
-        logging.debug("Downloading GCN %s models...", mode.upper())
         for url in gcn_model_links[version][mode].values():
             download_file(url, output_path / url.split("/")[-1])
 
     for mode in cnn_model_links:
-        logging.debug("Downloading CNN %s models...", mode.upper())
         for url in cnn_model_links[mode].values():
             # version 1.1 does not perdict EC number
             if version == "1.1":
@@ -182,7 +177,6 @@ def remove_intermediate_files(temporary_files: Iterable):
     for file in temporary_files:
         extensions = glob(str(file) + "*")
         for ext in extensions:
-            logging.info(f"Removing temporary file {ext}.")
             Path(ext).unlink()
 
 
@@ -285,3 +279,8 @@ def retrieve_fasta_entries_as_dict(fasta_file: str,
     pysam.set_verbosity(verb)
 
     return fasta_dict
+
+
+def stdout_warn(message, category, filename, lineno, file=None, line=None):
+    sys.stdout.write(
+        warnings.formatwarning(message, category, filename, lineno))
