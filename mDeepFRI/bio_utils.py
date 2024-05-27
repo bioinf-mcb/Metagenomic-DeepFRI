@@ -18,6 +18,154 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
+# https://github.com/openmm/pdbfixer/blob/master/pdbfixer/pdbfixer.py
+substitutions = {
+    '2AS': 'ASP',
+    '3AH': 'HIS',
+    '5HP': 'GLU',
+    '5OW': 'LYS',
+    'ACL': 'ARG',
+    'AGM': 'ARG',
+    'AIB': 'ALA',
+    'ALM': 'ALA',
+    'ALO': 'THR',
+    'ALY': 'LYS',
+    'ARM': 'ARG',
+    'ASA': 'ASP',
+    'ASB': 'ASP',
+    'ASK': 'ASP',
+    'ASL': 'ASP',
+    'ASQ': 'ASP',
+    'AYA': 'ALA',
+    'BCS': 'CYS',
+    'BHD': 'ASP',
+    'BMT': 'THR',
+    'BNN': 'ALA',
+    'BUC': 'CYS',
+    'BUG': 'LEU',
+    'C5C': 'CYS',
+    'C6C': 'CYS',
+    'CAS': 'CYS',
+    'CCS': 'CYS',
+    'CEA': 'CYS',
+    'CGU': 'GLU',
+    'CHG': 'ALA',
+    'CLE': 'LEU',
+    'CME': 'CYS',
+    'CSD': 'ALA',
+    'CSO': 'CYS',
+    'CSP': 'CYS',
+    'CSS': 'CYS',
+    'CSW': 'CYS',
+    'CSX': 'CYS',
+    'CXM': 'MET',
+    'CY1': 'CYS',
+    'CY3': 'CYS',
+    'CYG': 'CYS',
+    'CYM': 'CYS',
+    'CYQ': 'CYS',
+    'DAH': 'PHE',
+    'DAL': 'ALA',
+    'DAR': 'ARG',
+    'DAS': 'ASP',
+    'DCY': 'CYS',
+    'DGL': 'GLU',
+    'DGN': 'GLN',
+    'DHA': 'ALA',
+    'DHI': 'HIS',
+    'DIL': 'ILE',
+    'DIV': 'VAL',
+    'DLE': 'LEU',
+    'DLY': 'LYS',
+    'DNP': 'ALA',
+    'DPN': 'PHE',
+    'DPR': 'PRO',
+    'DSN': 'SER',
+    'DSP': 'ASP',
+    'DTH': 'THR',
+    'DTR': 'TRP',
+    'DTY': 'TYR',
+    'DVA': 'VAL',
+    'EFC': 'CYS',
+    'FLA': 'ALA',
+    'FME': 'MET',
+    'GGL': 'GLU',
+    'GL3': 'GLY',
+    'GLZ': 'GLY',
+    'GMA': 'GLU',
+    'GSC': 'GLY',
+    'HAC': 'ALA',
+    'HAR': 'ARG',
+    'HIC': 'HIS',
+    'HIP': 'HIS',
+    'HMR': 'ARG',
+    'HPQ': 'PHE',
+    'HTR': 'TRP',
+    'HYP': 'PRO',
+    'IAS': 'ASP',
+    'IIL': 'ILE',
+    'IYR': 'TYR',
+    'KCX': 'LYS',
+    'LLP': 'LYS',
+    'LLY': 'LYS',
+    'LTR': 'TRP',
+    'LYM': 'LYS',
+    'LYZ': 'LYS',
+    'MAA': 'ALA',
+    'MEN': 'ASN',
+    'MHS': 'HIS',
+    'MIS': 'SER',
+    'MK8': 'LEU',
+    'MLE': 'LEU',
+    'MPQ': 'GLY',
+    'MSA': 'GLY',
+    'MSE': 'MET',
+    'MVA': 'VAL',
+    'NEM': 'HIS',
+    'NEP': 'HIS',
+    'NLE': 'LEU',
+    'NLN': 'LEU',
+    'NLP': 'LEU',
+    'NMC': 'GLY',
+    'OAS': 'SER',
+    'OCS': 'CYS',
+    'OMT': 'MET',
+    'PAQ': 'TYR',
+    'PCA': 'GLU',
+    'PEC': 'CYS',
+    'PHI': 'PHE',
+    'PHL': 'PHE',
+    'PR3': 'CYS',
+    'PRR': 'ALA',
+    'PTR': 'TYR',
+    'PYX': 'CYS',
+    'SAC': 'SER',
+    'SAR': 'GLY',
+    'SCH': 'CYS',
+    'SCS': 'CYS',
+    'SCY': 'CYS',
+    'SEL': 'SER',
+    'SEP': 'SER',
+    'SET': 'SER',
+    'SHC': 'CYS',
+    'SHR': 'LYS',
+    'SMC': 'CYS',
+    'SOC': 'CYS',
+    'STY': 'TYR',
+    'SVA': 'SER',
+    'TIH': 'ALA',
+    'TPL': 'TRP',
+    'TPO': 'THR',
+    'TPQ': 'ALA',
+    'TRG': 'LYS',
+    'TRO': 'TRP',
+    'TYB': 'TYR',
+    'TYI': 'TYR',
+    'TYQ': 'TYR',
+    'TYS': 'TYR',
+    'TYY': 'TYR'
+}
+
 
 def calculate_contact_map(coordinates: np.ndarray,
                           threshold=6.0,
@@ -65,12 +213,39 @@ def get_residues_coordinates(structure: np.ndarray, chain: str = "A"):
 
     protein_chain = structure[structure.chain_id == chain]
     # extract CA atoms coordinates
-    ca_atoms = protein_chain[protein_chain.atom_name == "CA"]
+    ca_atoms = protein_chain[(protein_chain.atom_name == "CA")
+                             & (protein_chain.hetero is False)]
 
-    residues = str(ProteinSequence(ca_atoms.res_name))
+    residues = str(
+        ProteinSequence(
+            [substitutions.get(res, res) for res in ca_atoms.res_name]))
     coords = ca_atoms.coord
 
     return (residues, coords)
+
+
+def load_structure(structure_string: str,
+                   filetype: Literal["mmcif", "pdb"] = "mmcif") -> np.ndarray:
+    """
+    Load structure from string.
+
+    Args:
+        structure_string (str): Structure file read into string.
+        filetype (str): Filetype of the structure.
+
+    Returns:
+        np.ndarray: Structure.
+    """
+    if filetype == "mmcif":
+        mmcif = PDBxFile.read(StringIO(structure_string))
+        structure = get_structure(mmcif, model=1)
+    elif filetype == "pdb":
+        pdb = PDBFile.read(StringIO(structure_string))
+        structure = pdb.get_structure()[0]
+    else:
+        raise NotImplementedError(f"Filetype {filetype} not supported.")
+
+    return structure
 
 
 def extract_residues_coordinates(
@@ -88,15 +263,8 @@ def extract_residues_coordinates(
     Returns:
         Tuple[str, np.ndarray]: Tuple of residues and coordinates.
     """
-    if filetype == "mmcif":
-        mmcif = PDBxFile.read(StringIO(structure_string))
-        structure = get_structure(mmcif, model=1)
-    elif filetype == "pdb":
-        pdb = PDBFile.read(StringIO(structure_string))
-        structure = pdb.get_structure()[0]
-    else:
-        raise NotImplementedError(f"Filetype {filetype} not supported.")
 
+    structure = load_structure(structure_string, filetype=filetype)
     residues, coords = get_residues_coordinates(structure, chain=chain)
 
     return (residues, coords)

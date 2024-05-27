@@ -1,5 +1,5 @@
 import gzip
-import logging
+import warnings
 from pathlib import Path
 from typing import Tuple
 
@@ -12,13 +12,6 @@ from mDeepFRI.bio_utils import extract_residues_coordinates
 from mDeepFRI.database import Database
 from mDeepFRI.mmseqs import _createdb, _createindex
 from mDeepFRI.utils import download_file
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-logger = logging.getLogger(__name__)
 
 
 def create_pdb_mmseqs(threads: int = 1):
@@ -43,7 +36,6 @@ def create_pdb_mmseqs(threads: int = 1):
     compressed_path = pdb100_path.with_suffix(".fasta.gz")
 
     if not (compressed_path).exists():
-        logger.info("Downloading PDB100 database.")
         download_file(PDB100, compressed_path)
 
         # re-compress with bgzip (tabix_compress)
@@ -61,7 +53,6 @@ def create_pdb_mmseqs(threads: int = 1):
     pdb100_mmseqs = build_dir / "pdb100_230517.mmseqsDB"
     # check if database exists
     if not pdb100_mmseqs.exists():
-        logging.info("Creating MMSeqs2 database from PDB100.")
         _createdb(compressed_path, pdb100_mmseqs)
         _createindex(pdb100_mmseqs, threads=threads)
 
@@ -91,6 +82,8 @@ def get_pdb_structure(pdb_id: str) -> str:
     return structure
 
 
+# TODO: pdbfixer should remove error catching in this function
+# only needed to run a function with multiprocessing
 def get_pdb_seq_coords(pdb_id_chain: str,
                        query_name: str) -> Tuple[str, np.ndarray]:
     """
@@ -113,7 +106,7 @@ def get_pdb_seq_coords(pdb_id_chain: str,
     except KeyError as e:
         sequence, coords = None, None
         pdb_id = pdb_id.upper()
-        logger.warning(
+        warnings.warn(
             f"Error extracting residues and coordinates for PDB ID {pdb_id}[Chain {chain}] - "
             f"non-standard residue {str(e)} present; {query_name} alignment skipped."
         )
