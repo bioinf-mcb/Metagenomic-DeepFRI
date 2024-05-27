@@ -403,7 +403,9 @@ class QueryFile:
             raise FileNotFoundError(f"File {self.filepath} not found.")
         self.sequences = retrieve_fasta_entries_as_dict(filepath, ids)
 
-    def load_sequences(self, ids: Iterable[str] = None) -> None:
+    def load_sequences(self,
+                       ids: Iterable[str] = None,
+                       sort: bool = True) -> None:
         """
         Load sequences from FASTA file. Sequences are stored in a dictionary with sequence
         IDs as keys and sequences as values.
@@ -429,6 +431,10 @@ class QueryFile:
             with FastxFile(self.filepath) as f:
                 for entry in f:
                     self.sequences[entry.name] = entry.sequence
+
+        # sort sequences by length
+        self.sequences = dict(
+            sorted(self.sequences.items(), key=lambda x: len(x[1])))
 
     def remove_sequences(self, ids: List[str]):
         """

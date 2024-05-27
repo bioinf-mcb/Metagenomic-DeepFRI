@@ -15,7 +15,7 @@ import requests
 from pysam import FastaFile, FastxFile, tabix_compress
 
 
-def run_command(command, timeout=None):
+def run_command(command):
     """
     Runs a command and returns its output.
 
@@ -26,25 +26,25 @@ def run_command(command, timeout=None):
     Returns:
         str: Command output.
     """
-    if isinstance(command, str):
-        command = shlex.split(command, ' ')
 
-    try:
-        completed_process = subprocess.run(command,
-                                           capture_output=True,
-                                           timeout=timeout,
-                                           check=True,
-                                           universal_newlines=True)
+    command_parts = shlex.split(command)
 
-    except subprocess.TimeoutExpired:
-        raise TimeoutError(f"command {' '.join(command)} timed out") from None
+    process = subprocess.Popen(command_parts,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               universal_newlines=True)
 
-    except subprocess.CalledProcessError as err:
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break
+        print(line, end='')
+
+    process.wait()
+    if process.returncode != 0:
         raise RuntimeError(
-            f"Command '{' '.join(command)}' failed with exit code {err.returncode}\n{err.stderr}"
-        ) from err
-
-    return completed_process.stdout
+            f"Command '{' '.join(command_parts)}' failed with exit code {process.returncode}"
+        )
 
 
 def download_file(url, path):
