@@ -1,25 +1,37 @@
+import csv
 import logging
 import pathlib
-from typing import Iterable
+import sys
+from functools import partial
+from multiprocessing import Pool
+from typing import Iterable, List, Tuple
 
 import numpy as np
+from tqdm import tqdm
 
-from mDeepFRI.database import build_database, search_database
-from mDeepFRI.mmseqs import QueryFile
-from mDeepFRI.pdb import create_pdb_mmseqs
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+from mDeepFRI import BAR_FORMAT, DEEPFRI_MODES, OUTPUT_HEADER
+from mDeepFRI.alignment import align_mmseqs_results
+from mDeepFRI.bio_utils import build_align_contact_map
+from mDeepFRI.database import build_database
+from mDeepFRI.mmseqs import MMseqsResult, QueryFile
+from mDeepFRI.pdb import create_pdb_mmseqs, extract_calpha_coords
+from mDeepFRI.predict import Predictor
+from mDeepFRI.utils import load_deepfri_config, remove_intermediate_files
 
 logger = logging.getLogger(__name__)
-BAR_FORMAT = "{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}], {rate_fmt}{postfix}"
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 
 def hierarchical_database_search(query_file: str,
                                  output_path: str,
                                  databases: Iterable[str] = [],
+                                 sensitivity: float = 5.7,
                                  min_seq_len: int = None,
                                  max_seq_len: int = None,
                                  min_bits: float = 0,
@@ -36,9 +48,15 @@ def hierarchical_database_search(query_file: str,
     # load initial sequences
     query_file = QueryFile(filepath=query_file)
     query_file.load_sequences()
+    # logging variable
     sequence_num_start = len(query_file.sequences)
+    # filter out sequences
     if min_seq_len or max_seq_len:
-        query_file.filter_sequences(min_seq_len, max_seq_len)
+        query_file.filter_sequences(
+            lambda x: min_seq_len <= len(x) <= max_seq_len)
+
+    for idx, seq in query_file.filtered_out.items():
+        logger.info(f"Skipping {idx}; sequence length {len(seq)} aa.")
 
     dbs = []
     # PDB100 database
@@ -60,22 +78,36 @@ def hierarchical_database_search(query_file: str,
 
     aligned_total = 0
 
+    seqs_to_search = query_file.sequences.copy()
     for db in dbs:
-        best_hits = search_database(query_file=query_file.filepath,
-                                    ids=query_file.sequences.keys(),
-                                    database=db.mmseqs_db,
-                                    min_seq_len=min_seq_len,
-                                    max_seq_len=max_seq_len,
-                                    min_bits=min_bits,
-                                    max_eval=max_eval,
-                                    min_ident=min_ident,
-                                    min_coverage=min_coverage,
-                                    top_k=top_k,
+
+        results = query_file.search(db.mmseqs_db,
+                                    sensitivity=sensitivity,
+                                    eval=max_eval,
                                     threads=threads)
 
-        best_hits.save(output_path / f"{db.name}_results.tsv")
-        # percentage of hits
-        unique_hits = np.unique(best_hits["query"])
+        filtered = results.apply_filters(min_cov=min_coverage,
+                                         min_bits=min_bits,
+                                         min_ident=min_ident)
+
+        try:
+            best_matches = filtered.find_best_matches(top_k, threads=threads)
+        except ValueError:
+            best_matches = MMseqsResult([], results.query_fasta,
+                                        db.sequence_db)
+
+        mmseqs_results_path = output_path / f"{db.name}_results.tsv"
+        # save intermediate results
+        best_matches.save(mmseqs_results_path)
+        # store the location of the result for the next step
+        db.mmseqs_result = mmseqs_results_path
+
+        # logging
+        unique_hits = np.unique(best_matches["query"])
+        if "pdb100" in db.name:
+            pdb_hits = unique_hits
+        else:
+            unique_hits = [hit for hit in unique_hits if hit not in pdb_hits]
         aligned_db = len(unique_hits)
         aligned_total += aligned_db
         aligned_perc = round(aligned_db / sequence_num_start * 100, 2)
@@ -85,318 +117,244 @@ def hierarchical_database_search(query_file: str,
         logger.info(
             f"Aligned {aligned_total}/{sequence_num_start} ({total_perc:.2f}%) proteins in total."
         )
-        query_file.remove_sequences(unique_hits)
+
+        # this mechanism decreases the amount of sequences
+        # on each iteration. Drastically improves execution times
+        # for large datasets.
+        # PDB100 hits are aligned second time to experimental
+        # structures in order to save failed contact map alignemnts.
+        if 'pdb100' not in db.name:
+            query_file.remove_sequences(unique_hits)
+
+    # reassign initial sequences for further processing
+    query_file.sequences = seqs_to_search
+
+    return query_file, dbs
 
 
-# def predict_protein_function(
-#         query_file: str,
-#         databases: Tuple[str],
-#         weights: str,
-#         output_path: str,
-#         deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
-#         angstrom_contact_threshold: float = 6,
-#         generate_contacts: int = 2,
-#         mmseqs_min_bitscore: float = None,
-#         mmseqs_max_eval: float = 10e-5,
-#         mmseqs_min_identity: float = 0.5,
-#         top_k: int = 5,
-#         alignment_gap_open: float = 10,
-#         alignment_gap_continuation: float = 1,
-#         identity_threshold: float = 0.5,
-#         remove_intermediate=False,
-#         overwrite=False,
-#         threads: int = 1,
-#         skip_pdb: bool = False,
-#         min_length: int = 60,
-#         max_length: int = 1000):
+def predict_protein_function(
+        query_file: str,
+        databases: Tuple[str],
+        weights: str,
+        output_path: str,
+        deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
+        angstrom_contact_threshold: float = 6,
+        generate_contacts: int = 2,
+        mmseqs_sensitivity: float = 5.7,
+        mmseqs_min_bitscore: float = 0,
+        mmseqs_max_eval: float = 1e-5,
+        mmseqs_min_identity: float = 0.5,
+        mmseqs_min_coverage: float = 0.9,
+        top_k: int = 5,
+        alignment_gap_open: float = 10,
+        alignment_gap_continuation: float = 1,
+        identity_threshold: float = 0.5,
+        remove_intermediate=False,
+        overwrite=False,
+        threads: int = 1,
+        skip_pdb: bool = False,
+        min_length: int = 60,
+        max_length: int = 1000):
 
-#     MIN_SEQ_LEN = min_length
-#     MAX_SEQ_LEN = max_length
+    # load DeepFRI model
+    deepfri_models_config = load_deepfri_config(weights)
+    # version 1.1 drops support for ec
+    if deepfri_models_config["version"] == "1.1":
+        # remove "ec" from processing modes
+        deepfri_processing_modes = [
+            mode for mode in deepfri_processing_modes if mode != "ec"
+        ]
+        logger.info("EC number prediction is not supported in version 1.1.")
 
-#     query_file = pathlib.Path(query_file)
-#     weights = pathlib.Path(weights)
-#     output_path = pathlib.Path(output_path)
-#     output_path.mkdir(parents=True, exist_ok=True)
+    if len(deepfri_processing_modes) == 0:
+        raise ValueError("No processing modes selected.")
 
-#     deepfri_models_config = load_deepfri_config(weights)
+    weights = pathlib.Path(weights)
+    output_path = pathlib.Path(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
-#     # version 1.1 drops support for ec
-#     if deepfri_models_config["version"] == "1.1":
-#         # remove "ec" from processing modes
-#         deepfri_processing_modes = [
-#             mode for mode in deepfri_processing_modes if mode != "ec"
-#         ]
-#         logger.info("EC number prediction is not supported in version 1.1.")
+    query_file, deepfri_dbs = hierarchical_database_search(
+        query_file=query_file,
+        output_path=output_path / "database_search",
+        databases=databases,
+        sensitivity=mmseqs_sensitivity,
+        min_seq_len=min_length,
+        max_seq_len=max_length,
+        min_bits=mmseqs_min_bitscore,
+        max_eval=mmseqs_max_eval,
+        min_ident=mmseqs_min_identity,
+        min_coverage=mmseqs_min_coverage,
+        top_k=top_k,
+        skip_pdb=skip_pdb,
+        overwrite=overwrite,
+        threads=threads)
 
-#     assert len(
-#         deepfri_processing_modes) > 0, "No valid processing modes selected."
+    aligned_cmaps = []
+    for db in deepfri_dbs:
+        # SEQUENCE ALIGNMENT
+        # calculate already aligned sequences
+        alignments = align_mmseqs_results(
+            best_matches_filepath=db.mmseqs_result,
+            sequence_db=db.sequence_db,
+            alignment_gap_open=alignment_gap_open,
+            alignment_gap_extend=alignment_gap_continuation,
+            threads=threads)
 
-#     deepfri_dbs = []
-#     # PDB100 database
-#     if not skip_pdb:
-#         logger.info(
-#             "Creating PDB100 database."
-#         )
-#         pdb100 = create_pdb_mmseqs()
-#         deepfri_dbs.append(pdb100)
-#         logger.info("PDB100 database created.")
+        # filter alignments by identity
+        alignments = [
+            aln for aln in alignments
+            if aln.query_identity > identity_threshold
+        ]
 
-#     # design solution
-#     # database is built in the same directory
-#     # where the structure database is stored
-#     for database in databases:
-#         database = pathlib.Path(database)
-#         db = build_database(
-#             input_path=database,
-#             output_path=database.parent,
-#             overwrite=overwrite,
-#             threads=threads,
-#         )
-#         deepfri_dbs.append(db)
+        try:
+            # set a db name for alignments
+            for aln in alignments:
+                aln.db_name = db.name
 
-#     query_seqs = load_fasta_as_dict(query_file)
-#     # sort dictionary by length
-#     query_seqs = dict(sorted(query_seqs.items(), key=lambda x: len(x[1])))
+            aligned_queries = [aln[0].query_name for aln in aligned_cmaps]
+            new_alignments = {
+                aln.query_name: aln
+                for aln in alignments if aln.query_name not in aligned_queries
+                and aln.query_name in query_file.sequences
+            }
 
-#     # filter query seqs and log their sizes
-#     to_remove = []
-#     for seq in query_seqs:
-#         if len(query_seqs[seq]) < MIN_SEQ_LEN:
-#             logger.info("Skipping %s; sequence too short %i aa", seq,
-#                         len(query_seqs[seq]))
-#             to_remove.append(seq)
-#         elif len(query_seqs[seq]) > MAX_SEQ_LEN:
-#             logger.info("Skipping %s; sequence too long %i aa", seq,
-#                         len(query_seqs[seq]))
-#             to_remove.append(seq)
+            # CONTACT MAP ALIGNMENT
+            # initially designed as a separate step
+            # some protein structures in PDB are not formatted correctly
+            # so contact map alignment fails for them
+            # for this cases we replace closest experimental structure with
+            # closest predicted structure if available
+            # if no alignments were found - report
 
-#     for seq in to_remove:
-#         del query_seqs[seq]
+            query_ids = [aln.query_name for aln in new_alignments.values()]
+            target_ids = [
+                aln.target_name.rsplit(".", 1)[0]
+                for aln in new_alignments.values()
+            ]
 
-#     aligned_cmaps = []
+            # extract structural information
+            # in form of C-alpha coordinates
+            coords = extract_calpha_coords(db, target_ids, query_ids, threads)
 
-#     for db in deepfri_dbs:
-#         # SEQUENCE ALIGNMENT
-#         # calculate already aligned sequences
-#         logger.info("Aligning %s sequences against %s.", len(query_seqs),
-#                     db.name)
+            for aln, coord in zip(new_alignments.values(), coords):
+                aln.coords = coord
 
-#         # align new sequences agains db
-#         alignments = run_alignment(query_file, db.mmseqs_db, db.sequence_db,
-#                                    output_path, mmseqs_min_bitscore,
-#                                    mmseqs_max_eval, mmseqs_min_identity, top_k,
-#                                    alignment_gap_open,
-#                                    alignment_gap_continuation, threads)
+        # troubleshoot cases where alignments are empty
+        except IndexError:
+            logger.info("No alignments found for %s.", db.name)
+            new_alignments = {}
+            continue
 
-#         # if anything aligned
-#         if not alignments:
-#             logger.info("No alignments found for %s.", db.name)
-#             continue
-#         # filter alignments by identity
-#         alignments = [
-#             aln for aln in alignments if aln.identity > identity_threshold
-#         ]
+        # if new alignments are empty - result is empty as well
+        partial_map_align = partial(build_align_contact_map,
+                                    threshold=angstrom_contact_threshold,
+                                    generated_contacts=generate_contacts)
 
-#         if not alignments:
-#             logger.info("All alignments below identity threshold for %s.",
-#                         db.name)
-#             continue
+        with Pool(threads) as p:
+            cmaps = list(p.map(partial_map_align, new_alignments.values()))
 
-#         # set a db name for alignments
-#         for aln in alignments:
-#             aln.db_name = db.name
+        # filter errored contact maps
+        # returned as Tuple[AlignmentResult, None] from `retrieve_align_contact_map`
+        partial_cmaps = [cmap for cmap in cmaps if cmap[1] is not None]
+        aligned_cmaps.extend(partial_cmaps)
+        aligned_database = round(
+            len(partial_cmaps) / len(query_file.sequences) * 100, 2)
+        aligned_total = round(
+            len(aligned_cmaps) / len(query_file.sequences) * 100, 2)
+        logger.info(
+            f"Aligned {len(partial_cmaps)}/{len(query_file.sequences)} ({aligned_database}%) "
+            f"proteins against {db.name} [without length ivalid].")
+        logger.info(
+            f"Aligned {len(aligned_cmaps)}/{len(query_file.sequences)} ({aligned_total}%) "
+            "proteins in total [without length invalid].")
 
-#         aligned_queries = [aln[0].query_name for aln in aligned_cmaps]
-#         new_alignments = {
-#             aln.query_name: aln
-#             for aln in alignments if aln.query_name not in aligned_queries
-#             and aln.query_name in query_seqs
-#         }
+    # FUNCTION PREDICTION
+    aligned_queries = [aln[0].query_name for aln in aligned_cmaps]
+    unaligned_queries = {
+        query_id: seq
+        for query_id, seq in query_file.sequences.items()
+        if query_id not in aligned_queries
+    }
 
-#         # CONTACT MAP ALIGNMENT
-#         # initially designed as a separate step
-#         # some protein structures in PDB are not formatted correctly
-#         # so contact map alignment fails for them
-#         # for this cases we replace closest experimental structure with
-#         # closest predicted structure if available
-#         # if no alignments were found - report
+    # sort cmaps by length of query sequence
+    aligned_cmaps = sorted(aligned_cmaps,
+                           key=lambda x: len(x[0].query_sequence))
+    # sort unaligned queries by length
+    unaligned_queries = dict(
+        sorted(unaligned_queries.items(), key=lambda x: len(x[1])))
 
-#         query_ids = [aln.query_name for aln in new_alignments.values()]
-#         target_ids = [
-#             aln.target_name.rsplit(".", 1)[0]
-#             for aln in new_alignments.values()
-#         ]
+    output_file_name = output_path / "results.tsv"
+    output_buffer = open(output_file_name, "w", encoding="utf-8")
+    csv_writer = csv.writer(output_buffer, delimiter="\t")
+    csv_writer.writerow(OUTPUT_HEADER)
 
-#         # extract structural information
-#         # in form of C-alpha coordinates
-#         if "pdb100" in db.name:
-#             with Pool(threads) as p:
-#                 iterable = zip(target_ids, query_ids)
-#                 _, coords = zip(*p.starmap(get_pdb_seq_coords, iterable))
+    for i, mode in enumerate(deepfri_processing_modes):
+        logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode], i + 1,
+                    len(deepfri_processing_modes))
+        # GCN
+        gcn_prots = len(aligned_cmaps)
+        if gcn_prots > 0:
+            net_type = "gcn"
 
-#         else:
-#             suffix = foldcomp_sniff_suffix(target_ids[0], db.foldcomp_db)
-#             if suffix:
-#                 target_ids = [f"{t}{suffix}" for t in target_ids]
+            # GCN for queries with aligned contact map
+            gcn_path = deepfri_models_config[net_type][mode]
 
-#             # extracting coordinates from FoldComp
-#             with foldcomp.open(db.foldcomp_db, ids=target_ids) as struct_db:
-#                 coords = [
-#                     extract_residues_coordinates(struct, filetype="pdb")[1]
-#                     for _, struct in struct_db
-#                 ]
+            gcn = Predictor(gcn_path, threads=threads)
 
-#         for aln, coord in zip(new_alignments.values(), coords):
-#             aln.coords = coord
+            for i, (aln, aligned_cmap) in tqdm(
+                    enumerate(aligned_cmaps),
+                    total=gcn_prots,
+                    miniters=len(aligned_cmaps) // 10,
+                    desc=f"Predicting with GCN ({DEEPFRI_MODES[mode]})",
+                    bar_format=BAR_FORMAT):
+                # writing the results to the output file
 
-#         partial_align = partial(build_align_contact_map,
-#                                 threshold=angstrom_contact_threshold,
-#                                 generated_contacts=generate_contacts)
+                prediction_rows = gcn.predict_function(
+                    seqres=aln.query_sequence,
+                    cmap=aligned_cmap,
+                    chain=str(aln.query_name))
 
-#         with Pool(threads) as p:
-#             # align with progress bar
-#             partial_cmaps = list(
-#                     p.map(partial_align, new_alignments.values())
-#                 )
+                for row in prediction_rows:
+                    deepfri_info = [net_type, mode]
+                    row.extend(deepfri_info)
 
-#         # filter errored contact maps
-#         # returned as Tuple[AlignmentResult, None] from `retrieve_align_contact_map`
-#         partial_cmaps = [cmap for cmap in partial_cmaps if cmap[1] is not None]
-#         aligned_cmaps.extend(partial_cmaps)
-#         aligned_database = round(len(partial_cmaps) / len(query_seqs) * 100, 2)
-#         aligned_total = round(len(aligned_cmaps) / len(query_seqs) * 100, 2)
-#         logger.info(
-#             f"Aligned {len(partial_cmaps)}/{len(query_seqs)} ({aligned_database}% of total)
-# proteins against {db.name}."
-#         )
-#         logger.info(
-#             f"Aligned {len(aligned_cmaps)}/{len(query_seqs)} ({aligned_total}%) proteins in total."
-#         )
+                    # additional alignment info
+                    # corrected name for FoldComp inconsistency
 
-#     aligned_queries = [aln.query_name for aln in alignments]
-#     unaligned_queries = {
-#         k: v
-#         for k, v in query_seqs.items() if k not in aligned_queries
-#     }
+                    row.extend([
+                        aln.target_name.rsplit(".", 1)[0], aln.db_name,
+                        aln.query_identity, aln.query_coverage
+                    ])
+                    csv_writer.writerow(row)
 
-#     # deepfri_processing_modes = ['mf', 'bp', 'cc', 'ec']
-#     # mf = molecular_function
-#     # bp = biological_process
-#     # cc = cellular_component
-#     # ec = enzyme_commission
+            del gcn
 
-#     # sort cmaps by length of query sequence
-#     aligned_cmaps = sorted(aligned_cmaps,
-#                            key=lambda x: len(x[0].query_sequence))
-#     # sort unaligned queries by length
-#     unaligned_queries = dict(
-#         sorted(unaligned_queries.items(), key=lambda x: len(x[1])))
+        # CNN for queries without satisfying alignments
+        cnn_prots = len(unaligned_queries)
+        if cnn_prots > 0:
+            net_type = "cnn"
+            cnn_path = deepfri_models_config[net_type][mode]
+            cnn = Predictor(cnn_path, threads=threads)
+            for i, query_id in tqdm(
+                    enumerate(unaligned_queries),
+                    total=cnn_prots,
+                    miniters=len(unaligned_queries) // 10,
+                    desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
+                    bar_format=BAR_FORMAT):
 
-#     output_file_name = output_path / "results.tsv"
-#     output_buffer = open(output_file_name, "w", encoding="utf-8")
-#     csv_writer = csv.writer(output_buffer, delimiter="\t")
-#     csv_writer.writerow([
-#         'Protein',
-#         'GO_term/EC_number',
-#         'Score',
-#         'Annotation',
-#         'Neural_net',
-#         'DeepFRI_mode',
-#         'DB_hit',
-#         'DB_name',
-#         'Identity',
-#     ])
+                prediction_rows = cnn.predict_function(
+                    seqres=unaligned_queries[query_id], chain=str(query_id))
+                for row in prediction_rows:
+                    row.extend([net_type, mode])
+                    row.extend([np.nan, np.nan, np.nan])
+                    csv_writer.writerow(row)
 
-#     # FUNCTION PREDICTION
-#     for i, mode in enumerate(deepfri_processing_modes):
-#         # GCN
-#         gcn_prots = len(aligned_cmaps)
-#         if gcn_prots > 0:
-#             net_type = "gcn"
-#             logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode],
-#                         i + 1, len(deepfri_processing_modes))
-#             # GCN for queries with aligned contact map
-#             gcn_path = deepfri_models_config[net_type][mode]
+            del cnn
 
-#             gcn = Predictor(gcn_path, threads=threads)
+    output_buffer.close()
 
-#             for i, (aln, aligned_cmap) in tqdm(
-#                     enumerate(aligned_cmaps),
-#                     total=gcn_prots,
-#                     miniters=len(aligned_cmaps) // 10,
-#                     desc=f"Predicting with GCN ({DEEPFRI_MODES[mode]})",
-#                     bar_format=BAR_FORMAT):
+    if remove_intermediate:
+        for db in deepfri_dbs:
+            remove_intermediate_files([db.sequence_db, db.mmseqs_db])
 
-#                 ### PROTEIN LENGTH CHECKS
-#                 if len(aln.query_sequence) < MIN_SEQ_LEN:
-#                     logger.info("Skipping %s; sequence too short %i aa",
-#                                 aln.query_name, len(aln.query_sequence))
-#                     continue
-
-#                 elif len(aln.query_sequence) > MAX_SEQ_LEN:
-#                     logger.info("Skipping %s; sequence too long - %i aa",
-#                                 aln.query_name, len(aln.query_sequence))
-#                     continue
-
-#                 logger.debug("Predicting %s; %i/%i", aln.query_name, i + 1,
-#                              gcn_prots)
-#                 # running the actual prediction
-#                 prediction_rows = gcn.predict_function(
-#                     seqres=aln.query_sequence,
-#                     cmap=aligned_cmap,
-#                     chain=str(aln.query_name))
-#                 # writing the results to the output file
-#                 for row in prediction_rows:
-#                     row.extend([net_type, mode])
-#                     # corrected name for FoldComp inconsistency
-#                     row.extend([
-#                         aln.target_name.rsplit(".", 1)[0], aln.db_name,
-#                         aln.identity
-#                     ])
-#                     csv_writer.writerow(row)
-
-#             del gcn
-
-#         # CNN for queries without satisfying alignments
-#         cnn_prots = len(unaligned_queries)
-#         if cnn_prots > 0:
-#             net_type = "cnn"
-#             logger.info("Predicting with CNN: %i proteins", cnn_prots)
-#             cnn_path = deepfri_models_config[net_type][mode]
-#             cnn = Predictor(cnn_path, threads=threads)
-#             for i, query_id in tqdm(
-#                     enumerate(unaligned_queries),
-#                     total=cnn_prots,
-#                     miniters=len(unaligned_queries) // 10,
-#                     desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
-#                     bar_format=BAR_FORMAT):
-
-#                 seq = query_seqs[query_id]
-#                 if len(seq) > MAX_SEQ_LEN:
-#                     logger.info("Skipping %s; sequence too long %i aa.",
-#                                 query_id, len(seq))
-#                     continue
-
-#                 elif len(seq) < MIN_SEQ_LEN:
-#                     logger.info("Skipping %s; sequence too short %i aa.",
-#                                 query_id, len(seq))
-#                     continue
-
-#                 logger.debug("Predicting %s; %i/%i", query_id, i + 1,
-#                              cnn_prots)
-#                 prediction_rows = cnn.predict_function(
-#                     seqres=query_seqs[query_id], chain=str(query_id))
-#                 for row in prediction_rows:
-#                     row.extend([net_type, mode])
-#                     row.extend([np.nan, np.nan, np.nan])
-#                     csv_writer.writerow(row)
-
-#             del cnn
-
-#     output_buffer.close()
-
-#     if remove_intermediate:
-#         for db in deepfri_dbs:
-#             remove_intermediate_files([db.sequence_db, db.mmseqs_db])
-
-#     logger.info("meta-DeepFRI finished successfully.")
+    logger.info("meta-DeepFRI finished successfully.")

@@ -6,8 +6,6 @@ from typing import Tuple
 import numpy as np
 import pyopal
 
-from mDeepFRI.contact_map import CAlphaCoordinates
-from mDeepFRI.contact_map_utils import align_contact_map
 from mDeepFRI.mmseqs import MMseqsResult
 from mDeepFRI.utils import (load_fasta_as_dict, retrieve_fasta_entries_as_dict,
                             stdout_warn)
@@ -99,40 +97,6 @@ class AlignmentResult:
 
         self.gapped_sequence, self.gapped_target = insert_gaps(
             self.query_sequence, self.target_sequence, self.alignment)
-
-        return self
-
-    def align_contact_map(self,
-                          cmap_threshold: int = 6,
-                          generated_contacts: int = 2):
-        """
-        Aligns the contact map of the query and target sequences.
-
-        Args:
-            cmap_threshold (int): Distance threshold for contact map.
-            generated_contacts (int): Number of generated contacts to add for gapped regions in the query alignment.
-
-        Returns:
-            np.ndarray: The aligned contact map.
-        """
-
-        if self.coords is None:
-            warnings.warn(f"No coordinates found for {self.target_name}.")
-
-        target_coords = CAlphaCoordinates(self.target_name, self.target_coords)
-        self.cmap = target_coords.calculate_contact_map(
-            threshold=cmap_threshold)
-
-        try:
-            self.aligned_cmap = align_contact_map(self.gapped_sequence,
-                                                  self.gapped_target,
-                                                  self.cmap.sparsify(),
-                                                  generated_contacts)
-        except IndexError:
-            pdb_id, chain = self.target_name.upper().split("_")
-            warnings.warn(
-                f"Error aligning contact map for PDB ID {pdb_id}[Chain {chain}] "
-                f"against {self.query_name}.")
 
 
 def best_hit_database(query,

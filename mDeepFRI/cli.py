@@ -98,6 +98,14 @@ def get_models(output, version):
     help="Path to a structures database compessed with FoldComp.",
 )
 @click.option(
+    "-s",
+    "--sensitivity",
+    required=False,
+    default=5.7,
+    type=click.FloatRange(1, 7.5),
+    help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
+)
+@click.option(
     "--min-length",
     required=False,
     default=None,
@@ -264,8 +272,14 @@ def search_databases(input, output, db_path, min_length, max_length, min_bits,
     help="Gap fill threshold during contact map alignment.",
 )
 @click.option(
+    "--mmseqs-sensitivity",
+    default=5.7,
+    type=click.FloatRange(1, 7.5),
+    help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
+)
+@click.option(
     "--mmseqs-min-bitscore",
-    default=None,
+    default=0,
     type=float,
     help="Minimum bitscore for MMseqs2 alignment.",
 )
@@ -280,6 +294,13 @@ def search_databases(input, output, db_path, min_length, max_length, min_bits,
     default=0.5,
     type=float,
     help="Minimum identity for MMseqs2 alignment.",
+)
+@click.option(
+    "--mmseqs-min-coverage",
+    default=0.9,
+    type=float,
+    help=
+    "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
 )
 @click.option(
     "--top-k",
@@ -353,8 +374,9 @@ def search_databases(input, output, db_path, min_length, max_length, min_bits,
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
-                     mmseqs_min_bitscore, mmseqs_max_evalue,
-                     mmseqs_min_identity, top_k, alignment_gap_open,
+                     mmseqs_sensitivity, mmseqs_min_bitscore,
+                     mmseqs_max_evalue, mmseqs_min_identity,
+                     mmseqs_min_coverage, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
                      remove_intermediate, overwrite, threads, skip_pdb,
                      min_length, max_length):
@@ -372,9 +394,11 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
     logger.info("Processing modes:              %s", processing_modes)
     logger.info("Angstrom contact threshold:    %s", angstrom_contact_thresh)
     logger.info("Generate contacts:             %s", generate_contacts)
+    logger.info("MMSeqs2 sensitivity:           %s", mmseqs_sensitivity)
     logger.info("MMSeqs2 minimum bitscore:      %s", mmseqs_min_bitscore)
     logger.info("MMSeqs2 maximum e-value:       %s", mmseqs_max_evalue)
     logger.info("MMSeqs2 minimum identity:      %s", mmseqs_min_identity)
+    logger.info("MMSeqs2 sensitivity:           %s", )
     logger.info("Top k results:                 %s", top_k)
     logger.info("Alignment gap open:            %s", alignment_gap_open)
     logger.info("Alignment gap extend:          %s", alignment_gap_extend)

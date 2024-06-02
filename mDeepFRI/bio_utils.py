@@ -173,13 +173,13 @@ substitutions = {
 
 def calculate_contact_map(coordinates: np.ndarray,
                           threshold=6.0,
+                          distance="sqeuclidean",
                           mode="matrix") -> np.ndarray:
     """
     Calculate contact map from PDB string.
 
     Args:
         pdb_string (str): PDB file read into string.
-        max_seq_len (int): Maximum sequence length.
         threshold (float): Distance threshold for contact map.
         mode (str): Output mode. Either "matrix" or "sparse".
 
@@ -187,9 +187,14 @@ def calculate_contact_map(coordinates: np.ndarray,
         np.ndarray: Contact map.
     """
     # squared euclidean is used for efficiency
-    threshold = threshold**2
+    distance_functions = {"sqeuclidean": pairwise_sqeuclidean}
 
-    distances = pairwise_sqeuclidean(coordinates)
+    if distance == "sqeuclidean":
+        threshold = threshold**2
+
+    distance_func = distance_functions[distance]
+
+    distances = distance_func(coordinates)
     cmap = (distances < threshold).astype(np.int32)
 
     if mode == "sparse":
@@ -339,8 +344,6 @@ def build_align_contact_map(
         cmap = calculate_contact_map(coordinates,
                                      threshold=threshold,
                                      mode="sparse")
-        logger.debug("Aligning contact map for %s against %s.", idx,
-                     alignment.query_name)
         try:
             aligned_cmap = align_contact_map(alignment.gapped_sequence,
                                              alignment.gapped_target, cmap,
@@ -353,6 +356,7 @@ def build_align_contact_map(
             aligned_cmap = None
 
     else:
+        logger.warning(f"No coordinates found for {alignment.target_name}.")
         aligned_cmap = None
 
     return (alignment, aligned_cmap)

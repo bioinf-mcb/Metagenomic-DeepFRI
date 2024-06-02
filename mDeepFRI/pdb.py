@@ -1,17 +1,22 @@
 import gzip
 import warnings
+from multiprocessing import Pool
 from pathlib import Path
 from typing import Tuple
 
+import foldcomp
 import numpy as np
 import requests
 from pysam import tabix_compress
 
 import mDeepFRI
-from mDeepFRI.bio_utils import extract_residues_coordinates
+from mDeepFRI.bio_utils import (extract_residues_coordinates,
+                                foldcomp_sniff_suffix)
 from mDeepFRI.database import Database
 from mDeepFRI.mmseqs import _createdb, _createindex
-from mDeepFRI.utils import download_file
+from mDeepFRI.utils import download_file, stdout_warn
+
+warnings.showwarning = stdout_warn
 
 
 def create_pdb_mmseqs(threads: int = 1):
@@ -112,3 +117,24 @@ def get_pdb_seq_coords(pdb_id_chain: str,
         )
 
     return sequence, coords
+
+
+def extract_calpha_coords(db: Database,
+                          target_ids: list,
+                          query_ids: list,
+                          threads: int = 1) -> list:
+
+    if "pdb100" in db.name:
+        with Pool(threads) as p:
+            results = p.starmap(get_pdb_seq_coords, zip(target_ids, query_ids))
+        coords = [coord for _, coord in results]
+    else:
+        suffix = foldcomp_sniff_suffix(target_ids[0], db.foldcomp_db)
+        if suffix:
+            target_ids = [f"{t}{suffix}" for t in target_ids]
+        with foldcomp.open(db.foldcomp_db, ids=target_ids) as struct_db:
+            coords = [
+                extract_residues_coordinates(struct, filetype="pdb")[1]
+                for _, struct in struct_db
+            ]
+    return coords

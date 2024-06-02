@@ -230,14 +230,19 @@ class MMseqsResult(np.recarray):
         # sort by bit score
         self.result_arr.sort(order=["query", "bits", "fident"],
                              kind="quicksort")
+
         select_top = partial(select_top_k, db=self.result_arr[::-1], k=k)
         # select k best hits
         top_k = []
         with ThreadPool(threads) as p:
             top_k = p.map(select_top, np.unique(self.result_arr["query"]))
 
-        return MMseqsResult(np.concatenate(top_k), self.query_fasta,
-                            self.database)
+        try:
+            final_table = np.concatenate(top_k)
+        except ValueError:
+            final_table = np.array([])
+
+        return MMseqsResult(final_table, self.query_fasta, self.database)
 
     def get_queries(self):
         """
@@ -571,7 +576,7 @@ class QueryFile:
 
             result = MMseqsResult.from_mmseqs_result(
                 output_file,
-                query_fasta=fasta_path,
+                query_fasta=self.filepath,
                 database=target_db_path,
             )
 

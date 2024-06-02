@@ -125,7 +125,13 @@ gcn_model_links = {
     }
 }
 
+BAR_FORMAT = "{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}], {rate_fmt}{postfix}"
+OUTPUT_HEADER = [
+    'Protein', 'GO_term/EC_number', 'Score', 'Annotation', 'Neural_net',
+    'DeepFRI_mode', 'DB_hit', 'DB_name', 'Identity', 'Coverage'
+]
+
 __all__ = [
     "QueryFile",
-    "MMSeqsSearchResult",
+    "MMSeqsResult",
 ]

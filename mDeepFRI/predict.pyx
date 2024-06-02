@@ -60,7 +60,7 @@ cdef class Predictor(object):
     cdef public np.ndarray Y_hat
     cdef public dict data
 
-    def __init__(self, model_path: str, threads: int = 0):
+    def __init__(self, model_path: str, threads: int = 0, ):
         self.model_path = model_path
         self.threads = threads
 
@@ -91,7 +91,6 @@ cdef class Predictor(object):
         cdef np.ndarray prediction
         cdef np.ndarray y
 
-        # self.data = {}
         S = seq2onehot(seqres)
         S = S.reshape(1, *S.shape)
         inputDetails = self.session.get_inputs()
@@ -103,13 +102,11 @@ cdef class Predictor(object):
                     inputDetails[0].name: A.astype(np.float32),
                     inputDetails[1].name: S.astype(np.float32)
                 })[0]
-            # self.data[chain] = [[A, S], seqres]
 
         # if no cmap use CNN with 1 input
         else:
             prediction = self.session.run(
                 None, {inputDetails[0].name: S.astype(np.float32)})[0]
-            # self.data[chain] = [[S], seqres]
 
         y = prediction[:, :, 0].reshape(-1)
 

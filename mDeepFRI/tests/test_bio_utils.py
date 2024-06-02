@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 from biotite.structure.io.pdb import PDBFile
 
-from mDeepFRI.alignment_utils import pairwise_sqeuclidean
 from mDeepFRI.bio_utils import get_residues_coordinates, insert_gaps
+from mDeepFRI.contact_map_utils import pairwise_sqeuclidean
 
 
 class TestInsertGaps(unittest.TestCase):
