@@ -1,6 +1,7 @@
 # project specific files
 test_database/
-notebooks
+notebooks/*
+!notebooks/halogenases.ipynb
 mDeepFRI/*.cpp
 cython_tests.ipynb
 foldcomp_bin
