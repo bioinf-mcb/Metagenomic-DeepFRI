@@ -28,7 +28,6 @@ jobs:
         CIBW_BUILD: ${{ matrix.python-tag }}
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
-        # CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_TEST_REQUIRES: importlib-resources
       with:
         output-dir: dist
@@ -44,6 +43,7 @@ jobs:
       matrix:
         python-tag:
         - cp311-manylinux_x86_64
+        - cp312-manylinux_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -53,7 +53,6 @@ jobs:
         CIBW_BUILD: ${{ matrix.python-tag }}
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
-        # CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_TEST_REQUIRES: importlib-resources
       with:
         output-dir: dist
@@ -69,6 +68,7 @@ jobs:
       matrix:
         python-tag:
         - cp311-macosx_x86_64
+        - cp312-macosx_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -78,7 +78,6 @@ jobs:
         CIBW_BUILD: ${{ matrix.python-tag }}
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
-        # CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_TEST_REQUIRES: importlib-resources
       with:
         output-dir: dist
@@ -104,7 +103,6 @@ jobs:
         CIBW_BUILD: ${{ matrix.python-tag }}
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
-        # CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_TEST_REQUIRES: importlib-resources
       with:
         output-dir: dist
