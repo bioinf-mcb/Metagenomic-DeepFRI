@@ -154,7 +154,7 @@ jobs:
       run: python -m pip install -U pip setuptools wheel
     - name: Install built wheel
       run: python -m pip install --no-binary mDeepFRI --find-links=dist mDeepFRI
-    - name: Run tests without coverage
+    # - name: Run tests without coverage
       # run: python -m unittest mDeepFRI.tests -vv
 
   upload:
