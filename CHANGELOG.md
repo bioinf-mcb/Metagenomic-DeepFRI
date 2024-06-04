@@ -7,6 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 [Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...HEAD
 
+## [Release]
+
+## [1.1.6] - 2024-06-04
+[1.1.6]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...v1.1.6
+
+### Added
+- MMSeqs2 API + tests
+- rudimentary documentation website
+- fixed bugs of v1.1.5
+
+
 ## [1.1.5] - 2024-04-01
 [1.1.5]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.4...v1.1.5
 
