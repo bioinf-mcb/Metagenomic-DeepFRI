@@ -163,8 +163,6 @@ jobs:
     - test-sdist
     - wheel-linux-aarch64
     - wheel-linux-x86_64
-    - wheel-macos-aarch64
-    - wheel-macos-x86_64
     steps:
     - uses: actions/download-artifact@v2
       with:
