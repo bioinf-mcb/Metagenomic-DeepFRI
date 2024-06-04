@@ -13,6 +13,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - improved logging
 - support for ESM databases (closes #80)
+- corrected structures retrieval from PDB (closes #81, #83)
+    - correct non-standard amino acids
+    - remove base pairs
 
 ### Changed
 - retrieval of structures from PDB & FoldComp databases
