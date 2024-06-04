@@ -93,9 +93,6 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-macosx_arm64
-        - cp39-macosx_arm64
-        - cp310-macosx_arm64
         - cp311-macosx_arm64
         - cp312-macosx_arm64
     steps:
