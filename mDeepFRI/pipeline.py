@@ -102,8 +102,13 @@ def hierarchical_database_search(query_file: str,
         # store the location of the result for the next step
         db.mmseqs_result = mmseqs_results_path
 
-        # logging
-        unique_hits = np.unique(best_matches["query"])
+        # catch error if no matches to database
+        # a case from phage proteins
+        try:
+            unique_hits = np.unique(best_matches["query"])
+        except IndexError:
+            unique_hits = np.array([])
+
         if "pdb100" in db.name:
             pdb_hits = unique_hits
         else:

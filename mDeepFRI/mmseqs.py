@@ -341,9 +341,14 @@ class MMseqsResult(np.recarray):
                                    delimiter="\t",
                                    encoding="utf-8",
                                    names=True)
-
-        query_file = np.unique(result_arr["query_file"])[0]
-        database = np.unique(result_arr["database_file"])[0]
+        try:
+            query_file = np.unique(result_arr["query_file"])[0]
+        except IndexError:
+            query_file = None
+        try:
+            database = np.unique(result_arr["database_file"])[0]
+        except IndexError:
+            database = None
 
         return cls(result_arr, query_file, database)
 
