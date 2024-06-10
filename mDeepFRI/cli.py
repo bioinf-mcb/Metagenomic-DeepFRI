@@ -95,6 +95,7 @@ def get_models(output, version):
     "--db-path",
     required=True,
     type=click.Path(exists=True),
+    multiple=True,
     help="Path to a structures database compessed with FoldComp.",
 )
 @click.option(
@@ -179,9 +180,9 @@ def get_models(output, version):
     is_flag=True,
     help="Skip PDB100 database search.",
 )
-def search_databases(input, output, db_path, min_length, max_length, min_bits,
-                     max_eval, min_ident, min_coverage, top_k, overwrite,
-                     threads, skip_pdb):
+def search_databases(input, output, db_path, sensitivity, min_length,
+                     max_length, min_bits, max_eval, min_ident, min_coverage,
+                     top_k, overwrite, threads, skip_pdb):
     """
     Hierarchically search FoldComp databases for similar proteins with
     MMSeqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
@@ -204,9 +205,27 @@ def search_databases(input, output, db_path, min_length, max_length, min_bits,
     #     "skip_pdb": skip_pdb
     # }
 
+    # write command parameters to log
+    logger.info("Command parameters:")
+    logger.info("Input:                        %s", input)
+    logger.info("Output:                       %s", output)
+    logger.info("Database:                     %s", db_path)
+    logger.info("Sensitivity:                  %s", sensitivity)
+    logger.info("Minimum length:               %s", min_length)
+    logger.info("Maximum length:               %s", max_length)
+    logger.info("Minimum bitscore:             %s", min_bits)
+    logger.info("Maximum e-value:              %s", max_eval)
+    logger.info("Minimum identity:             %s", min_ident)
+    logger.info("Minimum coverage:             %s", min_coverage)
+    logger.info("Top k results:                %s", top_k)
+    logger.info("Overwrite:                    %s", overwrite)
+    logger.info("Threads:                      %s", threads)
+    logger.info("Skip PDB:                     %s", skip_pdb)
+
     hierarchical_database_search(query_file=input,
                                  databases=db_path,
                                  output_path=output,
+                                 sensitivity=sensitivity,
                                  min_seq_len=min_length,
                                  max_seq_len=max_length,
                                  min_bits=min_bits,

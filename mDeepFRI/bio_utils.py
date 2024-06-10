@@ -11,7 +11,7 @@ from biotite.structure.io.pdb import PDBFile
 from biotite.structure.io.pdbx import PDBxFile, get_structure
 
 from mDeepFRI.alignment import AlignmentResult
-from mDeepFRI.alignment_utils import align_contact_map, pairwise_sqeuclidean
+from mDeepFRI.contact_map_utils import align_contact_map, pairwise_sqeuclidean
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
