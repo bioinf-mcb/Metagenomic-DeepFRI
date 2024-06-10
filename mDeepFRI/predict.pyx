@@ -136,7 +136,8 @@ cdef class Predictor(object):
         self,
         seqres: str,
         cmap = None,
-        chain: str = ""
+        chain: str = "",
+        format: str = "tsv",
     ):
         """
         Computes GO/EC predictions for a single protein chain from sequence and contact map.
@@ -145,6 +146,7 @@ cdef class Predictor(object):
             seqres (str): protein sequence.
             cmap (np.array): contact map.
             chain (str): protein ID.
+            format (str): output format. Options: "tsv", "vector".
 
         Returns:
             list: list of GO/EC predictions.
