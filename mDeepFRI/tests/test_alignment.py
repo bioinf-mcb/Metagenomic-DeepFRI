@@ -2,7 +2,7 @@ import unittest
 
 import pyopal
 
-from mDeepFRI.alignment import align_pairwise, best_hit_database
+from mDeepFRI.alignment import align_pairwise, best_hit_database, insert_gaps
 
 
 class TestAlignment(unittest.TestCase):
@@ -26,7 +26,20 @@ class TestAlignment(unittest.TestCase):
         self.assertEqual(best_hit, "seq3")
 
     def test_align_pairwise(self):
-        alignment = align_pairwise(self.queries["query_seq"],
-                                   self.targets["seq3"])
+        alignment, iden, coverage = align_pairwise(self.queries["query_seq"],
+                                                   self.targets["seq3"])
         self.assertEqual(alignment,
                          "MMMMMMMMMXMMMMMMMMMMMMMMMMMMMMMMXMMMMMMMMMMX")
+        self.assertAlmostEqual(iden, 0.93, places=2)
+        self.assertAlmostEqual(coverage, 1.0, places=2)
+
+
+class TestInsertGaps(unittest.TestCase):
+    def test_deletion(self):
+        self.assertEqual(insert_gaps('AACT', 'AAT', 'MMDM'), ('AACT', 'AA-T'))
+
+    def test_insertion(self):
+        self.assertEqual(insert_gaps('AAT', 'AATC', 'MMMI'), ('AAT-', 'AATC'))
+
+    def test_unaligned(self):
+        self.assertEqual(insert_gaps('AAT', 'FGTC', 'XXMI'), ('AAT-', 'FGTC'))

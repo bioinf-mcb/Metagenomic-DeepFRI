@@ -3,19 +3,8 @@ import unittest
 import numpy as np
 from biotite.structure.io.pdb import PDBFile
 
-from mDeepFRI.bio_utils import get_residues_coordinates, insert_gaps
+from mDeepFRI.bio_utils import get_residues_coordinates
 from mDeepFRI.contact_map_utils import pairwise_sqeuclidean
-
-
-class TestInsertGaps(unittest.TestCase):
-    def test_deletion(self):
-        self.assertEqual(insert_gaps('AACT', 'AAT', 'MMDM'), ('AACT', 'AA-T'))
-
-    def test_insertion(self):
-        self.assertEqual(insert_gaps('AAT', 'AATC', 'MMMI'), ('AAT-', 'AATC'))
-
-    def test_unaligned(self):
-        self.assertEqual(insert_gaps('AAT', 'FGTC', 'XXMI'), ('AAT-', 'FGTC'))
 
 
 class TestPairwiseSqeuclidean(unittest.TestCase):

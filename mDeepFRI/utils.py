@@ -32,16 +32,24 @@ def run_command(command):
                                shell=True,
                                universal_newlines=True)
 
+    stdout = []
     while True:
         line = process.stdout.readline()
+
         if not line:
             break
+        stdout.append(line)
         print(line, end='')
 
     process.wait()
     if process.returncode != 0:
         raise RuntimeError(
             f"Command {command} failed with exit code {process.returncode}")
+
+    # close file
+    process.stdout.close()
+
+    return "".join(stdout)
 
 
 def download_file(url, path):

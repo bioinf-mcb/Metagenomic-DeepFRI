@@ -223,7 +223,7 @@ def get_residues_coordinates(structure: np.ndarray, chain: str = "A"):
     protein_chain = structure[structure.chain_id == chain]
     # extract CA atoms coordinates
     ca_atoms = protein_chain[(protein_chain.atom_name == "CA")
-                             & (protein_chain.hetero is False)]
+                             & (protein_chain.hetero is not False)]
 
     residues = str(
         ProteinSequence(
