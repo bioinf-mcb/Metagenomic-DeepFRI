@@ -1,4 +1,3 @@
-
 Welcome to Metagenomic-DeepFRI's documentation! |Stars|
 =======================================================
 
@@ -54,6 +53,7 @@ Library
     Command Line Interface <cli>
     API Reference <api/index>
     Examples <examples/index>
+    Result Interpretation <results>
 
 .. list-table::
 

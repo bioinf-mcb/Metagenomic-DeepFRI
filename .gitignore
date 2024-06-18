@@ -1,5 +1,6 @@
 # project specific files
 test_database/
+models/
 notebooks/*
 !notebooks/halogenases.ipynb
 mDeepFRI/*.cpp

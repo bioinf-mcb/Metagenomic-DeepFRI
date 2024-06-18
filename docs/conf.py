@@ -72,7 +72,7 @@ extensions = [
     "nbsphinx",
     "recommonmark",
     "sphinx_click",
-    "IPython.sphinxext.ipython_console_highlighting",
+    "IPython.sphinxext.ipython_console_highlighting"
 ]
 
 bibtex_bibfiles = ['_static/bibtex/references.bib']
