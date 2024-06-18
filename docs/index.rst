@@ -61,9 +61,10 @@ Contents
     * - .. image :: _images/sano_logo.png
           :align: center
           :width: 400
-      - .. image :: _images/flatiron_logo.png
+      - .. image :: _images/flatiron-institute-bloc-ii.jpg
           :align: center
           :width: 400
     * - .. image :: _images/full_col2x-100.jpg
           :align: center
           :width: 400
+      -

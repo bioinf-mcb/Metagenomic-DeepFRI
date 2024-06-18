@@ -1,6 +1,6 @@
-Command Line Interface (CLI)
-============================
+Commands (CLI)
+==============
 
-.. click:: cli:main
+.. click:: mDeepFRI.cli:main
     :prog: mDeepFRI
     :nested: full
