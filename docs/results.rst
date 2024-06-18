@@ -24,9 +24,10 @@ Predicted structures are as useful as experimental ones (Fig. 1a). The bad quali
 the verbosity of predicted GO terms, yet predictions still remain accurate due to the contribution of the sequence module (Fig. 1b, c).
 
 
-.. image:: _images/deepfri_2b.png
+.. figure:: _images/deepfri_2b.png
     :align: center
 
+    Figure 1. Figure 2 reproduced from original DeepFRI manuscript [#]_.
 
 .. rubric:: Bibliography
 .. [#] `Barrio-Hernandez, I. et al. Clustering predicted structures at the scale of the known protein universe. Nature 622, 637–645 (2023). <https://doi.org/10.1038/s41586-023-06510-w>`_
