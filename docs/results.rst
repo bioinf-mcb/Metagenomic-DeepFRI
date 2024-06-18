@@ -29,7 +29,12 @@ the verbosity of predicted GO terms, yet predictions still remain accurate due t
 
     Figure 1. Figure 2 reproduced from original DeepFRI manuscript [#]_.
 
+In the follow up work, we demonstrated that DeepFRI predictions are concordant with EggNOG and HUMAnN 2.0 on the samples from cohort
+of neonatal patients. It should be noted, that structure module was not used in the study, and still was able to generalise to unknown taxa
+compared to EggNOG. However, EggNOG gave significantly better annotations for class `Gammaproteobacteria` [#]_.
+
 .. rubric:: Bibliography
 .. [#] `Barrio-Hernandez, I. et al. Clustering predicted structures at the scale of the known protein universe. Nature 622, 637–645 (2023). <https://doi.org/10.1038/s41586-023-06510-w>`_
 .. [#] `Koehler Leman, J. et al. Sequence-structure-function relationships in the microbial protein universe. Nat Commun 14, 2351 (2023). <https://doi.org/10.1038/s41467-023-37896-w>`_
 .. [#] `Gligorijević, V. et al. Structure-based protein function prediction using graph convolutional networks. Nat Commun 12, 3168 (2021). <https://doi.org/10.1038/s41467-021-23303-9>`_
+.. [#] `Maranga, M. et al. Comprehensive Functional Annotation of Metagenomes and Microbial Genomes Using a Deep Learning-Based Method. mSystems 8, e0117822 (2023). <https://10.1128/msystems.01178-22>`_

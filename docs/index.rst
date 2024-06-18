@@ -53,7 +53,15 @@ Library
     Command Line Interface <cli>
     API Reference <api/index>
     Examples <examples/index>
+
+Usage
+-----
+
+.. tocttree::
+    :maxdepth: 2
+
     Result Interpretation <results>
+
 
 .. list-table::
 
