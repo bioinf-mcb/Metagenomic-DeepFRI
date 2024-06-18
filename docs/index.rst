@@ -43,23 +43,16 @@ Setup
     # Optional cleanup
     rm environment.yml
 
-Library
--------
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
 
     Installation <install>
-    Command Line Interface <cli>
+    Commands <cli>
     API Reference <api/index>
     Examples <examples/index>
-
-Usage
------
-
-.. tocttree::
-    :maxdepth: 2
-
     Result Interpretation <results>
 
 
