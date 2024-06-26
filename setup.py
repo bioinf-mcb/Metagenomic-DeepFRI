@@ -265,6 +265,7 @@ EXTENSIONS = [
               language="c++",
               libraries=["stdc++"],
               extra_compile_args=extra_compile_args,
+              compiler_directives={"unreachable": False},
               define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
                              ]),
     Extension("mDeepFRI.contact_map_utils",
