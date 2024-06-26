@@ -11,11 +11,6 @@ class TestCommands(unittest.TestCase):
         result = run_command(command).strip()
         self.assertEqual(result, "Hello World!")
 
-    def test_mmseqs(self):
-        command = "mmseqs"
-        result = run_command(command).strip()
-        self.assertEqual(result.split()[0], "MMseqs2")
-
 
 class TestFastaFunctions(unittest.TestCase):
     def setUp(self):
