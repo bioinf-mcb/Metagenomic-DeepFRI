@@ -2,6 +2,7 @@ import configparser
 import os
 import re
 import shutil
+import sysconfig
 import tarfile
 from pathlib import Path
 
@@ -157,12 +158,23 @@ class build_binaries(Command):
     def initialize_options(self):
         self.force = False
         self.inplace = False
+        self.plat_name = None
+        self.target_machine = None
+        self.target_cpu = None
+        self.target_system = None
+        self.target_features = None
 
     def finalize_options(self):
-        _build_py = self.get_finalized_command("build_py")
-        self.build_lib = _build_py.build_lib
+        pass
 
     def run(self):
+        self.plat_name = sysconfig.get_platform()
+        self.target_machine = _detect_target_machine(self.plat_name)
+        self.target_cpu = _detect_target_cpu(self.plat_name)
+        self.target_system = _detect_target_system(self.plat_name)
+        self.target_features = _detect_cpu_features()
+        self.build_lib = self.get_finalized_command("build_ext").build_lib
+
         if self.inplace:
             output_path = Path(".")
         else:
@@ -173,16 +185,9 @@ class build_binaries(Command):
                     output_path / "mmseqs_bin").exists():
                 return
 
-        _build_ext = self.get_finalized_command("build_ext")
-        _build_ext.run()
-
-        self.announce("Downloading foldcomp", level=5)
-        _download_foldcomp(_build_ext.target_system, _build_ext.target_cpu,
-                           output_path)
-
-        self.announce("Downloading mmseqs", level=5)
-        _download_mmseqs(_build_ext.target_system, _build_ext.target_cpu,
-                         _build_ext.target_features, output_path)
+        _download_foldcomp(self.target_system, self.target_cpu, output_path)
+        _download_mmseqs(self.target_system, self.target_cpu,
+                         self.target_features, output_path)
 
 
 class build_ext(_build_ext):
@@ -226,9 +231,9 @@ class build_ext(_build_ext):
 class build(_build):
     def run(self):
         _build.run(self)
+        self.announce("Building binaries", level=5)
         _build_binaries = self.get_finalized_command("build_binaries")
         _build_binaries.run()
-        _build.run(self)
 
 
 class sdist(_sdist):
