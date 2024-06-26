@@ -53,11 +53,12 @@ def _detect_target_system(platform):
 
 
 def _detect_cpu_features():
-    import cpufeature
-    features = cpufeature.CPUFeature
-    if features["AVX2"] and features["OS_AVX"]:
+    import archspec.cpu
+    host = archspec.cpu.host()
+    features = host.to_dict()["features"]
+    if "avx2" in features:
         return "avx2"
-    elif features["SSE4.1"]:
+    elif "sse4_1" in features:
         return "sse41"
     else:
         return "sse2"
