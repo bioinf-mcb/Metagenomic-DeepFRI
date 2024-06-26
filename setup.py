@@ -225,6 +225,7 @@ class build_ext(_build_ext):
 
 class build(_build):
     def run(self):
+        _build.run(self)
         _build_binaries = self.get_finalized_command("build_binaries")
         _build_binaries.run()
         _build.run(self)
