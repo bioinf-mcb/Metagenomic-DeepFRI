@@ -5,7 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.7...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.8...HEAD
+
+## [Release]
+
+## [1.1.8] - 2024-06-26
+[1.1.8]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.7...v1.1.8
 
 ### Added
 
@@ -15,10 +20,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - hetero atom bug introduced by Ruff (c044a158)
-
-## [Release]
-
-
+- MacOS CI/CD bug connected to Foldcomp binary
 
 ## [1.1.7] - 2024-06-10
 [1.1.7]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.6...v1.1.7

@@ -6,40 +6,38 @@ on:
       - v*
 
 jobs:
-  wheel-linux-aarch64:
-    name: Build Linux wheels (Aarch64)
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        python-tag:
-        - cp38-manylinux_aarch64
-        - cp39-manylinux_aarch64
-        - cp310-manylinux_aarch64
-        - cp311-manylinux_aarch64
-        - cp312-manylinux_aarch64
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up QEMU
-      id: qemu
-      uses: docker/setup-qemu-action@v2
-      with:
-        platforms: all
-    - name: Build manylinux wheels
-      uses: pypa/cibuildwheel@v2.18.1
-      env:
-        CIBW_ARCHS: aarch64
-        CIBW_BUILD: ${{ matrix.python-tag }}
-        CIBW_BEFORE_ALL: yum install -y bzip2-devel xz-devel
-        CIBW_BEFORE_BUILD: pip install cython
-        CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
-        CIBW_BUILD_VERBOSITY: 2
-        CIBW_TEST_REQUIRES: importlib-resources
-      with:
-        output-dir: dist
-    - uses: actions/upload-artifact@v3
-      with:
-        name: wheels
-        path: dist/*
+  # wheel-linux-aarch64:
+  #   name: Build Linux wheels (Aarch64)
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     matrix:
+  #       python-tag:
+  #       - cp39-manylinux_aarch64
+  #       - cp310-manylinux_aarch64
+  #       - cp311-manylinux_aarch64
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up QEMU
+  #     id: qemu
+  #     uses: docker/setup-qemu-action@v2
+  #     with:
+  #       platforms: all
+  #   - name: Build manylinux wheels
+  #     uses: pypa/cibuildwheel@v2.18.1
+  #     env:
+  #       CIBW_ARCHS: aarch64
+  #       CIBW_BUILD: ${{ matrix.python-tag }}
+  #       CIBW_BEFORE_ALL: yum install -y bzip2-devel xz-devel
+  #       CIBW_BEFORE_BUILD: pip install cython
+  #       CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
+  #       CIBW_BUILD_VERBOSITY: 2
+  #       CIBW_TEST_REQUIRES: importlib-resources
+  #     with:
+  #       output-dir: dist
+  #   - uses: actions/upload-artifact@v3
+  #     with:
+  #       name: wheels
+  #       path: dist/*
 
   wheel-linux-x86_64:
     name: Build Linux wheels (x86-64)
@@ -47,11 +45,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-manylinux_x86_64
         - cp39-manylinux_x86_64
         - cp310-manylinux_x86_64
         - cp311-manylinux_x86_64
-        - cp312-manylinux_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -77,11 +73,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-macosx_x86_64
         - cp39-macosx_x86_64
         - cp310-macosx_x86_64
         - cp311-macosx_x86_64
-        - cp312-macosx_x86_64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -106,11 +100,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
-        - cp38-macosx_arm64
         - cp39-macosx_arm64
         - cp310-macosx_arm64
         - cp311-macosx_arm64
-        - cp312-macosx_arm64
     steps:
     - uses: actions/checkout@v4
     - name: Build manylinux wheels
@@ -178,7 +170,6 @@ jobs:
     needs:
     - sdist
     - test-sdist
-    - wheel-linux-aarch64
     - wheel-linux-x86_64
     - wheel-macos-x86_64
     - wheel-macos-aarch64

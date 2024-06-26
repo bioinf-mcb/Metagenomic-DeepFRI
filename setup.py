@@ -289,7 +289,6 @@ setup(
     packages=find_packages(),
     package_data={
         "foldcomp": ["foldcomp_bin"],
-        "mmseqs": ["mmseqs"],
-        "test_data": ["mDeepFRI/tests/data"]
+        "mmseqs": ["mmseqs"]
     },
 )
