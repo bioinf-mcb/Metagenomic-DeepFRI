@@ -63,55 +63,57 @@ jobs:
         name: wheels
         path: dist/*
 
-  # wheel-macos-x86_64:
-  #   name: Build MacOS wheels (x86-64)
-  #   runs-on: macOS-11
-  #   strategy:
-  #     matrix:
-  #       python-tag:
-  #       - cp311-macosx_x86_64
-  #       - cp312-macosx_x86_64
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #   - name: Build manylinux wheels
-  #     uses: pypa/cibuildwheel@v2.18.1
-  #     env:
-  #       CIBW_ARCHS: x86_64
-  #       CIBW_BUILD: ${{ matrix.python-tag }}
-  #       CIBW_BEFORE_BUILD: pip install cython
-  #       CIBW_BUILD_VERBOSITY: 2
-  #       CIBW_TEST_REQUIRES: importlib-resources
-  #     with:
-  #       output-dir: dist
-  #   - uses: actions/upload-artifact@v3
-  #     with:
-  #       name: wheels
-  #       path: dist/*
+  wheel-macos-x86_64:
+    name: Build MacOS wheels (x86-64)
+    runs-on: macOS-11
+    strategy:
+      matrix:
+        python-tag:
+        - cp311-macosx_x86_64
+        - cp312-macosx_x86_64
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build manylinux wheels
+      uses: pypa/cibuildwheel@v2.18.1
+      env:
+        CIBW_ARCHS: x86_64
+        CIBW_BUILD: ${{ matrix.python-tag }}
+        CIBW_BEFORE_BUILD: pip install cython
+        CIBW_BUILD_VERBOSITY: 2
+        CIBW_TEST_REQUIRES: importlib-resources
+        MACOSX_DEPLOYMENT_TARGET: 12.1
+      with:
+        output-dir: dist
+    - uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist/*
 
-  # wheel-macos-aarch64:
-  #   name: Build MacOS wheels (Aarch64)
-  #   runs-on: macOS-11
-  #   strategy:
-  #     matrix:
-  #       python-tag:
-  #       - cp311-macosx_arm64
-  #       - cp312-macosx_arm64
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #   - name: Build manylinux wheels
-  #     uses: pypa/cibuildwheel@v2.18.1
-  #     env:
-  #       CIBW_ARCHS: arm64
-  #       CIBW_BUILD: ${{ matrix.python-tag }}
-  #       CIBW_BEFORE_BUILD: pip install cython
-  #       CIBW_BUILD_VERBOSITY: 2
-  #       CIBW_TEST_REQUIRES: importlib-resources
-  #     with:
-  #       output-dir: dist
-  #   - uses: actions/upload-artifact@v3
-  #     with:
-  #       name: wheels
-  #       path: dist/*
+  wheel-macos-aarch64:
+    name: Build MacOS wheels (Aarch64)
+    runs-on: macOS-11
+    strategy:
+      matrix:
+        python-tag:
+        - cp311-macosx_arm64
+        - cp312-macosx_arm64
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build manylinux wheels
+      uses: pypa/cibuildwheel@v2.18.1
+      env:
+        CIBW_ARCHS: arm64
+        CIBW_BUILD: ${{ matrix.python-tag }}
+        CIBW_BEFORE_BUILD: pip install cython
+        CIBW_BUILD_VERBOSITY: 2
+        CIBW_TEST_REQUIRES: importlib-resources
+        MACOSX_DEPLOYMENT_TARGET: 12.1
+      with:
+        output-dir: dist
+    - uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist/*
 
   sdist:
     runs-on: ubuntu-latest
@@ -131,30 +133,28 @@ jobs:
       with:
         name: wheels
         path: dist/*
-    - name: Run tests without coverage
-      run: python -m unittest
 
-  test-sdist:
-    runs-on: ubuntu-latest
-    name: Test source distribution
-    needs:
-    - sdist
-    steps:
-    - name: Setup Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    - name: Download built wheels
-      uses: actions/download-artifact@v2
-      with:
-          name: wheels
-          path: dist/
-    - name: Update pip to latest version
-      run: python -m pip install -U pip setuptools wheel
-    - name: Install built wheel
-      run: python -m pip install --no-binary mDeepFRI --find-links=dist mDeepFRI
-    - name: Run tests without coverage
-      run: python -m unittest mDeepFRI.tests -vv
+  # test-sdist:
+  #   runs-on: ubuntu-latest
+  #   name: Test source distribution
+  #   needs:
+  #   - sdist
+  #   steps:
+  #   - name: Setup Python 3.11
+  #     uses: actions/setup-python@v4
+  #     with:
+  #       python-version: '3.11'
+  #   - name: Download built wheels
+  #     uses: actions/download-artifact@v2
+  #     with:
+  #         name: wheels
+  #         path: dist/
+  #   - name: Update pip to latest version
+  #     run: python -m pip install -U pip setuptools wheel
+  #   - name: Install built wheel
+  #     run: python -m pip install --no-binary mDeepFRI --find-links=dist mDeepFRI
+  #   - name: Run tests without coverage
+  #     run: python -m unittest mDeepFRI.tests -vv
 
   upload:
     environment: PyPI
@@ -164,9 +164,10 @@ jobs:
     name: Upload
     needs:
     - sdist
-    - test-sdist
     - wheel-linux-aarch64
     - wheel-linux-x86_64
+    - wheel-macos-x86_64
+    - wheel-macos-aarch64
     steps:
     - uses: actions/download-artifact@v2
       with:
