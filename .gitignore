@@ -6,8 +6,7 @@ notebooks/*
 mDeepFRI/*.cpp
 cython_tests.ipynb
 foldcomp_bin
-correct_pdb.py
-
+mmseqs
 
 docs/build/*
 build/

@@ -1,10 +1,10 @@
 import os
 
+from mDeepFRI.mmseqs import QueryFile
+
 __version__ = "1.1.7"
 __author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
 __licencse__ = "BSD-3-Clause"
-
-from mDeepFRI.mmseqs import QueryFile
 
 repo_url = "https://huggingface.co/valentynbez/mDeepFRI/resolve/main/"
 

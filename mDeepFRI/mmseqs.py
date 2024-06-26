@@ -14,6 +14,9 @@ from pysam import FastxFile, tabix_compress
 import mDeepFRI
 from mDeepFRI.utils import retrieve_fasta_entries_as_dict, run_command
 
+MMSEQS_PATH = Path(mDeepFRI.__path__[0]).parent / "mmseqs" / "bin" / "mmseqs"
+FOLDCOMP_PATH = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
+
 
 @dataclass
 class ValueRange:
@@ -35,13 +38,15 @@ def _createdb(sequences_file, db_path):
         None
     """
 
-    run_command(f"mmseqs createdb {sequences_file} {db_path} --dbtype 1")
+    run_command(
+        f"{MMSEQS_PATH} createdb {sequences_file} {db_path} --dbtype 1")
 
 
 def _createindex(db_path: str, threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
-            f"mmseqs createindex {db_path} {tmp_path} --threads {threads}")
+            f"{MMSEQS_PATH} createindex {db_path} {tmp_path} --threads {threads}"
+        )
 
 
 def _search(query_db: str,
@@ -52,7 +57,7 @@ def _search(query_db: str,
             threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
-            f"mmseqs search -e {mmseqs_max_eval} --threads {threads} "
+            f"{MMSEQS_PATH} search -e {mmseqs_max_eval} --threads {threads} "
             f"-s {sensitivity} {query_db} {target_db} {result_db} {tmp_path}")
 
 
@@ -75,7 +80,7 @@ def _convertalis(
 
     args = ",".join(columns)
     run_command(
-        f"mmseqs convertalis {query_db} {target_db} {result_db} {output_file} --format-mode 4 "
+        f"{MMSEQS_PATH} convertalis {query_db} {target_db} {result_db} {output_file} --format-mode 4 "
         f"--format-output {args}")
 
 
@@ -605,12 +610,11 @@ def extract_fasta_foldcomp(foldcomp_db: str,
         str: Path to gzipped FASTA file.
     """
 
-    foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
     database_name = Path(foldcomp_db).stem
 
     # run command
     run_command(
-        f"{foldcomp_bin} extract --fasta -t {threads} {foldcomp_db} {output_file}"
+        f"{FOLDCOMP_PATH} extract --fasta -t {threads} {foldcomp_db} {output_file}"
     )
 
     if database_name in ESM_DATABASES:

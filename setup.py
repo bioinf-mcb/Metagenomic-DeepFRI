@@ -5,9 +5,9 @@ import shutil
 import tarfile
 from pathlib import Path
 
-import numpy as np
 import requests
-from setuptools import Extension, find_packages, setup
+from setuptools import Command, Extension, find_packages, setup
+from setuptools.command.build import build as _build
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.sdist import sdist as _sdist
 
@@ -52,12 +52,30 @@ def _detect_target_system(platform):
     return None
 
 
+def _detect_cpu_features():
+    import cpufeature
+    features = cpufeature.CPUFeature
+    if features["AVX2"] and features["OS_AVX"]:
+        return "avx2"
+    elif features["SSE4.1"]:
+        return "sse41"
+    else:
+        return "sse2"
+
+
 FOLDCOMP_BINARIES = {
     "linux_or_android":
     "https://mmseqs.com/foldcomp/foldcomp-linux-x86_64.tar.gz",
     "aarch64": "https://mmseqs.com/foldcomp/foldcomp-linux-arm64.tar.gz",
-    "macos": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz",
-    "windows": "https://mmseqs.com/foldcomp/foldcomp-windows-x64.zip"
+    "macos": "https://mmseqs.com/foldcomp/foldcomp-macos-universal.tar.gz"
+}
+
+MMSEQS_BINARIES = {
+    "avx2": "https://mmseqs.com/latest/mmseqs-linux-avx2.tar.gz",
+    "sse41": "https://mmseqs.com/latest/mmseqs-linux-sse41.tar.gz",
+    "sse2": "https://mmseqs.com/latest/mmseqs-linux-sse2.tar.gz",
+    "aarch64": "https://mmseqs.com/latest/mmseqs-linux-arm64.tar.gz",
+    "ppc": "https://mmseqs.com/latest/mmseqs-linux-ppc64le-power8.tar.gz"
 }
 
 
@@ -77,6 +95,7 @@ def _download_foldcomp(system, cpu, output_path):
         build = "aarch64"
     else:
         build = system
+
     url = FOLDCOMP_BINARIES[build]
 
     output_path = Path(output_path)
@@ -93,12 +112,91 @@ def _download_foldcomp(system, cpu, output_path):
     foldcomp_tar.unlink()
 
 
+def _download_mmseqs(system, cpu, features, output_path):
+    # select appropriate binary
+    if cpu == "aarch64":
+        build = "aarch64"
+    elif cpu == "ppc" and system == "linux":
+        build = "ppc"
+    else:
+        build = features
+
+    url = MMSEQS_BINARIES[build]
+
+    output_path = Path(output_path)
+    mmseqs_tar = output_path / "mmseqs.tar.gz"
+    # download file
+    _download_file(url, mmseqs_tar)
+    # untar file
+    with tarfile.open(mmseqs_tar, "r:gz") as archive:
+        archive.extractall(path=output_path)
+
+    # remove tar file
+    mmseqs_tar.unlink()
+
+
+# --- Commands ------------------------------------------------------------------
+
+
+class build_binaries(Command):
+    """
+    A custom command to download foldcomp and mmseqs binaries.
+    """
+
+    description = "Download foldcomp and mmseqs binaries."
+    user_options = [
+        ("force", "f",
+         "Force download even if the binaries are already present."),
+        ("inplace", "i", "Download the binaries in the source directory."),
+    ]
+
+    def initialize_options(self):
+        self.force = False
+        self.inplace = False
+
+    def finalize_options(self):
+        _build_py = self.get_finalized_command("build_py")
+        self.build_lib = _build_py.build_lib
+
+    def run(self):
+        if self.inplace:
+            output_path = Path(".")
+        else:
+            output_path = Path(self.build_lib)
+
+        if not self.force:
+            if (output_path / "foldcomp_bin").exists() and (
+                    output_path / "mmseqs_bin").exists():
+                return
+
+        _build_ext = self.get_finalized_command("build_ext")
+        _build_ext.run()
+
+        self.announce("Downloading foldcomp", level=5)
+        _download_foldcomp(_build_ext.target_system, _build_ext.target_cpu,
+                           output_path)
+
+        self.announce("Downloading mmseqs", level=5)
+        _download_mmseqs(_build_ext.target_system, _build_ext.target_cpu,
+                         _build_ext.target_features, output_path)
+
+
 class build_ext(_build_ext):
     def initialize_options(self) -> None:
         _build_ext.initialize_options(self)
         self.target_machine = None
         self.target_cpu = None
         self.target_system = None
+        self.target_features = None
+
+    def finalize_options(self) -> None:
+        _build_ext.finalize_options(self)
+
+        import builtins
+        builtins.__NUMPY_SETUP__ = False
+
+        import numpy
+        self.include_dirs.append(numpy.get_include())
 
     def run(self):
         if isinstance(cythonize, ImportError):
@@ -115,10 +213,17 @@ class build_ext(_build_ext):
         self.target_machine = _detect_target_machine(self.plat_name)
         self.target_cpu = _detect_target_cpu(self.plat_name)
         self.target_system = _detect_target_system(self.plat_name)
-        _download_foldcomp(self.target_system, self.target_cpu, self.build_lib)
+        self.target_features = _detect_cpu_features()
+
+        if self.target_system == "windows":
+            raise RuntimeError("Windows is not supported.")
 
 
-# --- Commands ------------------------------------------------------------------
+class build(_build):
+    def run(self):
+        _build_binaries = self.get_finalized_command("build_binaries")
+        _build_binaries.run()
+        _build.run(self)
 
 
 class sdist(_sdist):
@@ -167,9 +272,17 @@ extras["dev"] = ["pre-commit"]
 setup(
     include_package_data=True,
     ext_modules=EXTENSIONS,
-    include_dirs=[np.get_include()],
     extras_require=extras,
     install_requires=install_requires,
-    cmdclass={'build_ext': build_ext},
+    cmdclass={
+        'build_ext': build_ext,
+        'build_binaries': build_binaries,
+        'build': build,
+        'sdist': sdist
+    },
     packages=find_packages(),
+    package_data={
+        "foldcomp": ["/foldcomp_bin"],
+        "mmseqs": ["/mmseqs"]
+    },
 )

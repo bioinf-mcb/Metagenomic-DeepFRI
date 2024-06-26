@@ -1,17 +1,29 @@
 import subprocess
-from pathlib import Path
+import unittest
 
-import mDeepFRI
+from mDeepFRI.mmseqs import FOLDCOMP_PATH, MMSEQS_PATH
 
 
-def test_foldcomp_download():
-    """
-    Test if foldcomp binary was downloaded properly
-    and can be invoked from Python.
-    """
-    foldcomp_bin = Path(mDeepFRI.__path__[0]).parent / "foldcomp"
-    stdout = subprocess.run([foldcomp_bin],
-                            capture_output=True,
-                            check=True,
-                            text=True).stdout
-    assert "foldcomp compress" in stdout
+class TestSetup(unittest.TestCase):
+    def test_foldcomp(self):
+        """
+        Test if foldcomp binary was downloaded properly
+        and can be invoked from Python.
+        """
+        stdout = subprocess.run([FOLDCOMP_PATH],
+                                capture_output=True,
+                                check=True,
+                                text=True).stdout
+        assert "foldcomp compress" in stdout
+
+    def test_mmseqs(self):
+        """
+        Test if mmseqs binary was downloaded properly
+        and can be invoked from Python.
+        """
+
+        stdout = subprocess.run([MMSEQS_PATH],
+                                capture_output=True,
+                                check=True,
+                                text=True).stdout
+        assert "mmseqs" in stdout
