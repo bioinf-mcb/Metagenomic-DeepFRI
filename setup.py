@@ -18,6 +18,9 @@ except ImportError as err:
 
 # --- Utils -----------------------------------------------------------------
 
+os.environ["CC"] = "gcc"
+os.environ["CXX"] = "g++"
+
 
 def _detect_target_machine(platform):
     if platform == "win32":
