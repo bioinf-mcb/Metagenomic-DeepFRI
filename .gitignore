@@ -7,6 +7,7 @@ mDeepFRI/*.cpp
 cython_tests.ipynb
 foldcomp_bin
 mmseqs
+pdb100*
 
 docs/build/*
 build/

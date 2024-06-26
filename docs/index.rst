@@ -28,20 +28,11 @@ By integrating these features, Metagenomic-DeepFRI offers a powerful solution fo
 Setup
 -----
 
-1. Download environment YAML.
-
 .. code:: console
 
-    wget https://raw.githubusercontent.com/bioinf-mcb/Metagenomic-DeepFRI/main/environment.yml
+    pip install mdeepfri
 
-2. Setup conda environment and activate it.
 
-.. code:: console
-
-    conda env create --name deepfri --file environment.yml
-    conda activate deepfri
-    # Optional cleanup
-    rm environment.yml
 
 Contents
 --------
