@@ -29,6 +29,3 @@ exclude = [
     "tests/",
     "docs/"
     ]
-
-[tool.pytest.ini_options]
-addopts = "--ignore=boost_1_81_0"
