@@ -25,7 +25,7 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 
 ## 🔧 Installation
 
-1. Download environment YAML.
+1. Install from PyPI. Installation might take a few minutes due to download of MMseqs2 binaries.
 ```{code-block} bash
 pip install mdeepfri
 ```
