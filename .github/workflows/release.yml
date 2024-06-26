@@ -12,6 +12,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
+        - cp38-manylinux_aarch64
+        - cp39-manylinux_aarch64
+        - cp310-manylinux_aarch64
         - cp311-manylinux_aarch64
         - cp312-manylinux_aarch64
     steps:
@@ -44,6 +47,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
+        - cp38-manylinux_x86_64
+        - cp39-manylinux_x86_64
+        - cp310-manylinux_x86_64
         - cp311-manylinux_x86_64
         - cp312-manylinux_x86_64
     steps:
@@ -71,6 +77,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
+        - cp38-macosx_x86_64
+        - cp39-macosx_x86_64
+        - cp310-macosx_x86_64
         - cp311-macosx_x86_64
         - cp312-macosx_x86_64
     steps:
@@ -97,6 +106,9 @@ jobs:
     strategy:
       matrix:
         python-tag:
+        - cp38-macosx_arm64
+        - cp39-macosx_arm64
+        - cp310-macosx_arm64
         - cp311-macosx_arm64
         - cp312-macosx_arm64
     steps:
