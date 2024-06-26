@@ -1,4 +1,15 @@
 # 🍳 Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
+[![License](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square&maxAge=2678400)](https://choosealicense.com/licenses/gpl-3.0/)
+[![PyPI](https://img.shields.io/pypi/v/mdeepfri.svg?style=flat-square&maxAge=3600&logo=PyPI)](https://pypi.org/project/mdeepfri)
+[![Wheel](https://img.shields.io/pypi/wheel/mdeepfri.svg?style=flat-square&maxAge=3600)](https://pypi.org/project/mdeepfri/#files)
+[![Python Versions](https://img.shields.io/pypi/pyversions/mdeepfri.svg?style=flat-square&maxAge=600&logo=python)](https://pypi.org/project/mdeepfri/#files)
+[![Python Implementations](https://img.shields.io/pypi/implementation/mdeepfri.svg?style=flat-square&maxAge=600&label=impl)](https://pypi.org/project/mdeepfri/#files)
+[![Source](https://img.shields.io/badge/source-GitHub-303030.svg?maxAge=2678400&style=flat-square)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/)
+[![GitHub issues](https://img.shields.io/github/issues/bioinf-MCB/Metagenomic-DeepFRI.svg?style=flat-square&maxAge=600)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI//issues)
+[![Docs](https://img.shields.io/readthedocs/metagenomic-deepfri/latest?style=flat-square&maxAge=600)](https://metagenomic-deepfri.readthedocs.io/)
+[![Changelog](https://img.shields.io/badge/keep%20a-changelog-8A0707.svg?maxAge=2678400&style=flat-square)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/blob/main/CHANGELOG.md)
+[![Downloads](https://img.shields.io/pypi/dm/mdeepfri?style=flat-square&color=303f9f&maxAge=86400&label=downloads)](https://pepy.tech/project/mdeepfri)
+
 *A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). It incorporates [FoldComp](https://github.com/steineggerlab/foldcomp) databases of predicted protein structures for fast annotation of metagenomic gene catalogues.*
 
 ## 🔍 Overview
