@@ -276,14 +276,9 @@ EXTENSIONS = [
                              ]),
 ]
 
-extras = {}
-extras["dev"] = ["pre-commit"]
-
 setup(
     include_package_data=True,
     ext_modules=EXTENSIONS,
-    extras_require=extras,
-    install_requires=install_requires,
     cmdclass={
         'build_ext': build_ext,
         'build_binaries': build_binaries,
