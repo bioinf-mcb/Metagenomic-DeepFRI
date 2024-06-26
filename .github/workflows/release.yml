@@ -26,7 +26,7 @@ jobs:
       env:
         CIBW_ARCHS: aarch64
         CIBW_BUILD: ${{ matrix.python-tag }}
-        CIBW_BEFORE_ALL: apt-get update && apt-get intall libbz2-dev
+        CIBW_BEFORE_ALL: yum install -y bzip2-devel xz-devel
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_BUILD_VERBOSITY: 2
@@ -53,7 +53,7 @@ jobs:
       env:
         CIBW_ARCHS: x86_64
         CIBW_BUILD: ${{ matrix.python-tag }}
-        CIBW_BEFORE_ALL: apt-get update && apt-get intall libbz2-dev
+        CIBW_BEFORE_ALL: yum install -y bzip2-devel xz-devel
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_BUILD_VERBOSITY: 2
@@ -67,7 +67,7 @@ jobs:
 
   wheel-macos-x86_64:
     name: Build MacOS wheels (x86-64)
-    runs-on: macOS-11
+    runs-on: macOS-13
     strategy:
       matrix:
         python-tag:
@@ -83,7 +83,7 @@ jobs:
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
         CIBW_TEST_REQUIRES: importlib-resources
-        MACOSX_DEPLOYMENT_TARGET: 12.1
+        MACOSX_DEPLOYMENT_TARGET: 13
       with:
         output-dir: dist
     - uses: actions/upload-artifact@v3
@@ -93,7 +93,7 @@ jobs:
 
   wheel-macos-aarch64:
     name: Build MacOS wheels (Aarch64)
-    runs-on: macOS-11
+    runs-on: macOS-13
     strategy:
       matrix:
         python-tag:
@@ -108,7 +108,7 @@ jobs:
         CIBW_BEFORE_BUILD: pip install cython
         CIBW_BUILD_VERBOSITY: 2
         CIBW_TEST_REQUIRES: importlib-resources
-        MACOSX_DEPLOYMENT_TARGET: 12.1
+        MACOSX_DEPLOYMENT_TARGET: 13
       with:
         output-dir: dist
     - uses: actions/upload-artifact@v3
