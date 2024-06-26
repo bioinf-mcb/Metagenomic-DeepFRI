@@ -5,12 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.7...HEAD
+
+### Added
+
+- fixed tests and added to CI/CD
+- added function to download MMseqs2 binaries for full CI/CD runs
+- removed Conda install - fully installable from PyPI
+
+### Fixed
+- hetero atom bug introduced by Ruff (c044a158)
 
 ## [Release]
 
+
+
 ## [1.1.7] - 2024-06-10
-[1.1.7]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...v1.1.6
+[1.1.7]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.6...v1.1.7
 
 ### Fixed
 - resolved old naming issues (closes #84)
