@@ -1,4 +1,5 @@
 # 🍳 Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
+[![Support Ukraine](https://img.shields.io/badge/Support-Ukraine-FFD500?style=flat&labelColor=005BBB)](https://u24.gov.ua/)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg?style=flat-square&maxAge=2678400)](https://choosealicense.com/licenses/gpl-3.0/)
 [![PyPI](https://img.shields.io/pypi/v/mdeepfri.svg?style=flat-square&maxAge=3600&logo=PyPI)](https://pypi.org/project/mdeepfri)
 [![Wheel](https://img.shields.io/pypi/wheel/mdeepfri.svg?style=flat-square&maxAge=3600)](https://pypi.org/project/mdeepfri/#files)
