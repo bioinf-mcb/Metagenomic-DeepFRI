@@ -58,7 +58,6 @@ Tested databases:
 - `afdb_swissprot_v4`
 - `afdb_rep_v4`
 - `afdb_rep_dark_v4`
-- `afdb_uniprot_v4`
 - `esmatlas`
 - `esmatlas_v2023_02`
 - `highquality_clust30`
