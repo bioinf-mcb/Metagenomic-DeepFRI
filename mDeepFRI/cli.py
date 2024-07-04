@@ -180,9 +180,16 @@ def get_models(output, version):
     is_flag=True,
     help="Skip PDB100 database search.",
 )
+@click.option(
+    "--tmpdir",
+    required=False,
+    default=None,
+    type=click.Path(exists=False),
+    help="Path to a temporary directory. Required for very large searches",
+)
 def search_databases(input, output, db_path, sensitivity, min_length,
                      max_length, min_bits, max_eval, min_ident, min_coverage,
-                     top_k, overwrite, threads, skip_pdb):
+                     top_k, overwrite, threads, skip_pdb, tmpdir):
     """
     Hierarchically search FoldComp databases for similar proteins with
     MMSeqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
@@ -235,6 +242,7 @@ def search_databases(input, output, db_path, sensitivity, min_length,
                                  top_k=top_k,
                                  skip_pdb=skip_pdb,
                                  overwrite=overwrite,
+                                 tmpdir=tmpdir,
                                  threads=threads)
 
 
@@ -390,6 +398,20 @@ def search_databases(input, output, db_path, sensitivity, min_length,
          "DANGER: Model behavior was not tested for sequences longer than 1000 amino acids. " \
          "It might still be useful, interpret results at your own risk;)"
 )
+@click.option(
+    "--save-structures",
+    default=False,
+    type=bool,
+    is_flag=True,
+    help="Save structures of the top hits.",
+)
+@click.option(
+    "--save-cmaps",
+    default=False,
+    type=bool,
+    is_flag=True,
+    help="Save contact maps of the top hits.",
+)
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
@@ -398,7 +420,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_min_coverage, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
                      remove_intermediate, overwrite, threads, skip_pdb,
-                     min_length, max_length):
+                     min_length, max_length, save_structures, save_cmaps):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
 
@@ -428,6 +450,8 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
     logger.info("Skip PDB:                      %s", skip_pdb)
     logger.info("Minimum length:                %s", min_length)
     logger.info("Maximum length:                %s", max_length)
+    logger.info("Save structures:               %s", save_structures)
+    logger.info("Save contact maps:             %s", save_cmaps)
 
     predict_protein_function(
         query_file=input,
@@ -440,6 +464,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         mmseqs_min_bitscore=mmseqs_min_bitscore,
         mmseqs_max_eval=mmseqs_max_evalue,
         mmseqs_min_identity=mmseqs_min_identity,
+        mmseqs_min_coverage=mmseqs_min_coverage,
         top_k=top_k,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
@@ -449,7 +474,9 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         threads=threads,
         skip_pdb=skip_pdb,
         min_length=min_length,
-        max_length=max_length)
+        max_length=max_length,
+        save_structures=save_structures,
+        save_cmaps=save_cmaps)
 
 
 if __name__ == "__main__":

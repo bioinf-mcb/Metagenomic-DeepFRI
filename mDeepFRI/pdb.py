@@ -1,5 +1,6 @@
 import gzip
 import warnings
+from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Tuple
@@ -68,7 +69,7 @@ def create_pdb_mmseqs(threads: int = 1):
     return pdb_db
 
 
-def get_pdb_structure(pdb_id: str) -> str:
+def get_pdb_structure(pdb_id: str, save_directory: str = None) -> str:
     """
     Get PDB structure from the RCSB PDB database.
 
@@ -84,13 +85,17 @@ def get_pdb_structure(pdb_id: str) -> str:
     pdb_id = pdb_id.lower()
     url = pdb_http.format(pdb_id=pdb_id)
     structure = requests.get(url).text
+    if save_directory:
+        with open(save_directory / f"{pdb_id}.cif", "w") as f:
+            f.write(structure)
     return structure
 
 
 # TODO: pdbfixer should remove error catching in this function
 # only needed to run a function with multiprocessing
 def get_pdb_seq_coords(pdb_id_chain: str,
-                       query_name: str) -> Tuple[str, np.ndarray]:
+                       query_name: str,
+                       save_directory: str = None) -> Tuple[str, np.ndarray]:
     """
     Get a sequence and coordinates of a protein chain from the PDB database.
 
@@ -102,7 +107,7 @@ def get_pdb_seq_coords(pdb_id_chain: str,
         Tuple[str, np.ndarray]: A tuple containing a sequence and coordinates of a protein chain.
     """
     pdb_id, chain = pdb_id_chain.split("_")
-    structure = get_pdb_structure(pdb_id)
+    structure = get_pdb_structure(pdb_id, save_directory=save_directory)
 
     try:
         sequence, coords = extract_residues_coordinates(structure,
@@ -122,19 +127,31 @@ def get_pdb_seq_coords(pdb_id_chain: str,
 def extract_calpha_coords(db: Database,
                           target_ids: list,
                           query_ids: list,
+                          save_directory: str = None,
                           threads: int = 1) -> list:
 
     if "pdb100" in db.name:
+        # add save option
+        if save_directory:
+            get_pdb_seq_coords_parallel = partial(
+                get_pdb_seq_coords, save_directory=save_directory)
+
         with Pool(threads) as p:
-            results = p.starmap(get_pdb_seq_coords, zip(target_ids, query_ids))
+            results = p.starmap(get_pdb_seq_coords_parallel,
+                                zip(target_ids, query_ids))
         coords = [coord for _, coord in results]
+
     else:
         suffix = foldcomp_sniff_suffix(target_ids[0], db.foldcomp_db)
         if suffix:
             target_ids = [f"{t}{suffix}" for t in target_ids]
+        coords = []
         with foldcomp.open(db.foldcomp_db, ids=target_ids) as struct_db:
-            coords = [
-                extract_residues_coordinates(struct, filetype="pdb")[1]
-                for _, struct in struct_db
-            ]
+            for idx, struct in struct_db:
+                _, coord = extract_residues_coordinates(struct, filetype="pdb")
+                coords.append(coord)
+                if save_directory:
+                    with open(save_directory / f"{idx}.pdb", "w") as f:
+                        f.write(struct)
+
     return coords

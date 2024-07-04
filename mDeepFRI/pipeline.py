@@ -41,6 +41,7 @@ def hierarchical_database_search(query_file: str,
                                  top_k: int = 5,
                                  skip_pdb: bool = False,
                                  overwrite: bool = False,
+                                 tmpdir: str = None,
                                  threads: int = 1):
 
     output_path = pathlib.Path(output_path)
@@ -84,7 +85,8 @@ def hierarchical_database_search(query_file: str,
         results = query_file.search(db.mmseqs_db,
                                     sensitivity=sensitivity,
                                     eval=max_eval,
-                                    threads=threads)
+                                    threads=threads,
+                                    tmpdir=tmpdir)
 
         filtered = results.apply_filters(min_cov=min_coverage,
                                          min_bits=min_bits,
@@ -159,7 +161,9 @@ def predict_protein_function(
         threads: int = 1,
         skip_pdb: bool = False,
         min_length: int = 60,
-        max_length: int = 1000):
+        max_length: int = 1000,
+        save_structures: bool = False,
+        save_cmaps: bool = False):
 
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
@@ -239,7 +243,17 @@ def predict_protein_function(
 
             # extract structural information
             # in form of C-alpha coordinates
-            coords = extract_calpha_coords(db, target_ids, query_ids, threads)
+            if save_structures:
+                save_dir = output_path / "structures" / db.name
+                save_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                save_dir = None
+
+            coords = extract_calpha_coords(db,
+                                           target_ids,
+                                           query_ids,
+                                           save_directory=save_dir,
+                                           threads=threads)
 
             for aln, coord in zip(new_alignments.values(), coords):
                 aln.coords = coord
@@ -272,6 +286,13 @@ def predict_protein_function(
         logger.info(
             f"Aligned {len(aligned_cmaps)}/{len(query_file.sequences)} ({aligned_total}%) "
             "proteins in total [without length invalid].")
+
+    if save_cmaps:
+        cmap_dir = output_path / "contact_maps"
+        cmap_dir.mkdir(parents=True, exist_ok=True)
+        for i, (aln, cmap) in enumerate(aligned_cmaps):
+            cmap_file = cmap_dir / f"{aln.query_name}.npy"
+            np.save(cmap_file, cmap)
 
     # FUNCTION PREDICTION
     aligned_queries = [aln[0].query_name for aln in aligned_cmaps]

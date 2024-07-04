@@ -260,7 +260,8 @@ def load_structure(structure_string: str,
 def extract_residues_coordinates(
         structure_string: str,
         chain: str = "A",
-        filetype: Literal["mmcif", "pdb"] = "mmcif") -> Tuple[str, np.ndarray]:
+        filetype: Literal["mmcif", "pdb"] = "mmcif",
+        save_directory: str = None) -> Tuple[str, np.ndarray]:
     """
     Extracts residues and coordinates from structural string.
     Automatically processes PDB and mmCIF files.
