@@ -355,6 +355,12 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     help="Minimum identity for contact map alignment.",
 )
 @click.option(
+    "--alignment-min-coverage",
+    default=0.9,
+    type=float,
+    help="Minimum coverage for contact map alignment.",
+)
+@click.option(
     "--remove-intermediate",
     default=False,
     type=bool,
@@ -419,8 +425,9 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_max_evalue, mmseqs_min_identity,
                      mmseqs_min_coverage, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
-                     remove_intermediate, overwrite, threads, skip_pdb,
-                     min_length, max_length, save_structures, save_cmaps):
+                     alignment_min_coverage, remove_intermediate, overwrite,
+                     threads, skip_pdb, min_length, max_length,
+                     save_structures, save_cmaps):
     """Predict protein function from sequence."""
     logger.info("Starting Metagenomic-DeepFRI.")
 
