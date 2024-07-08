@@ -200,23 +200,6 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     MMSeqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
     """
 
-    # collect all params into dict
-    # ctx.obj = {
-    #     "input": input,
-    #     "output": output,
-    #     "db_path": db_path,
-    #     "min_length": min_length,
-    #     "max_length": max_length,
-    #     "min_bits": min_bits,
-    #     "max_eval": max_eval,
-    #     "min_ident": min_ident,
-    #     "min_coverage": min_coverage,
-    #     "top_k": top_k,
-    #     "overwrite": overwrite,
-    #     "threads": threads,
-    #     "skip_pdb": skip_pdb
-    # }
-
     # write command parameters to log
     logger.info("Command parameters:")
     logger.info("Input:                        %s", input)
@@ -383,29 +366,35 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
     logger.info("Save structures:               %s", save_structures)
     logger.info("Save contact maps:             %s", save_cmaps)
 
-    predict_protein_function(
+    query_file, deepfri_dbs = hierarchical_database_search(
         query_file=input,
+        output_path=output_path / "database_search",
         databases=db_path,
+        sensitivity=mmseqs_sensitivity,
+        min_seq_len=min_length,
+        max_seq_len=max_length,
+        min_bits=mmseqs_min_bitscore,
+        max_eval=mmseqs_max_evalue,
+        min_ident=mmseqs_min_identity,
+        min_coverage=mmseqs_min_coverage,
+        top_k=top_k,
+        skip_pdb=skip_pdb,
+        overwrite=overwrite,
+        threads=threads)
+
+    predict_protein_function(
+        query_file=query_file,
+        databases=deepfri_dbs,
         weights=weights,
         output_path=output_path,
         deepfri_processing_modes=processing_modes,
         angstrom_contact_threshold=angstrom_contact_thresh,
         generate_contacts=generate_contacts,
-        mmseqs_min_bitscore=mmseqs_min_bitscore,
-        mmseqs_max_eval=mmseqs_max_evalue,
-        mmseqs_min_identity=mmseqs_min_identity,
-        mmseqs_min_coverage=mmseqs_min_coverage,
-        top_k=top_k,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
         identity_threshold=alignment_min_identity,
         alignment_min_coverage=alignment_min_coverage,
         remove_intermediate=remove_intermediate,
-        overwrite=overwrite,
-        threads=threads,
-        skip_pdb=skip_pdb,
-        min_length=min_length,
-        max_length=max_length,
         save_structures=save_structures,
         save_cmaps=save_cmaps)
 

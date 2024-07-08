@@ -13,7 +13,7 @@ from tqdm import tqdm
 from mDeepFRI import BAR_FORMAT, DEEPFRI_MODES, OUTPUT_HEADER
 from mDeepFRI.alignment import align_mmseqs_results
 from mDeepFRI.bio_utils import build_align_contact_map
-from mDeepFRI.database import build_database
+from mDeepFRI.database import Database, build_database
 from mDeepFRI.mmseqs import MMseqsResult, QueryFile
 from mDeepFRI.pdb import create_pdb_mmseqs, extract_calpha_coords
 from mDeepFRI.predict import Predictor
@@ -143,30 +143,24 @@ def hierarchical_database_search(query_file: str,
     return query_file, dbs
 
 
+def align_pairwise():
+    pass
+
+
 def predict_protein_function(
-        query_file: str,
-        databases: Tuple[str],
+        query_file: QueryFile,
+        databases: Tuple[Database],
         weights: str,
         output_path: str,
         deepfri_processing_modes: List[str] = ["ec", "bp", "mf", "cc"],
         angstrom_contact_threshold: float = 6,
         generate_contacts: int = 2,
-        mmseqs_sensitivity: float = 5.7,
-        mmseqs_min_bitscore: float = 0,
-        mmseqs_max_eval: float = 1e-5,
-        mmseqs_min_identity: float = 0.5,
-        mmseqs_min_coverage: float = 0.9,
-        top_k: int = 5,
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.5,
         coverage_threshold: float = 0.9,
         remove_intermediate=False,
-        overwrite=False,
         threads: int = 1,
-        skip_pdb: bool = False,
-        min_length: int = 60,
-        max_length: int = 1000,
         save_structures: bool = False,
         save_cmaps: bool = False):
 
@@ -187,24 +181,8 @@ def predict_protein_function(
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    query_file, deepfri_dbs = hierarchical_database_search(
-        query_file=query_file,
-        output_path=output_path / "database_search",
-        databases=databases,
-        sensitivity=mmseqs_sensitivity,
-        min_seq_len=min_length,
-        max_seq_len=max_length,
-        min_bits=mmseqs_min_bitscore,
-        max_eval=mmseqs_max_eval,
-        min_ident=mmseqs_min_identity,
-        min_coverage=mmseqs_min_coverage,
-        top_k=top_k,
-        skip_pdb=skip_pdb,
-        overwrite=overwrite,
-        threads=threads)
-
     aligned_cmaps = []
-    for db in deepfri_dbs:
+    for db in databases:
         # SEQUENCE ALIGNMENT
         # calculate already aligned sequences
         alignments = align_mmseqs_results(
@@ -401,7 +379,7 @@ def predict_protein_function(
     output_buffer.close()
 
     if remove_intermediate:
-        for db in deepfri_dbs:
+        for db in databases:
             remove_intermediate_files([db.sequence_db, db.mmseqs_db])
 
     logger.info("meta-DeepFRI finished successfully.")
