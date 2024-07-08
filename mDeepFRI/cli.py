@@ -35,6 +35,121 @@ def _show_usage_error(self, file=None):
 UsageError.show = _show_usage_error
 
 
+def search_options(function):
+    function = click.option(
+        "-i",
+        "--input",
+        required=True,
+        type=click.Path(exists=True),
+        help="Path to an input protein sequences (FASTA file, may be gzipped).",
+    )(function)
+    function = click.option(
+        "-o",
+        "--output",
+        required=True,
+        type=click.Path(exists=False),
+        help="Path to output file.",
+    )(function)
+    function = click.option(
+        "-d",
+        "--db-path",
+        required=True,
+        type=click.Path(exists=True),
+        multiple=True,
+        help="Path to a structures database compessed with FoldComp.",
+    )(function)
+    function = click.option(
+        "-s",
+        "--sensitivity",
+        required=False,
+        default=5.7,
+        type=click.FloatRange(1, 7.5),
+        help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
+    )(function)
+    function = click.option(
+        "--min-length",
+        required=False,
+        default=None,
+        type=int,
+        help="Minimum length of the protein sequence.",
+    )(function)
+    function = click.option(
+        "--max-length",
+        required=False,
+        default=None,
+        type=int,
+        help="Maximum length of the protein sequence.",
+    )(function)
+    function = click.option(
+        "--mmseqs-min-bits",
+        required=False,
+        default=0,
+        type=float,
+        help="Minimum bitscore for MMseqs2 alignment.",
+    )(function)
+    function = click.option(
+        "--mmseqs-max-eval",
+        required=False,
+        default=0.001,
+        type=float,
+        help="Maximum e-value for MMseqs2 alignment.",
+    )(function)
+    function = click.option(
+        "--mmseqs-min-ident",
+        required=False,
+        default=0.5,
+        type=float,
+        help="Minimum identity for MMseqs2 alignment.",
+    )(function)
+    function = click.option(
+        "--mmseqs-min-coverage",
+        required=False,
+        default=0.9,
+        type=float,
+        help=
+        "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
+    )(function)
+    function = click.option(
+        "--top-k",
+        required=False,
+        default=5,
+        type=int,
+        help="Number of top MMSeqs2 hits to save. Default is 1.",
+    )(function)
+    function = click.option(
+        "--overwrite",
+        required=False,
+        default=False,
+        type=bool,
+        is_flag=True,
+        help="Overwrite existing files.",
+    )(function)
+    function = click.option(
+        "-t",
+        "--threads",
+        required=False,
+        default=1,
+        type=int,
+        help="Number of threads to use. Default is 1.",
+    )(function)
+    function = click.option(
+        "--skip-pdb",
+        required=False,
+        default=False,
+        type=bool,
+        is_flag=True,
+        help="Skip PDB100 database search.",
+    )(function)
+    function = click.option(
+        "--tmpdir",
+        required=False,
+        default=None,
+        type=click.Path(exists=False),
+        help="Path to a temporary directory. Required for very large searches",
+    )(function)
+    return function
+
+
 @click.group()
 @click.option("--debug/--no-debug", default=False)
 @click.version_option(version=__version__)
@@ -76,117 +191,7 @@ def get_models(output, version):
 
 
 @main.command
-@click.option(
-    "-i",
-    "--input",
-    required=True,
-    type=click.Path(exists=True),
-    help="Path to an input protein sequences (FASTA file, may be gzipped).",
-)
-@click.option(
-    "-o",
-    "--output",
-    required=True,
-    type=click.Path(exists=False),
-    help="Path to output file.",
-)
-@click.option(
-    "-d",
-    "--db-path",
-    required=True,
-    type=click.Path(exists=True),
-    multiple=True,
-    help="Path to a structures database compessed with FoldComp.",
-)
-@click.option(
-    "-s",
-    "--sensitivity",
-    required=False,
-    default=5.7,
-    type=click.FloatRange(1, 7.5),
-    help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
-)
-@click.option(
-    "--min-length",
-    required=False,
-    default=None,
-    type=int,
-    help="Minimum length of the protein sequence.",
-)
-@click.option(
-    "--max-length",
-    required=False,
-    default=None,
-    type=int,
-    help="Maximum length of the protein sequence.",
-)
-@click.option(
-    "--min-bits",
-    required=False,
-    default=0,
-    type=float,
-    help="Minimum bitscore for MMseqs2 alignment.",
-)
-@click.option(
-    "--max-eval",
-    required=False,
-    default=0.001,
-    type=float,
-    help="Maximum e-value for MMseqs2 alignment.",
-)
-@click.option(
-    "--min-ident",
-    required=False,
-    default=0.5,
-    type=float,
-    help="Minimum identity for MMseqs2 alignment.",
-)
-@click.option(
-    "--min-coverage",
-    required=False,
-    default=0.9,
-    type=float,
-    help=
-    "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
-)
-@click.option(
-    "--top-k",
-    required=False,
-    default=1,
-    type=int,
-    help="Number of top MMSeqs2 hits to save. Default is 1.",
-)
-@click.option(
-    "--overwrite",
-    required=False,
-    default=False,
-    type=bool,
-    is_flag=True,
-    help="Overwrite existing files.",
-)
-@click.option(
-    "-t",
-    "--threads",
-    required=False,
-    default=1,
-    type=int,
-    help="Number of threads to use. Default is 1.",
-)
-@click.option(
-    "--skip-pdb",
-    required=False,
-    default=False,
-    type=bool,
-    is_flag=True,
-    help="Skip PDB100 database search.",
-)
-@click.option(
-    "--tmpdir",
-    required=False,
-    default=None,
-    type=click.Path(exists=False),
-    help="Path to a temporary directory. Required for very large searches",
-)
+@search_options
 def search_databases(input, output, db_path, sensitivity, min_length,
                      max_length, min_bits, max_eval, min_ident, min_coverage,
                      top_k, overwrite, threads, skip_pdb, tmpdir):
@@ -247,34 +252,13 @@ def search_databases(input, output, db_path, sensitivity, min_length,
 
 
 @main.command()
-@click.option(
-    "-i",
-    "--input",
-    required=True,
-    type=click.Path(exists=True),
-    help="Path to an input protein sequences (FASTA file, may be gzipped).",
-)
-@click.option(
-    "-d",
-    "--db-path",
-    required=False,
-    type=click.Path(exists=True),
-    multiple=True,
-    help="Path to a structures database compessed with FoldComp.",
-)
+@search_options
 @click.option(
     "-w",
     "--weights",
     required=True,
     type=click.Path(exists=True),
     help="Path to a folder containing model weights.",
-)
-@click.option(
-    "-o",
-    "--output",
-    required=True,
-    type=click.Path(exists=False),
-    help="Path to output file.",
 )
 @click.option(
     "-p",
@@ -297,44 +281,6 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     default=2,
     type=int,
     help="Gap fill threshold during contact map alignment.",
-)
-@click.option(
-    "--mmseqs-sensitivity",
-    default=5.7,
-    type=click.FloatRange(1, 7.5),
-    help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
-)
-@click.option(
-    "--mmseqs-min-bitscore",
-    default=0,
-    type=float,
-    help="Minimum bitscore for MMseqs2 alignment.",
-)
-@click.option(
-    "--mmseqs-max-evalue",
-    default=0.001,
-    type=float,
-    help="Maximum e-value for MMseqs2 alignment.",
-)
-@click.option(
-    "--mmseqs-min-identity",
-    default=0.5,
-    type=float,
-    help="Minimum identity for MMseqs2 alignment.",
-)
-@click.option(
-    "--mmseqs-min-coverage",
-    default=0.9,
-    type=float,
-    help=
-    "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
-)
-@click.option(
-    "--top-k",
-    default=5,
-    type=int,
-    help="Number of top MMSeqs2 alignment for"
-    "precise pairwise alignment check. Default is 30.",
 )
 @click.option(
     "--alignment-gap-open",
@@ -368,13 +314,6 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     help="Remove intermediate files.",
 )
 @click.option(
-    "--overwrite",
-    default=False,
-    type=bool,
-    is_flag=True,
-    help="Overwrite existing files.",
-)
-@click.option(
     "-t",
     "--threads",
     default=1,
@@ -387,22 +326,6 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     type=bool,
     is_flag=True,
     help="Skip PDB100 database search.",
-)
-@click.option(
-    "--min-length",
-    default=60,
-    type=int,
-    help="Minimum length of the protein sequence. Default is 60.\n" \
-         "DANGER: Model behavior was not tested for sequences shorter than 60 amino acids. " \
-         "It might still be useful, interpret results at your own risk;)"
-)
-@click.option(
-    "--max-length",
-    default=1000,
-    type=int,
-    help="Maximum length of the protein sequence. Default is 1000.\n" \
-         "DANGER: Model behavior was not tested for sequences longer than 1000 amino acids. " \
-         "It might still be useful, interpret results at your own risk;)"
 )
 @click.option(
     "--save-structures",
@@ -476,6 +399,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
         identity_threshold=alignment_min_identity,
+        alignment_min_coverage=alignment_min_coverage,
         remove_intermediate=remove_intermediate,
         overwrite=overwrite,
         threads=threads,
