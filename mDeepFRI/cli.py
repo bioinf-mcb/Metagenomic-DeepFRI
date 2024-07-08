@@ -8,7 +8,7 @@ from click.exceptions import UsageError
 from click.utils import echo
 
 from mDeepFRI import __version__
-from mDeepFRI.pipeline import (hierarchical_database_search,
+from mDeepFRI.pipeline import (hierarchical_database_search, load_query_file,
                                predict_protein_function)
 from mDeepFRI.utils import download_model_weights, generate_config_json
 
@@ -217,7 +217,8 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     logger.info("Threads:                      %s", threads)
     logger.info("Skip PDB:                     %s", skip_pdb)
 
-    hierarchical_database_search(query_file=input,
+    query_file = load_query_file(input)
+    hierarchical_database_search(query_file=query_file,
                                  databases=db_path,
                                  output_path=output,
                                  sensitivity=sensitivity,
@@ -366,8 +367,9 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
     logger.info("Save structures:               %s", save_structures)
     logger.info("Save contact maps:             %s", save_cmaps)
 
-    query_file, deepfri_dbs = hierarchical_database_search(
-        query_file=input,
+    query_file = load_query_file(input)
+    deepfri_dbs = hierarchical_database_search(
+        query_file=query_file,
         output_path=output_path / "database_search",
         databases=db_path,
         sensitivity=mmseqs_sensitivity,

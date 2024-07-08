@@ -29,12 +29,22 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
-def hierarchical_database_search(query_file: str,
+# load sequences in query filtered by length
+def load_query_file(query_file: str, min_length: int = None, max_length=None):
+    query_file = QueryFile(filepath=query_file)
+    query_file.load_sequences()
+    # filter out sequences
+    if min_length or max_length:
+        query_file.filter_sequences(
+            lambda x: min_length <= len(x) <= max_length)
+
+    return query_file
+
+
+def hierarchical_database_search(query_file: QueryFile,
                                  output_path: str,
                                  databases: Iterable[str] = [],
                                  sensitivity: float = 5.7,
-                                 min_seq_len: int = None,
-                                 max_seq_len: int = None,
                                  min_bits: float = 0,
                                  max_eval: float = 1e-5,
                                  min_ident: float = 0.5,
@@ -47,15 +57,9 @@ def hierarchical_database_search(query_file: str,
 
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
-    # load initial sequences
-    query_file = QueryFile(filepath=query_file)
-    query_file.load_sequences()
+
     # logging variable
     sequence_num_start = len(query_file.sequences)
-    # filter out sequences
-    if min_seq_len or max_seq_len:
-        query_file.filter_sequences(
-            lambda x: min_seq_len <= len(x) <= max_seq_len)
 
     for idx, seq in query_file.filtered_out.items():
         logger.info(f"Skipping {idx}; sequence length {len(seq)} aa.")
@@ -80,9 +84,7 @@ def hierarchical_database_search(query_file: str,
 
     aligned_total = 0
 
-    seqs_to_search = query_file.sequences.copy()
     for db in dbs:
-
         results = query_file.search(db.mmseqs_db,
                                     sensitivity=sensitivity,
                                     eval=max_eval,
@@ -137,10 +139,7 @@ def hierarchical_database_search(query_file: str,
         if 'pdb100' not in db.name:
             query_file.remove_sequences(unique_hits)
 
-    # reassign initial sequences for further processing
-    query_file.sequences = seqs_to_search
-
-    return query_file, dbs
+    return dbs
 
 
 def align_pairwise():
