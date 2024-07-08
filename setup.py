@@ -289,6 +289,7 @@ setup(
     packages=find_packages(),
     package_data={
         "foldcomp": ["foldcomp_bin"],
-        "mmseqs": ["mmseqs"]
+        "mmseqs": ["mmseqs"],
+        "highclust30_error_ids": ["mDeepFRI/assets/highclust30_error_ids.pkl"]
     },
 )

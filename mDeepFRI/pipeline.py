@@ -1,6 +1,7 @@
 import csv
 import logging
 import pathlib
+import pickle
 import sys
 from functools import partial
 from multiprocessing import Pool
@@ -113,8 +114,11 @@ def hierarchical_database_search(query_file: str,
 
         if "pdb100" in db.name:
             pdb_hits = unique_hits
+        elif skip_pdb:
+            unique_hits = [hit for hit in unique_hits]
         else:
             unique_hits = [hit for hit in unique_hits if hit not in pdb_hits]
+
         aligned_db = len(unique_hits)
         aligned_total += aligned_db
         aligned_perc = round(aligned_db / sequence_num_start * 100, 2)
@@ -156,6 +160,7 @@ def predict_protein_function(
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
         identity_threshold: float = 0.5,
+        coverage_threshold: float = 0.9,
         remove_intermediate=False,
         overwrite=False,
         threads: int = 1,
@@ -209,10 +214,11 @@ def predict_protein_function(
             alignment_gap_extend=alignment_gap_continuation,
             threads=threads)
 
-        # filter alignments by identity
+        # filter alignments by identity and coverage
         alignments = [
             aln for aln in alignments
             if aln.query_identity > identity_threshold
+            and aln.query_coverage > coverage_threshold
         ]
 
         try:
@@ -234,6 +240,21 @@ def predict_protein_function(
             # for this cases we replace closest experimental structure with
             # closest predicted structure if available
             # if no alignments were found - report
+
+            # remove broken structures
+            if db.name == "highquality_clust30":
+                data_path = pathlib.Path(__file__).parent / "assets"
+                # convert to abspath
+                data_path = data_path.resolve()
+                with open(data_path / "highquality_clust30_error_ids.pkl",
+                          "rb") as f:
+                    error_ids = pickle.load(f)
+                # filter out broken structures
+                new_alignments = {
+                    query_name: aln
+                    for query_name, aln in new_alignments.items()
+                    if aln.target_name not in error_ids
+                }
 
             query_ids = [aln.query_name for aln in new_alignments.values()]
             target_ids = [
