@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.8...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.9...HEAD
+
+### Added
+- `--alignment-min-coverage` parameter to filter low coverage alignments
+- `generate-config` CLI command - generate config file in case models are downloaded manually
+
+### Fixed
+- Skipping extraction of broken structures from `highquality_clust30`, which caused segmentation fault (https://github.com/steineggerlab/foldcomp/issues/56)
 
 ## [Release]
 

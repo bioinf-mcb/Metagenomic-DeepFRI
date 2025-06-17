@@ -190,6 +190,35 @@ def get_models(output, version):
     logger.info(f"DeepFRI models v{version} downloaded to {output_path}.")
 
 
+@click.option(
+    "-w",
+    "--weights_path",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to a folder containing model weights.",
+)
+@click.option(
+    "-v",
+    "--version",
+    required=True,
+    type=click.Choice(["1.0", "1.1"]),
+    help="Version of the model.",
+)
+@main.command
+def generate_config(weights_path, version):
+    """
+    Generate a config file for mDeepFRI.
+    This is used only when the model weights are downloaded manually.
+    """
+
+    logger.info("Generating config file for mDeepFRI.")
+    weights_path = Path(weights_path)
+    if not weights_path.exists():
+        raise UsageError(f"Path {weights_path} does not exist.")
+    generate_config_json(weights_path, version)
+    logger.info(f"Config file generated in {weights_path}.")
+
+
 @main.command
 @search_options
 def search_databases(input, output, db_path, sensitivity, min_length,

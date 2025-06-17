@@ -145,7 +145,10 @@ def generate_config_json(weights_path: str, version: Literal["1.0",
     models = list(weights_path.glob("*.onnx"))
     possible_modes = "|".join(list(config["cnn"].keys()))
     for model in models:
-        mode = re.search(possible_modes, model.name).group(0)
+        match = re.search(possible_modes, model.name)
+        if not match:
+            continue
+        mode = match.group(0)
         if "CNN" in model.name:
             config["cnn"][mode] = str(model)
         elif "GraphConv" in model.name:
@@ -158,6 +161,14 @@ def generate_config_json(weights_path: str, version: Literal["1.0",
         del config["gcn"]["ec"]
 
     config_name = "model_config.json"
+    # check if all paths are set
+    for net in ["cnn", "gcn"]:
+        for mode, path in config[net].items():
+            if path is None:
+                raise ValueError(
+                    f"Model weights for {net} {mode} not found in {weights_path}"
+                )
+
     with open(weights_path / config_name, "w") as f:
         json.dump(config, f, indent=4, sort_keys=True)
 

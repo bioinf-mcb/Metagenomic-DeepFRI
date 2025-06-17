@@ -35,6 +35,11 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 * [FoldComp](https://github.com/steineggerlab/foldcomp)
 * [ONNX](https://github.com/onnx/onnx)
 
+
+## Python requirements
+Python >= 3.9; < 3.12
+The app was tested for 3.11.
+
 ## 🔧 Installation
 
 1. Install from PyPI. Installation might take a few minutes due to download of MMseqs2 binaries.
