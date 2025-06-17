@@ -95,6 +95,8 @@ class TestMMseqsResult(unittest.TestCase):
         self.query_fasta = Path("path/to/query.fasta").resolve()
         self.database = Path("path/to/database").resolve()
         self.result = MMseqsResult(self.data, self.query_fasta, self.database)
+        self.out_tsv = "test.tsv"
+        self.out_npz = "test.npz"
 
     def test_init(self):
         self.assertIsInstance(self.result, MMseqsResult)
@@ -110,7 +112,7 @@ class TestMMseqsResult(unittest.TestCase):
             ]))
 
     def test_save_tsv(self):
-        filepath = "test.tsv"
+        filepath = self.out_tsv
         self.result.save(filepath)
         with open(filepath, "r") as f:
             lines = f.readlines()
@@ -141,7 +143,7 @@ class TestMMseqsResult(unittest.TestCase):
         self.assertEqual(len(best_matches), 5)
 
     def test_from_mmseqs_result(self):
-        filepath = "test.tsv"
+        filepath = self.out_tsv
         with open(filepath, "w", newline="") as f:
             f.write("query\ttarget\tqcov\ttcov\tfident\tbits\tevalue\n")
             f.write(f"seq1\ttarget1\t10\t20\t0.3\t40.0\t{float(1e-03)}\n")
@@ -151,6 +153,12 @@ class TestMMseqsResult(unittest.TestCase):
         self.assertIsInstance(result, MMseqsResult)
         self.assertEqual(result.query_fasta, Path(self.query_fasta).resolve())
         self.assertEqual(result.database, Path(self.database).resolve())
+
+    def tearDown(self):
+        if Path(self.out_tsv).exists():
+            Path(self.out_tsv).unlink()
+        if Path(self.out_npz).exists():
+            Path(self.out_npz).unlink()
 
 
 if __name__ == "__main__":

@@ -320,7 +320,7 @@ class MMseqsResult(np.recarray):
                 >>> result = MMseqsResult.from_mmseqs_result("path/to/file.tsv")
         """
 
-        result_arr = np.recfromcsv(filepath,
+        result_arr = np.genfromtxt(filepath,
                                    delimiter="\t",
                                    encoding="utf-8",
                                    names=True)
@@ -342,7 +342,7 @@ class MMseqsResult(np.recarray):
                 >>> from mDeepFRI.mmseqs import MMseqsResult
                 >>> result = MMseqsResult.from_best_matches("path/to/file.tsv")
         """
-        result_arr = np.recfromcsv(filepath,
+        result_arr = np.genfromtxt(filepath,
                                    delimiter="\t",
                                    encoding="utf-8",
                                    names=True)

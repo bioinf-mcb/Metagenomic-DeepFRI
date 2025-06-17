@@ -8,7 +8,7 @@ import numpy as np
 from biotite.sequence import ProteinSequence
 from biotite.structure import get_chains
 from biotite.structure.io.pdb import PDBFile
-from biotite.structure.io.pdbx import PDBxFile, get_structure
+from biotite.structure.io.pdbx import CIFFile, get_structure
 
 from mDeepFRI.alignment import AlignmentResult
 from mDeepFRI.contact_map_utils import align_contact_map, pairwise_sqeuclidean
@@ -246,7 +246,7 @@ def load_structure(structure_string: str,
         np.ndarray: Structure.
     """
     if filetype == "mmcif":
-        mmcif = PDBxFile.read(StringIO(structure_string))
+        mmcif = CIFFile.read(StringIO(structure_string))
         structure = get_structure(mmcif, model=1)
     elif filetype == "pdb":
         pdb = PDBFile.read(StringIO(structure_string))
