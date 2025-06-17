@@ -84,6 +84,7 @@ def download_model_weights(output_path: str,
 
     Args:
         output_path (str): Path to save the files.
+        version (str): Version of the model. Can be "1.0" or "1.1".
 
     Returns:
         None
