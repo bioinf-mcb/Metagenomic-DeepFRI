@@ -1,6 +1,6 @@
 [project]
 name = "mDeepFRI"
-version = "attr: mDeepFRI.__version__"
+version = "1.1.8"
 description = "Pipeline for searching and aligning contact maps for proteins, and function prediction with DeepFRI."
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE.md" }
@@ -10,6 +10,7 @@ authors = [
 requires-python = ">=3.9,<3.12"
 keywords = ["bioinformatics", "protein", "function", "deep-learning"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Cython",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -17,18 +18,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: BSD License",
     "Operating System :: MacOS",
-    "Operating System :: Linux",
-    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
     "Topic :: Scientific/Engineering :: Bio-Informatics"
 ]
-
-[project.urls]
-"Homepage" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI"
-"Bug Tracker" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues"
-"Changelog" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/blob/main/CHANGELOG.md"
-"Builds" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/actions"
-"PyPI" = "https://pypi.org/project/mdeepfri"
-
 dependencies = [
     "click ~=8.0",
     "numpy ~=2.3",
@@ -39,6 +31,13 @@ dependencies = [
     "tqdm",
     "onnxruntime-gpu"
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI"
+"Bug Tracker" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues"
+"Changelog" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/blob/main/CHANGELOG.md"
+"Builds" = "https://github.com/bioinf-MCB/Metagenomic-DeepFRI/actions"
+"PyPI" = "https://pypi.org/project/mdeepfri"
 
 [project.optional-dependencies]
 dev = [
