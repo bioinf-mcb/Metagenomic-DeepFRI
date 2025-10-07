@@ -1,3 +1,4 @@
+import importlib.metadata
 import logging
 import sys
 from pathlib import Path
@@ -7,7 +8,6 @@ from click._compat import get_text_stderr
 from click.exceptions import UsageError
 from click.utils import echo
 
-from mDeepFRI import __version__
 from mDeepFRI.pipeline import (hierarchical_database_search, load_query_file,
                                predict_protein_function)
 from mDeepFRI.utils import download_model_weights, generate_config_json
@@ -20,6 +20,8 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
+app_version = importlib.metadata.version("mDeepFRI")
 
 
 def _show_usage_error(self, file=None):
@@ -152,7 +154,7 @@ def search_options(function):
 
 @click.group()
 @click.option("--debug/--no-debug", default=False)
-@click.version_option(version=__version__)
+@click.version_option(version=app_version)
 def main(debug):
     """mDeepFRI"""
 
