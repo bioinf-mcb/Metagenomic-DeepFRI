@@ -24,7 +24,7 @@ class TestPairwiseSqeuclidean(unittest.TestCase):
 
 class TestGetResiduesCoordinates(unittest.TestCase):
     def setUp(self) -> None:
-        afdb_link = "https://alphafold.ebi.ac.uk/files/AF-A7YWM6-F1-model_v4.pdb"
+        afdb_link = "https://alphafold.ebi.ac.uk/files/AF-F4HVG8-F1-model_v6.pdb"
         afdb_path = "./AF-A7YWM6-F1-model_v4.pdb"
         with open(afdb_path, "wb") as f:
             f.write(requests.get(afdb_link).content)
@@ -32,8 +32,8 @@ class TestGetResiduesCoordinates(unittest.TestCase):
 
     def test_predicted_default_chain(self):
         sequence, coordinates = get_residues_coordinates(self.afdb_structure)
-        self.assertEqual(sequence[:10], "MAPLVAQLLF")
-        self.assertAlmostEqual(coordinates[:10].sum(), 199.20398, places=5)
+        self.assertEqual(sequence[:10], "MLLSAIASQT")
+        self.assertAlmostEqual(coordinates[:10].sum(), -25.926003, places=5)
 
     def test_predicted_invalid_chain(self):
         chain = "B"
