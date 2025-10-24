@@ -55,7 +55,7 @@ def search_options(function):
     function = click.option(
         "-d",
         "--db-path",
-        required=True,
+        required=False,
         type=click.Path(exists=True),
         multiple=True,
         help="Path to a structures database compessed with FoldComp.",
@@ -147,7 +147,7 @@ def search_options(function):
         required=False,
         default=None,
         type=click.Path(exists=False),
-        help="Path to a temporary directory. Required for very large searches",
+        help="Path to a temporary directory. Required for very large searches.",
     )(function)
     return function
 
