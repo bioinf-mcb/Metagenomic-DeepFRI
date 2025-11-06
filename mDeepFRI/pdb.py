@@ -22,7 +22,7 @@ warnings.showwarning = stdout_warn
 
 def create_pdb_mmseqs(threads: int = 1):
     """
-    Downloads PDB100 database and creates an MMSeqs2 database from it.
+    Downloads PDB100 database and creates an MMseqs2 database from it.
 
     Args:
         threads (int): Number of threads to use.
@@ -135,6 +135,8 @@ def extract_calpha_coords(db: Database,
         if save_directory:
             get_pdb_seq_coords_parallel = partial(
                 get_pdb_seq_coords, save_directory=save_directory)
+        else:
+            get_pdb_seq_coords_parallel = get_pdb_seq_coords
 
         with Pool(threads) as p:
             results = p.starmap(get_pdb_seq_coords_parallel,

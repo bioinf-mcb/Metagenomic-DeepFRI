@@ -1,6 +1,7 @@
 import importlib.metadata
 import logging
 import sys
+from functools import wraps
 from pathlib import Path
 
 import click
@@ -13,148 +14,189 @@ from mDeepFRI.pipeline import (hierarchical_database_search, load_query_file,
 from mDeepFRI.utils import download_model_weights, generate_config_json
 
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-    '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-app_version = importlib.metadata.version("mDeepFRI")
 
 
-def _show_usage_error(self, file=None):
-    if file is None:
-        file = get_text_stderr()
-    color = None
-    if self.ctx is not None:
-        color = self.ctx.color
-        echo(self.ctx.get_help() + '\n', file=file, color=color)
-    echo('Error: %s' % self.format_message(), file=file, color=color)
+def setup_logging(debug: bool = False):
+    """Configures the root logger for the application."""
+    log_level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format=
+        "[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,  # Override any existing configuration
+    )
 
 
-UsageError.show = _show_usage_error
+def log_command_params(ctx: click.Context):
+    """Logs all parameters passed to a click command."""
+    logger.info("Command parameters:")
+    max_key_len = max(len(k) for k in ctx.params)
+    for key, value in ctx.params.items():
+        logger.info(f"{key:<{max_key_len + 2}} : {value}")
 
 
+def patch_usage_error():
+    """
+    Patches click.UsageError.show to print the full help message
+    before the error, which is more user-friendly.
+    """
+
+    original_show = UsageError.show
+
+    def _show_usage_error_with_help(self, file=None):
+        """Custom show method that includes the command's help."""
+        if file is None:
+            file = get_text_stderr()
+        color = None
+        if self.ctx is not None:
+            color = self.ctx.color
+            # Show the full help text for the command
+            echo(self.ctx.get_help() + "\n", file=file, color=color)
+
+        # Call the original show method to display the error message
+        # We need to temporarily restore the original to avoid recursion
+        UsageError.show = original_show
+        self.show(file=file)
+        # Re-patch it for subsequent errors
+        UsageError.show = _show_usage_error_with_help
+
+    UsageError.show = _show_usage_error_with_help
+
+
+# Reusable decorator for search options
 def search_options(function):
-    function = click.option(
-        "-i",
-        "--input",
-        required=True,
-        type=click.Path(exists=True),
-        help="Path to an input protein sequences (FASTA file, may be gzipped).",
-    )(function)
-    function = click.option(
-        "-o",
-        "--output",
-        required=True,
-        type=click.Path(exists=False),
-        help="Path to output file.",
-    )(function)
-    function = click.option(
-        "-d",
-        "--db-path",
-        required=False,
-        type=click.Path(exists=True),
-        multiple=True,
-        help="Path to a structures database compessed with FoldComp.",
-    )(function)
-    function = click.option(
-        "-s",
-        "--sensitivity",
-        required=False,
-        default=5.7,
-        type=click.FloatRange(1, 7.5),
-        help="Sensitivity of the MMSeqs2 search. Default is 5.7.",
-    )(function)
-    function = click.option(
-        "--min-length",
-        required=False,
+    """
+    A decorator to apply a standard set of search-related
+    click options to a command.
+    """
+
+    # Note: Applying decorators from bottom to top
+    # is easier to read than re-assigning the function variable.
+    @click.option(
+        "--tmpdir",
         default=None,
+        type=click.Path(exists=False,
+                        file_okay=False,
+                        dir_okay=True,
+                        path_type=Path),
+        help="Path to a temporary directory. Required for very large searches.",
+    )
+    @click.option(
+        "--skip-pdb",
+        default=False,
+        is_flag=True,
+        help="Skip PDB100 database search.",
+    )
+    @click.option(
+        "-t",
+        "--threads",
+        default=1,
         type=int,
-        help="Minimum length of the protein sequence.",
-    )(function)
-    function = click.option(
+        show_default=True,
+        help="Number of threads to use.",
+    )
+    @click.option(
+        "--overwrite",
+        default=False,
+        is_flag=True,
+        help="Overwrite existing files.",
+    )
+    @click.option(
+        "--top-k",
+        default=5,
+        type=int,
+        show_default=True,
+        help="Number of top MMseqs2 hits to save.",
+    )
+    @click.option(
+        "--mmseqs-min-coverage",
+        default=0.9,
+        type=float,
+        show_default=True,
+        help=
+        "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
+    )
+    @click.option(
+        "--mmseqs-min-identity",
+        default=0.5,
+        type=float,
+        show_default=True,
+        help="Minimum identity for MMseqs2 alignment.",
+    )
+    @click.option(
+        "--mmseqs-max-evalue",
+        default=0.001,
+        type=float,
+        show_default=True,
+        help="Maximum e-value for MMseqs2 alignment.",
+    )
+    @click.option(
+        "--mmseqs-min-bitscore",
+        default=0,
+        type=float,
+        show_default=True,
+        help="Minimum bitscore for MMseqs2 alignment.",
+    )
+    @click.option(
         "--max-length",
-        required=False,
         default=None,
         type=int,
         help="Maximum length of the protein sequence.",
-    )(function)
-    function = click.option(
-        "--mmseqs-min-bits",
-        required=False,
-        default=0,
-        type=float,
-        help="Minimum bitscore for MMseqs2 alignment.",
-    )(function)
-    function = click.option(
-        "--mmseqs-max-eval",
-        required=False,
-        default=0.001,
-        type=float,
-        help="Maximum e-value for MMseqs2 alignment.",
-    )(function)
-    function = click.option(
-        "--mmseqs-min-ident",
-        required=False,
-        default=0.5,
-        type=float,
-        help="Minimum identity for MMseqs2 alignment.",
-    )(function)
-    function = click.option(
-        "--mmseqs-min-coverage",
-        required=False,
-        default=0.9,
-        type=float,
-        help=
-        "Minimum coverage for MMseqs2 alignment for both query and target sequences.",
-    )(function)
-    function = click.option(
-        "--top-k",
-        required=False,
-        default=5,
-        type=int,
-        help="Number of top MMSeqs2 hits to save. Default is 1.",
-    )(function)
-    function = click.option(
-        "--overwrite",
-        required=False,
-        default=False,
-        type=bool,
-        is_flag=True,
-        help="Overwrite existing files.",
-    )(function)
-    function = click.option(
-        "-t",
-        "--threads",
-        required=False,
-        default=1,
-        type=int,
-        help="Number of threads to use. Default is 1.",
-    )(function)
-    function = click.option(
-        "--skip-pdb",
-        required=False,
-        default=False,
-        type=bool,
-        is_flag=True,
-        help="Skip PDB100 database search.",
-    )(function)
-    function = click.option(
-        "--tmpdir",
-        required=False,
+    )
+    @click.option(
+        "--min-length",
         default=None,
-        type=click.Path(exists=False),
-        help="Path to a temporary directory. Required for very large searches.",
-    )(function)
-    return function
+        type=int,
+        help="Minimum length of the protein sequence.",
+    )
+    @click.option(
+        "-s",
+        "--mmseqs-sensitivity",
+        default=5.7,
+        type=click.FloatRange(1, 7.5),
+        show_default=True,
+        help="Sensitivity of the MMseqs2 search.",
+    )
+    @click.option(
+        "-d",
+        "--db-path",
+        required=False,
+        type=click.Path(exists=True,
+                        dir_okay=False,
+                        file_okay=True,
+                        path_type=Path),
+        multiple=True,
+        help="Path to a structures database compessed with FoldComp.",
+    )
+    @click.option(
+        "-o",
+        "--output",
+        required=True,
+        type=click.Path(exists=False, path_type=Path),
+        help="Path to output file or directory.",
+    )
+    @click.option(
+        "-i",
+        "--input",
+        required=True,
+        type=click.Path(exists=True,
+                        dir_okay=False,
+                        readable=True,
+                        path_type=Path),
+        help="Path to an input protein sequences (FASTA file, may be gzipped).",
+    )
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        return function(*args, **kwargs)
+
+    return wrapper
 
 
 @click.group()
 @click.option("--debug/--no-debug", default=False)
-@click.version_option(version=app_version)
+@click.version_option(version=importlib.metadata.version("mDeepFRI"))
 def main(debug):
     """mDeepFRI"""
 
@@ -167,20 +209,27 @@ def main(debug):
         else:
             log.setLevel(logging.INFO)
 
+    patch_usage_error()
+    setup_logging(debug)
 
+
+# CLI commands
+@main.command
 @click.option(
     "-o",
     "--output",
     required=True,
-    type=click.Path(exists=False),
-    help="Path to folder where the database will be created.",
+    type=click.Path(file_okay=False,
+                    dir_okay=True,
+                    writable=True,
+                    path_type=Path),
+    help="Path to folder where the model weights will be downloaded.",
 )
 @click.option("-v",
               "--version",
               required=True,
               type=click.Choice(["1.0", "1.1"]),
               help="Version of the model.")
-@main.command
 def get_models(output, version):
     """Download model weights for mDeepFRI."""
 
@@ -192,11 +241,15 @@ def get_models(output, version):
     logger.info(f"DeepFRI models v{version} downloaded to {output_path}.")
 
 
+@main.command
 @click.option(
     "-w",
     "--weights_path",
     required=True,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True,
+                    dir_okay=True,
+                    file_okay=False,
+                    path_type=Path),
     help="Path to a folder containing model weights.",
 )
 @click.option(
@@ -206,7 +259,6 @@ def get_models(output, version):
     type=click.Choice(["1.0", "1.1"]),
     help="Version of the model.",
 )
-@main.command
 def generate_config(weights_path, version):
     """
     Generate a config file for mDeepFRI.
@@ -223,36 +275,26 @@ def generate_config(weights_path, version):
 
 @main.command
 @search_options
-def search_databases(input, output, db_path, sensitivity, min_length,
-                     max_length, min_bits, max_eval, min_ident, min_coverage,
-                     top_k, overwrite, threads, skip_pdb, tmpdir):
+@click.pass_context
+def search_databases(ctx, input, output, db_path, mmseqs_sensitivity,
+                     min_length, max_length, min_bits, max_eval, min_ident,
+                     min_coverage, top_k, overwrite, threads, skip_pdb,
+                     tmpdir):
     """
     Hierarchically search FoldComp databases for similar proteins with
-    MMSeqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
+    MMseqs2. Based on the thresholds from https://doi.org/10.1038/s41586-023-06510-w.
     """
 
     # write command parameters to log
-    logger.info("Command parameters:")
-    logger.info("Input:                        %s", input)
-    logger.info("Output:                       %s", output)
-    logger.info("Database:                     %s", db_path)
-    logger.info("Sensitivity:                  %s", sensitivity)
-    logger.info("Minimum length:               %s", min_length)
-    logger.info("Maximum length:               %s", max_length)
-    logger.info("Minimum bitscore:             %s", min_bits)
-    logger.info("Maximum e-value:              %s", max_eval)
-    logger.info("Minimum identity:             %s", min_ident)
-    logger.info("Minimum coverage:             %s", min_coverage)
-    logger.info("Top k results:                %s", top_k)
-    logger.info("Overwrite:                    %s", overwrite)
-    logger.info("Threads:                      %s", threads)
-    logger.info("Skip PDB:                     %s", skip_pdb)
+    log_command_params(ctx)
 
-    query_file = load_query_file(input)
+    query_file = load_query_file(query_file=input,
+                                 min_length=min_length,
+                                 max_length=max_length)
     hierarchical_database_search(query_file=query_file,
                                  databases=db_path,
                                  output_path=output,
-                                 sensitivity=sensitivity,
+                                 mmseqs_sensitivity=mmseqs_sensitivity,
                                  min_seq_len=min_length,
                                  max_seq_len=max_length,
                                  min_bits=min_bits,
@@ -272,7 +314,10 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     "-w",
     "--weights",
     required=True,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True,
+                    dir_okay=True,
+                    file_okay=False,
+                    path_type=Path),
     help="Path to a folder containing model weights.",
 )
 @click.option(
@@ -329,20 +374,6 @@ def search_databases(input, output, db_path, sensitivity, min_length,
     help="Remove intermediate files.",
 )
 @click.option(
-    "-t",
-    "--threads",
-    default=1,
-    type=int,
-    help="Number of threads to use. Default is 1.",
-)
-@click.option(
-    "--skip-pdb",
-    default=False,
-    type=bool,
-    is_flag=True,
-    help="Skip PDB100 database search.",
-)
-@click.option(
     "--save-structures",
     default=False,
     type=bool,
@@ -364,48 +395,26 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_min_coverage, top_k, alignment_gap_open,
                      alignment_gap_extend, alignment_min_identity,
                      alignment_min_coverage, remove_intermediate, overwrite,
-                     threads, skip_pdb, min_length, max_length,
+                     threads, skip_pdb, min_length, max_length, tmpdir,
                      save_structures, save_cmaps):
     """Predict protein function from sequence."""
+
     logger.info("Starting Metagenomic-DeepFRI.")
 
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
     # write command parameters to log
-    logger.info("Command parameters:")
-    logger.info("Input:                         %s", input)
-    logger.info("Database:                      %s", db_path)
-    logger.info("Weights:                       %s", weights)
-    logger.info("Output:                        %s", output)
-    logger.info("Processing modes:              %s", processing_modes)
-    logger.info("Angstrom contact threshold:    %s", angstrom_contact_thresh)
-    logger.info("Generate contacts:             %s", generate_contacts)
-    logger.info("MMSeqs2 sensitivity:           %s", mmseqs_sensitivity)
-    logger.info("MMSeqs2 minimum bitscore:      %s", mmseqs_min_bitscore)
-    logger.info("MMSeqs2 maximum e-value:       %s", mmseqs_max_evalue)
-    logger.info("MMSeqs2 minimum identity:      %s", mmseqs_min_identity)
-    logger.info("MMSeqs2 sensitivity:           %s", )
-    logger.info("Top k results:                 %s", top_k)
-    logger.info("Alignment gap open:            %s", alignment_gap_open)
-    logger.info("Alignment gap extend:          %s", alignment_gap_extend)
-    logger.info("Alignment minimum identity:    %s", alignment_min_identity)
-    logger.info("Remove intermediate:           %s", remove_intermediate)
-    logger.info("Overwrite:                     %s", overwrite)
-    logger.info("Threads:                       %s", threads)
-    logger.info("Skip PDB:                      %s", skip_pdb)
-    logger.info("Minimum length:                %s", min_length)
-    logger.info("Maximum length:                %s", max_length)
-    logger.info("Save structures:               %s", save_structures)
-    logger.info("Save contact maps:             %s", save_cmaps)
+    log_command_params(ctx)
 
-    query_file = load_query_file(input)
+    query_file = load_query_file(query_file=input,
+                                 min_length=min_length,
+                                 max_length=max_length)
+
     deepfri_dbs = hierarchical_database_search(
         query_file=query_file,
         output_path=output_path / "database_search",
         databases=db_path,
-        sensitivity=mmseqs_sensitivity,
-        min_seq_len=min_length,
-        max_seq_len=max_length,
+        mmseqs_sensitivity=mmseqs_sensitivity,
         min_bits=mmseqs_min_bitscore,
         max_eval=mmseqs_max_evalue,
         min_ident=mmseqs_min_identity,
@@ -413,6 +422,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         top_k=top_k,
         skip_pdb=skip_pdb,
         overwrite=overwrite,
+        tmpdir=tmpdir,
         threads=threads)
 
     predict_protein_function(
@@ -425,7 +435,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         generate_contacts=generate_contacts,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
-        identity_threshold=alignment_min_identity,
+        alignment_min_identity=alignment_min_identity,
         alignment_min_coverage=alignment_min_coverage,
         remove_intermediate=remove_intermediate,
         save_structures=save_structures,

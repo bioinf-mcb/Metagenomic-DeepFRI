@@ -44,7 +44,7 @@ def load_query_file(query_file: str, min_length: int = None, max_length=None):
 def hierarchical_database_search(query_file: QueryFile,
                                  output_path: str,
                                  databases: Iterable[str] = [],
-                                 sensitivity: float = 5.7,
+                                 mmseqs_sensitivity: float = 5.7,
                                  min_bits: float = 0,
                                  max_eval: float = 1e-5,
                                  min_ident: float = 0.5,
@@ -86,7 +86,7 @@ def hierarchical_database_search(query_file: QueryFile,
 
     for db in dbs:
         results = query_file.search(db.mmseqs_db,
-                                    sensitivity=sensitivity,
+                                    mmseqs_sensitivity=mmseqs_sensitivity,
                                     eval=max_eval,
                                     threads=threads,
                                     tmpdir=tmpdir)
@@ -156,8 +156,8 @@ def predict_protein_function(
         generate_contacts: int = 2,
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
-        identity_threshold: float = 0.5,
-        coverage_threshold: float = 0.9,
+        alignment_min_identity: float = 0.5,
+        alignment_min_coverage: float = 0.9,
         remove_intermediate=False,
         threads: int = 1,
         save_structures: bool = False,
@@ -194,8 +194,8 @@ def predict_protein_function(
         # filter alignments by identity and coverage
         alignments = [
             aln for aln in alignments
-            if aln.query_identity > identity_threshold
-            and aln.query_coverage > coverage_threshold
+            if aln.query_identity > alignment_min_identity
+            and aln.query_coverage > alignment_min_coverage
         ]
 
         try:

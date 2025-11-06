@@ -53,12 +53,14 @@ def _search(query_db: str,
             target_db: str,
             result_db: str,
             mmseqs_max_eval: float = 10e-5,
-            sensitivity: Annotated[float, ValueRange(min=1.0, max=7.5)] = 5.7,
+            mmseqs_sensitivity: Annotated[float,
+                                          ValueRange(min=1.0, max=7.5)] = 5.7,
             threads: int = 1):
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
             f"{MMSEQS_PATH} search -e {mmseqs_max_eval} --threads {threads} "
-            f"-s {sensitivity} {query_db} {target_db} {result_db} {tmp_path}")
+            f"-s {mmseqs_sensitivity} {query_db} {target_db} {result_db} {tmp_path}"
+        )
 
 
 def _convertalis(
@@ -515,21 +517,22 @@ class QueryFile:
         if not self.sequences:
             raise ValueError("No sequences left after filtering.")
 
-    def search(self,
-               database_path: str,
-               eval: float = 10e-5,
-               sensitivity: Annotated[float,
-                                      ValueRange(min=1.0, max=7.5)] = 5.7,
-               index_target: bool = False,
-               tmpdir=None,
-               threads: int = 1):
+    def search(
+            self,
+            database_path: str,
+            eval: float = 10e-5,
+            mmseqs_sensitivity: Annotated[float,
+                                          ValueRange(min=1.0, max=7.5)] = 5.7,
+            index_target: bool = False,
+            tmpdir=None,
+            threads: int = 1):
         """
         Queries sequences against MMseqs2 database. The search results are stored in a tabular format.
 
         Args:
             database_path (str): Path to MMseqs2 database or database FASTA.
             eval (float): Maximum e-value for MMseqs2 search.
-            sensitivity (float): Sensitivity value for MMseqs2 search.
+            mmseqs_sensitivity (float): Sensitivity value for MMseqs2 search.
             index_target (bool): Create index for target database. Advised for repeated searches.
             tmpdir (str): Path to temporary directory. MMseqs2 creates a lot of temporary files.
                           For large queries, needs to be set to a directory with enough space.
@@ -546,10 +549,10 @@ class QueryFile:
                 >>> query_file.filter_sequences(min_length=50, max_length=200)
                 >>> result = query_file.search("path/to/database")
         """
-        # check sensitivity values
-        if not 1.0 <= sensitivity <= 7.5:
+        # check MMseqs2sensitivity values
+        if not 1.0 <= mmseqs_sensitivity <= 7.5:
             raise ValueError(
-                "Sensitivity value should be between 1.0 and 7.5.")
+                "MMseqs2 sensitivity value should be between 1.0 and 7.5.")
 
         with tempfile.TemporaryDirectory(dir=tmpdir) as tmp_path:
             if self.sequences:
@@ -579,7 +582,7 @@ class QueryFile:
 
             result_db = Path(tmp_path) / "search_resultDB"
             _search(input_db_path, target_db_path, result_db, eval,
-                    sensitivity, threads)
+                    mmseqs_sensitivity, threads)
 
             output_file = Path(tmp_path) / "search_results.tsv"
             _convertalis(input_db_path, target_db_path, result_db, output_file)
