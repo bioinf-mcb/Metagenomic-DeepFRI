@@ -20,8 +20,8 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 
 ### 📋 Pipeline stages
 
-1. Search proteins similar to query in PDB and supply `FoldComp` databases with `MMSeqs2`.
-2. Find the best alignment among `MMSeqs2` hits using `PyOpal`.
+1. Search proteins similar to query in PDB and supply `FoldComp` databases with `MMseqs2`.
+2. Find the best alignment among `MMseqs2` hits using `PyOpal`.
 3. Align target protein contact map to query protein with unknown structure.
 4. Run `DeepFRI` with the structure if found in the database, otherwise run `DeepFRI` with sequence only.
 
@@ -100,7 +100,7 @@ Other available parameters can be found upon command `mDeepFRI --help`.
 ## ✅ Results
 The output folder will contain:
 1. `{database_name}.search_results.tsv`
-2. `query.mmseqsDB` + index from MMSeqs2 search.
+2. `query.mmseqsDB` + index from MMseqs2 search.
 3. `results.tsv` - a final output from the DeepFRI model.
 
 ### Example output (`results.tsv`)

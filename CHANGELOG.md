@@ -39,7 +39,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 [1.1.6]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.5...v1.1.6
 
 ### Added
-- MMSeqs2 API + tests
+- MMseqs2 API + tests
 - rudimentary documentation website
 - fixed bugs of v1.1.5
 
@@ -83,7 +83,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 [v1.1.2]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.1...v1.1.2
 
 ### Added
-- chunked loading of MMSeqs2 preselected targets - improves runtime
+- chunked loading of MMseqs2 preselected targets - improves runtime
 
 ### Fixed
 - C++17 lowered to C++14 for compatibility
