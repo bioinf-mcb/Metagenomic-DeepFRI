@@ -41,7 +41,7 @@ def build_database(
     threads: int = 1,
 ) -> None:
     """
-    Extracts FASTA file from FoldComp database. Creates MMSeqs2 database and index.
+    Extracts FASTA file from FoldComp database. Creates MMseqs2 database and index.
 
     Args:
         input_path (str): path to a FoldComp database with compressed structures.
@@ -53,7 +53,7 @@ def build_database(
         None
     """
 
-    logger.info("Building MMSeqs2 database from %s", input_path)
+    logger.info("Building MMseqs2 database from %s", input_path)
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -76,13 +76,13 @@ def build_database(
     # create mmseqs db
     mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
     if overwrite or needs_new_mmseqs:
-        logger.info("Creating and indexing MMSeqs2 daStabase.")
+        logger.info("Creating and indexing MMseqs2 daStabase.")
         _createdb(output_sequences, mmseqs_path)
         _createindex(mmseqs_path, threads)
         logger.info("Database created at %s", output_path)
     else:
         logger.info("Found %s in %s", mmseqs_path, output_path)
-        logger.info("Skipping creation of MMSeqs2 database.")
+        logger.info("Skipping creation of MMseqs2 database.")
 
     database = Database(foldcomp_db=input_path,
                         sequence_db=output_sequences,
