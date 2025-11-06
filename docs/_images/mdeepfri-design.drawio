@@ -45,7 +45,7 @@
         <mxCell id="oikshHjOcAwH3rsg0z-a-11" value="Top K MMSeqs alignments" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="180" y="120" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="oikshHjOcAwH3rsg0z-a-14" value="MMSeqs2" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+        <mxCell id="oikshHjOcAwH3rsg0z-a-14" value="MMseqs2" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="110" y="90" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="oikshHjOcAwH3rsg0z-a-15" value="Alignment" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
