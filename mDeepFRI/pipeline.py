@@ -5,7 +5,7 @@ import pickle
 import sys
 from functools import partial
 from multiprocessing import Pool
-from typing import Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -146,6 +146,24 @@ def align_pairwise():
     pass
 
 
+def _initialize_processing_modes(modes: List[str],
+                                 config: Dict[str, Any]) -> List[str]:
+    """
+    Filters processing modes based on the model config version.
+    """
+    filtered_modes = list(modes)
+    # version 1.1 drops support for ec
+    if config.get("version") == "1.1":
+        if "ec" in filtered_modes:
+            filtered_modes.remove("ec")
+            logger.info(
+                "EC number prediction is not supported in version 1.1.")
+
+    if len(filtered_modes) == 0:
+        raise ValueError("No processing modes selected.")
+    return filtered_modes
+
+
 def predict_protein_function(
         query_file: QueryFile,
         databases: Tuple[Database],
@@ -165,16 +183,8 @@ def predict_protein_function(
 
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
-    # version 1.1 drops support for ec
-    if deepfri_models_config["version"] == "1.1":
-        # remove "ec" from processing modes
-        deepfri_processing_modes = [
-            mode for mode in deepfri_processing_modes if mode != "ec"
-        ]
-        logger.info("EC number prediction is not supported in version 1.1.")
-
-    if len(deepfri_processing_modes) == 0:
-        raise ValueError("No processing modes selected.")
+    deepfri_processing_modes = _initialize_processing_modes(
+        deepfri_processing_modes, deepfri_models_config)
 
     weights = pathlib.Path(weights)
     output_path = pathlib.Path(output_path)
@@ -333,10 +343,9 @@ def predict_protein_function(
                     bar_format=BAR_FORMAT):
                 # writing the results to the output file
 
-                prediction_rows = gcn.predict_function(
-                    seqres=aln.query_sequence,
-                    cmap=aligned_cmap,
-                    chain=str(aln.query_name))
+                prediction_rows = gcn.predict(seqres=aln.query_sequence,
+                                              cmap=aligned_cmap,
+                                              chain=str(aln.query_name))
 
                 for row in prediction_rows:
                     deepfri_info = [net_type, mode]
@@ -366,7 +375,7 @@ def predict_protein_function(
                     desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
                     bar_format=BAR_FORMAT):
 
-                prediction_rows = cnn.predict_function(
+                prediction_rows = cnn.predict(
                     seqres=unaligned_queries[query_id], chain=str(query_id))
                 for row in prediction_rows:
                     row.extend([net_type, mode])
