@@ -340,7 +340,8 @@ def predict_protein_function(
                     total=gcn_prots,
                     miniters=len(aligned_cmaps) // 10,
                     desc=f"Predicting with GCN ({DEEPFRI_MODES[mode]})",
-                    bar_format=BAR_FORMAT):
+                    bar_format=BAR_FORMAT,
+                    file=sys.stdout):
                 # writing the results to the output file
 
                 prediction_rows = gcn.predict(seqres=aln.query_sequence,
@@ -373,7 +374,8 @@ def predict_protein_function(
                     total=cnn_prots,
                     miniters=len(unaligned_queries) // 10,
                     desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
-                    bar_format=BAR_FORMAT):
+                    bar_format=BAR_FORMAT,
+                    file=sys.stdout):
 
                 prediction_rows = cnn.predict(
                     seqres=unaligned_queries[query_id], chain=str(query_id))
