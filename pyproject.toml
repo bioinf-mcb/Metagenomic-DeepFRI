@@ -57,6 +57,12 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"mDeepFRI" = ["assets/*.pkl"]
+
 [tool.ruff]
 line-length = 120
 
