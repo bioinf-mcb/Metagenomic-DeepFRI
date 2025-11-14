@@ -10,23 +10,37 @@ from typing import Any, Dict, Iterable, List, Tuple
 import numpy as np
 from tqdm import tqdm
 
-from mDeepFRI import BAR_FORMAT, DEEPFRI_MODES, OUTPUT_HEADER
+from mDeepFRI import DEEPFRI_MODES
 from mDeepFRI.alignment import align_mmseqs_results
 from mDeepFRI.bio_utils import build_align_contact_map
 from mDeepFRI.database import Database, build_database
 from mDeepFRI.mmseqs import MMseqsResult, QueryFile
 from mDeepFRI.pdb import create_pdb_mmseqs, extract_calpha_coords
 from mDeepFRI.predict import Predictor
-from mDeepFRI.utils import load_deepfri_config, remove_intermediate_files
+from mDeepFRI.utils import (get_json_values, load_deepfri_config,
+                            remove_intermediate_files)
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
+# logger.propagate = False
 formatter = logging.Formatter(
     '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
+ALIGNMENT_HEADER = [
+    "query_id", "aligned", "target_id", "db_name", "query_identity",
+    "query_coverage", "target_coverage"
+]
+FINAL_OUTPUT_HEADER = [
+    "protein", "network_type", "prediction_mode", "go_term", "score",
+    "go_name", "aligned", "target_id", "db_name", "query_identity",
+    "query_coverage", "target_coverage"
+]
+
+NAN_ALIGNMENT_INFO = [np.nan] * 6
 
 
 # load sequences in query filtered by length
@@ -164,6 +178,35 @@ def _initialize_processing_modes(modes: List[str],
     return filtered_modes
 
 
+def _run_prediction_loop(predictor, data_iterable: iter, data_len: int,
+                         net_type: str, tsv_writer: csv.writer,
+                         description: str):
+    """
+    A helper function to run a prediction loop for either GCN or CNN.
+    """
+    BAR_FORMAT = "{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}], {rate_fmt}{postfix}"
+    # Assuming BAR_FORMAT and sys.stdout are available in scope
+    # or passed as arguments if this is in a different module.
+    for item in tqdm(data_iterable,
+                     total=data_len,
+                     desc=description,
+                     bar_format=BAR_FORMAT,
+                     file=sys.stdout):
+        if net_type == "gcn":
+            # item is (aln, aligned_cmap)
+            aln, aligned_cmap = item
+            query_id = aln.query_name
+            pred_vector = predictor.forward_pass(seqres=aln.query_sequence,
+                                                 cmap=aligned_cmap)
+        else:  # net_type == "cnn"
+            # item is (query_id, sequence)
+            query_id, sequence = item
+            pred_vector = predictor.forward_pass(seqres=sequence)
+
+        out_row = [query_id, net_type] + pred_vector.tolist()
+        tsv_writer.writerow(out_row)
+
+
 def predict_protein_function(
         query_file: QueryFile,
         databases: Tuple[Database],
@@ -180,7 +223,7 @@ def predict_protein_function(
         threads: int = 1,
         save_structures: bool = False,
         save_cmaps: bool = False):
-
+    # TODO: troubleshot alignment steps
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
     deepfri_processing_modes = _initialize_processing_modes(
@@ -302,7 +345,6 @@ def predict_protein_function(
             cmap_file = cmap_dir / f"{aln.query_name}.npy"
             np.save(cmap_file, cmap)
 
-    # FUNCTION PREDICTION
     aligned_queries = [aln[0].query_name for aln in aligned_cmaps]
     unaligned_queries = {
         query_id: seq
@@ -310,6 +352,22 @@ def predict_protein_function(
         if query_id not in aligned_queries
     }
 
+    # WRITE ALIGNMENT RESULTS
+    alignment_results_file = output_path / "alignment_summary.tsv"
+
+    with open(alignment_results_file, "w", encoding="utf-8") as aln_output:
+        tsv_writer = csv.writer(aln_output, delimiter="\t")
+        tsv_writer.writerow(ALIGNMENT_HEADER)
+        for aln, _ in aligned_cmaps:
+            tsv_writer.writerow([
+                aln.query_name, True, aln.target_name, aln.db_name,
+                aln.query_identity, aln.query_coverage, aln.target_coverage
+            ])
+        for query_id in unaligned_queries:
+            tsv_writer.writerow(
+                [query_id, False, np.nan, np.nan, np.nan, np.nan, np.nan])
+
+    ### FUNCTION PREDICTION ###
     # sort cmaps by length of query sequence
     aligned_cmaps = sorted(aligned_cmaps,
                            key=lambda x: len(x[0].query_sequence))
@@ -317,76 +375,107 @@ def predict_protein_function(
     unaligned_queries = dict(
         sorted(unaligned_queries.items(), key=lambda x: len(x[1])))
 
-    output_file_name = output_path / "results.tsv"
-    output_buffer = open(output_file_name, "w", encoding="utf-8")
-    csv_writer = csv.writer(output_buffer, delimiter="\t")
-    csv_writer.writerow(OUTPUT_HEADER)
+    # output_file_name = output_path / "results.tsv"
+    # output_buffer = open(output_file_name, "w", encoding="utf-8")
+    # csv_writer = csv.writer(output_buffer, delimiter="\t")
+    # csv_writer.writerow(OUTPUT_HEADER)
 
+    matrices = {}
+    json_configs = {}
     for i, mode in enumerate(deepfri_processing_modes):
-        logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode], i + 1,
-                    len(deepfri_processing_modes))
-        # GCN
-        gcn_prots = len(aligned_cmaps)
-        if gcn_prots > 0:
-            net_type = "gcn"
+        # load model go terms
+        model_path = deepfri_models_config["gcn"][mode]
+        config_path = model_path.rsplit(".", 1)[0] + "_model_params.json"
+        json_configs[mode] = config_path
+        GOTERMS = get_json_values(config_path, "goterms")
 
-            # GCN for queries with aligned contact map
-            gcn_path = deepfri_models_config[net_type][mode]
+        # create output file for each mode
+        output_matrix = output_path / f"prediction_matrix_{mode}.tsv"
+        matrices[mode] = output_matrix
+        with open(output_matrix, "w", encoding="utf-8") as output_buffer:
+            tsv_writer = csv.writer(output_buffer, delimiter="\t")
+            tsv_writer.writerow(["protein", "network_type"] + GOTERMS)
 
-            gcn = Predictor(gcn_path, threads=threads)
+            logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode],
+                        i + 1, len(deepfri_processing_modes))
 
-            for i, (aln, aligned_cmap) in tqdm(
-                    enumerate(aligned_cmaps),
-                    total=gcn_prots,
-                    miniters=len(aligned_cmaps) // 10,
-                    desc=f"Predicting with GCN ({DEEPFRI_MODES[mode]})",
-                    bar_format=BAR_FORMAT,
-                    file=sys.stdout):
-                # writing the results to the output file
+            # GCN prediction
+            gcn_prots = len(aligned_cmaps)
+            if gcn_prots > 0:
+                net_type = "gcn"
 
-                prediction_rows = gcn.predict(seqres=aln.query_sequence,
-                                              cmap=aligned_cmap,
-                                              chain=str(aln.query_name))
+                # GCN for queries with aligned contact map
+                gcn_path = deepfri_models_config[net_type][mode]
+                gcn = Predictor(gcn_path, threads=threads)
+                _run_prediction_loop(
+                    predictor=gcn,
+                    data_iterable=aligned_cmaps,
+                    data_len=len(aligned_cmaps),
+                    net_type=net_type,
+                    tsv_writer=tsv_writer,
+                    description=f"Predicting with GCN ({DEEPFRI_MODES[mode]})")
+                del gcn  # Explicitly free memory
 
-                for row in prediction_rows:
-                    deepfri_info = [net_type, mode]
-                    row.extend(deepfri_info)
+            # CNN for queries without satisfying alignments
+            cnn_prots = len(unaligned_queries)
+            if cnn_prots > 0:
+                net_type = "cnn"
+                cnn_path = deepfri_models_config[net_type][mode]
+                cnn = Predictor(cnn_path, threads=threads)
+                _run_prediction_loop(
+                    predictor=cnn,
+                    data_iterable=unaligned_queries.items(),
+                    data_len=len(unaligned_queries),
+                    net_type=net_type,
+                    tsv_writer=tsv_writer,
+                    description=f"Predicting with CNN ({DEEPFRI_MODES[mode]})")
+                del cnn  # Explicitly free memory
 
-                    # additional alignment info
-                    # corrected name for FoldComp inconsistency
+    ### FORMAT AND CREATE FINAL OUTPUT FILES ###
+    # combine mode-specific matrices into a single file
+    # open and load alignment data
+    with open(alignment_results_file, "r", encoding="utf-8") as aln_input:
+        tsv_reader = csv.reader(aln_input, delimiter="\t")
+        next(tsv_reader)  # skip header
+        alignment_data = {row[0]: row[1:] for row in tsv_reader}
 
-                    row.extend([
-                        aln.target_name.rsplit(".", 1)[0], aln.db_name,
-                        aln.query_identity, aln.query_coverage
-                    ])
-                    csv_writer.writerow(row)
-
-            del gcn
-
-        # CNN for queries without satisfying alignments
-        cnn_prots = len(unaligned_queries)
-        if cnn_prots > 0:
-            net_type = "cnn"
-            cnn_path = deepfri_models_config[net_type][mode]
-            cnn = Predictor(cnn_path, threads=threads)
-            for i, query_id in tqdm(
-                    enumerate(unaligned_queries),
-                    total=cnn_prots,
-                    miniters=len(unaligned_queries) // 10,
-                    desc=f"Predicting with CNN ({DEEPFRI_MODES[mode]})",
-                    bar_format=BAR_FORMAT,
-                    file=sys.stdout):
-
-                prediction_rows = cnn.predict(
-                    seqres=unaligned_queries[query_id], chain=str(query_id))
-                for row in prediction_rows:
-                    row.extend([net_type, mode])
-                    row.extend([np.nan, np.nan, np.nan])
-                    csv_writer.writerow(row)
-
-            del cnn
-
-    output_buffer.close()
+    final_output = output_path / "results.tsv"
+    with open(final_output, "w", encoding="utf-8") as fout:
+        fout.write("\t".join(FINAL_OUTPUT_HEADER) + "\n")
+        for mode, matrix_file in matrices.items():
+            json_path = json_configs[mode]
+            GONAMES = get_json_values(json_path, "gonames")
+            with open(matrix_file, "r", encoding="utf-8") as matrix_input:
+                # convert wide to narrow format for GO terms with score > 0.1
+                tsv_reader = csv.reader(matrix_input, delimiter="\t")
+                # get term names from header
+                header = next(tsv_reader)
+                terms = header[2:]  # skip first two columns (Protein and Type)
+                term_to_name = {
+                    term: name
+                    for term, name in zip(terms, GONAMES)
+                }
+                # get ids with scores > 0.1
+                for row in tsv_reader:
+                    query_id = row[0]
+                    net_type = row[1]
+                    scores = row[2:]
+                    term_score = {
+                        terms[i]: float(scores[i])
+                        for i in range(len(terms)) if float(scores[i]) >= 0.1
+                    }
+                    sorted_term_score = dict(
+                        sorted(term_score.items(),
+                               key=lambda item: item[1],
+                               reverse=True))
+                    # print results and add go names
+                    for term, score in sorted_term_score.items():
+                        go_name = term_to_name.get(term, "Unknown")
+                        aln_info = alignment_data.get(query_id, [np.nan] * 6)
+                        fout.write(
+                            f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
+                            f"\t{aln_info[1]}\t{aln_info[2]}\t{aln_info[3]}\t{aln_info[4]}\n"
+                        )
 
     if remove_intermediate:
         for db in databases:

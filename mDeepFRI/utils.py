@@ -304,3 +304,59 @@ def retrieve_fasta_entries_as_dict(fasta_file: str,
 def stdout_warn(message, category, filename, lineno, file=None, line=None):
     sys.stdout.write(
         warnings.formatwarning(message, category, filename, lineno))
+
+
+def opener(filepath: str, mode: str = "rt"):
+    """
+    Read file whether it is gzipped or not.
+    Args:
+        filepath (str): Path to the file.
+    Returns:
+        file object: File object.
+    """
+
+    # read first two bytes
+    with open(filepath, 'rb') as f:
+        sig = f.read(2)
+
+    if sig == b"\x1f\x8b":  # gzip magic number
+        with gzip.open(filepath, mode, encoding="utf-8") as json_file:
+            file_buffer = json.load(json_file)
+    else:
+        with open(filepath, mode, encoding="utf-8") as json_file:
+            file_buffer = json.load(json_file)
+
+    return file_buffer
+
+
+def get_json_values(config_json: str, key: str) -> List[str]:
+    """
+    Get GO terms predicted by the model from config json.
+
+    Args:
+        config_json (str): Path to config json.
+        key (str): Key to retrieve values for.
+    Returns:
+        List[str]: List of values for the specified key.
+    """
+
+    config_json = Path(config_json)
+
+    assert config_json.exists(), f"Config json not found at {config_json}"
+
+    metadata = opener(str(config_json))
+    values = metadata[key]
+
+    return values
+
+
+def create_final_output():
+    """
+    Create final output file by merging mode-specific prediction matrices and
+    alignment information.
+
+    Returns:
+        None
+    """
+
+    pass

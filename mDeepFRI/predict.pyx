@@ -32,7 +32,7 @@ cpdef np.ndarray[float, ndim=2] seq2onehot(str seq):
     cdef int vocab_size = len(chars)
     cdef int seq_len = len(seq)
     cdef int i, j
-    cdef int[:, ::1] onehot_view = np.zeros((seq_len, vocab_size), dtype=np.int32)
+    cdef float[:, ::1] onehot_view = np.zeros((seq_len, vocab_size), dtype=np.float32)
 
     for i in range(seq_len):
         j = chars.find(seq_bytes[i])
@@ -41,12 +41,13 @@ cpdef np.ndarray[float, ndim=2] seq2onehot(str seq):
         else:
             raise ValueError(f"Invalid character in sequence: {seq[i]}")
 
-    return np.asarray(onehot_view, dtype=np.float32)
+    return np.asarray(onehot_view)
 
 
 cdef class Predictor(object):
     """
-    Class for loading trained models and computing GO/EC predictions and class activation maps (CAMs).
+    Class for loading trained models and computing GO/EC predictions
+    and class activation maps (CAMs).
     """
 
     cdef public str model_path
@@ -54,8 +55,6 @@ cdef class Predictor(object):
     cdef public dict prot2goterms
     cdef public dict goidx2chains
     cdef public np.ndarray gonames
-    cdef public np.ndarray goterms
-    cdef public np.ndarray thresh
     cdef public session
     cdef public np.ndarray Y_hat
     cdef public dict data
@@ -91,8 +90,6 @@ cdef class Predictor(object):
                 metadata = json.load(json_file)
 
         self.gonames = np.asarray(metadata['gonames'])
-        self.goterms = np.asarray(metadata['goterms'])
-        self.thresh = 0.1 * np.ones(len(self.goterms))
 
     def forward_pass(self, seqres: str, cmap = None):
 
@@ -120,49 +117,3 @@ cdef class Predictor(object):
         y = prediction[:, :, 0].reshape(-1)
 
         return y
-
-    def format_predictions(self, y, chain: str = ""):
-
-        cdef list output_rows = []
-        cdef str go_term
-        cdef float score
-        cdef str annotation
-
-        go_idx = np.where(y >= self.thresh)[0]
-        for idx in go_idx:
-            go_term = self.goterms[idx].item()
-            score = float(y[idx])
-            annotation = self.gonames[idx].item()
-            output_rows.append([chain, go_term, score, annotation])
-
-        # Sort output_rows based on score in descending order
-        output_rows.sort(key=operator.itemgetter(2), reverse=True)
-
-        return output_rows
-
-
-    def predict_function(
-        self,
-        seqres: str,
-        cmap = None,
-        chain: str = "",
-        format: str = "tsv",
-    ):
-        """
-        Computes GO/EC predictions for a single protein chain from sequence and contact map.
-
-        Args:
-            seqres (str): protein sequence.
-            cmap (np.array): contact map.
-            chain (str): protein ID.
-            format (str): output format. Options: "tsv", "vector".
-
-        Returns:
-            list: list of GO/EC predictions.
-
-        """
-
-        y = self.forward_pass(seqres, cmap)
-        output_rows = self.format_predictions(y, chain)
-
-        return output_rows
