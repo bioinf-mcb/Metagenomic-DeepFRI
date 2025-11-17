@@ -223,7 +223,7 @@ def predict_protein_function(
         threads: int = 1,
         save_structures: bool = False,
         save_cmaps: bool = False):
-    # TODO: troubleshot alignment steps
+
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
     deepfri_processing_modes = _initialize_processing_modes(
