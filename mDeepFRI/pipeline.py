@@ -22,7 +22,7 @@ from mDeepFRI.utils import (get_json_values, load_deepfri_config,
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
-# logger.propagate = False
+logger.propagate = False
 formatter = logging.Formatter(
     '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
