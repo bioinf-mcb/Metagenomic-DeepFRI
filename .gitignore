@@ -178,10 +178,3 @@ __pycache__/
 
 # PyCharm
 .idea/
-
-boost_1_81_0.tar.gz
-boost_1_81_0
-
-meta_deepFRI/CPP_lib/CMakeCache.txt
-meta_deepFRI/CPP_lib/Makefile
-meta_deepFRI/CPP_lib/cmake_install.cmake

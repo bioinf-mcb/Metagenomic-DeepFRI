@@ -128,7 +128,7 @@ cpdef align_contact_map(str query_alignment,
     for i in range(0, sparse_map_size, 2):
         j = sparse_query_contact_map[i]
         k = sparse_query_contact_map[i + 1]
-        if j < query_index and k < query_index:
+        if 0 <= j < query_index and 0 <= k < query_index:
             output_contact_map[j, k] = 1
             output_contact_map[k, j] = 1
 
