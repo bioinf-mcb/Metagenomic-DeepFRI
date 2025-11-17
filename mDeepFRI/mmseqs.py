@@ -268,7 +268,7 @@ class MMseqsResult(np.recarray):
         try:
             final_table = np.concatenate(top_k)
         except ValueError:
-            final_table = np.array([])
+            final_table = np.empty(0, dtype=self.MMSEQS_DTYPE)
 
         return MMseqsResult(final_table, self.query_fasta, self.database)
 
