@@ -63,6 +63,7 @@ class AlignmentResult:
                  alignment: str = "",
                  query_identity: float = None,
                  query_coverage: float = None,
+                 target_coverage: float = None,
                  db_name: str = None,
                  coords: np.ndarray = None):
 
@@ -73,6 +74,7 @@ class AlignmentResult:
         self.alignment = alignment
         self.query_identity = query_identity
         self.query_coverage = query_coverage
+        self.target_coverage = target_coverage
         self.insert_gaps()
         self.db_name = db_name
         self.target_coords = None
@@ -153,9 +155,10 @@ def align_pairwise(query, target, gap_open: int = 10, gap_extend: int = 1):
     alignment = aligner.align(query, database, algorithm="nw", mode="full")
     alignment_string = alignment[0].alignment
     identity = alignment[0].identity()
-    coverage = alignment[0].coverage(reference="query")
+    query_coverage = alignment[0].coverage(reference="query")
+    target_coverage = alignment[0].coverage(reference="target")
 
-    return alignment_string, identity, coverage
+    return alignment_string, identity, query_coverage, target_coverage
 
 
 def pairwise_against_database(query_id,
@@ -171,12 +174,17 @@ def pairwise_against_database(query_id,
     best_idx, best_target = best_hit_database(query_sequence, target_sequences,
                                               gap_open, gap_extend)
     # align the query against the best hit
-    alignment, identity, coverage = align_pairwise(query_sequence, best_target,
-                                                   gap_open, gap_extend)
+    alignment, identity, query_coverage, target_coverage = align_pairwise(
+        query_sequence, best_target, gap_open, gap_extend)
     # create an alignment object
-    alignment_result = AlignmentResult(query_id, query_sequence, best_idx,
-                                       best_target, alignment, identity,
-                                       coverage)
+    alignment_result = AlignmentResult(query_id,
+                                       query_sequence,
+                                       best_idx,
+                                       best_target,
+                                       alignment,
+                                       identity,
+                                       query_coverage=query_coverage,
+                                       target_coverage=target_coverage)
 
     return alignment_result
 
