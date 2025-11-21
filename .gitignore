@@ -4,6 +4,7 @@ test_database/
 models/
 notebooks/*
 !notebooks/halogenases.ipynb
+!notebooks/functional_vector_analysis.ipynb
 mDeepFRI/*.cpp
 cython_tests.ipynb
 foldcomp_bin
