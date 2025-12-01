@@ -97,6 +97,7 @@ def hierarchical_database_search(query_file: QueryFile,
         dbs.append(db)
 
     aligned_total = 0
+    pdb_hits = set()
 
     for db in dbs:
         results = query_file.search(db.mmseqs_db,
@@ -124,21 +125,23 @@ def hierarchical_database_search(query_file: QueryFile,
         # catch error if no matches to database
         # a case from phage proteins
         try:
-            unique_hits = np.unique(best_matches["query"])
+            all_hits = np.unique(best_matches["query"])
         except IndexError:
-            unique_hits = np.array([])
+            all_hits = np.array([])
+        # cover skip_pdb case
+        unique_hits = all_hits
 
         if "pdb100" in db.name:
-            pdb_hits = unique_hits
-        elif skip_pdb:
-            unique_hits = [hit for hit in unique_hits]
-        else:
-            unique_hits = [hit for hit in unique_hits if hit not in pdb_hits]
+            pdb_hits.update(all_hits)
+        elif not skip_pdb:
+            unique_hits = [hit for hit in all_hits if hit not in pdb_hits]
 
         aligned_db = len(unique_hits)
         aligned_total += aligned_db
+
         aligned_perc = round(aligned_db / sequence_num_start * 100, 2)
         total_perc = round(aligned_total / sequence_num_start * 100, 2)
+
         logger.info(f"Aligned {aligned_db}/{sequence_num_start} "
                     f"({aligned_perc:.2f}%) proteins against {db.name}.")
         logger.info(
@@ -151,7 +154,7 @@ def hierarchical_database_search(query_file: QueryFile,
         # PDB100 hits are aligned second time to experimental
         # structures in order to save failed contact map alignemnts.
         if 'pdb100' not in db.name:
-            query_file.remove_sequences(unique_hits)
+            query_file.remove_sequences(all_hits)
 
     return dbs
 

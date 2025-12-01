@@ -429,6 +429,14 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         tmpdir=tmpdir,
         threads=threads)
 
+    # refresh query file
+    # hierarchical_database_search filters out aligned sequences
+    # to avoid redundant alignments
+
+    query_file = load_query_file(query_file=input,
+                                 min_length=min_length,
+                                 max_length=max_length)
+
     predict_protein_function(
         query_file=query_file,
         databases=deepfri_dbs,
