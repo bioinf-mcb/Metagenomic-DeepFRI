@@ -26,7 +26,7 @@ dependencies = [
     "numpy ~=2.3",
     "biotite >=1.3",
     "pysam >=0.18",
-    "pyopal ~=0.5",
+    "pyopal ~=0.7",
     "foldcomp",
     "tqdm",
     "onnxruntime-gpu"
