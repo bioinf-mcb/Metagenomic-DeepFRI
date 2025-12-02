@@ -220,8 +220,6 @@ def predict_protein_function(
         generate_contacts: int = 2,
         alignment_gap_open: float = 10,
         alignment_gap_continuation: float = 1,
-        alignment_min_identity: float = 0.5,
-        alignment_min_coverage: float = 0.9,
         remove_intermediate=False,
         threads: int = 1,
         save_structures: bool = False,

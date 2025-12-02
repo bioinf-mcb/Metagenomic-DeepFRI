@@ -359,18 +359,6 @@ def search_databases(ctx, input, output, db_path, mmseqs_sensitivity,
     help="Gap extend penalty for contact map alignment.",
 )
 @click.option(
-    "--alignment-min-identity",
-    default=0.5,
-    type=float,
-    help="Minimum identity for contact map alignment.",
-)
-@click.option(
-    "--alignment-min-coverage",
-    default=0.9,
-    type=float,
-    help="Minimum coverage for contact map alignment.",
-)
-@click.option(
     "--remove-intermediate",
     default=False,
     type=bool,
@@ -397,8 +385,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_sensitivity, mmseqs_min_bitscore,
                      mmseqs_max_evalue, mmseqs_min_identity,
                      mmseqs_min_coverage, top_k, alignment_gap_open,
-                     alignment_gap_extend, alignment_min_identity,
-                     alignment_min_coverage, remove_intermediate, overwrite,
+                     alignment_gap_extend, remove_intermediate, overwrite,
                      threads, skip_pdb, min_length, max_length, tmpdir,
                      save_structures, save_cmaps):
     """Predict protein function from sequence."""
@@ -447,8 +434,6 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         generate_contacts=generate_contacts,
         alignment_gap_open=alignment_gap_open,
         alignment_gap_continuation=alignment_gap_extend,
-        alignment_min_identity=alignment_min_identity,
-        alignment_min_coverage=alignment_min_coverage,
         remove_intermediate=remove_intermediate,
         save_structures=save_structures,
         save_cmaps=save_cmaps)
