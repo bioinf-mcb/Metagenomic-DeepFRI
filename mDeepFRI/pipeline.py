@@ -247,13 +247,6 @@ def predict_protein_function(
             alignment_gap_extend=alignment_gap_continuation,
             threads=threads)
 
-        # filter alignments by identity and coverage
-        alignments = [
-            aln for aln in alignments
-            if aln.query_identity > alignment_min_identity
-            and aln.query_coverage > alignment_min_coverage
-        ]
-
         try:
             # set a db name for alignments
             for aln in alignments:
