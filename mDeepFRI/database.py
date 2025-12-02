@@ -7,6 +7,7 @@ from mDeepFRI.mmseqs import _createdb, _createindex, extract_fasta_foldcomp
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
+logger.propagate = False
 formatter = logging.Formatter(
     '[%(asctime)s] %(module)s.%(funcName)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
@@ -76,7 +77,7 @@ def build_database(
     # create mmseqs db
     mmseqs_path = output_path / Path(input_path.stem + ".mmseqsDB")
     if overwrite or needs_new_mmseqs:
-        logger.info("Creating and indexing MMseqs2 daStabase.")
+        logger.info("Creating and indexing MMseqs2 database.")
         _createdb(output_sequences, mmseqs_path)
         _createindex(mmseqs_path, threads)
         logger.info("Database created at %s", output_path)

@@ -6,7 +6,6 @@ cimport numpy as np
 
 np.import_array()
 import gzip
-import operator
 
 import cython
 import onnxruntime as rt

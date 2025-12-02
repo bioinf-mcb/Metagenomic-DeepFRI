@@ -1,10 +1,13 @@
-cimport cython
+
 
 import numpy as np
 
-cimport numpy as np
+cimport cython
+cimport numpy as cnp
 from libc.stdlib cimport free, malloc
 from libc.string cimport strlen
+
+ctypedef cnp.int32_t DTYPE_t
 
 
 @cython.boundscheck(False)
@@ -31,9 +34,9 @@ cpdef pairwise_sqeuclidean(float[:, ::1] X):
     return np.asarray(D)
 
 
-cpdef align_contact_map(str query_alignment,
+cpdef cnp.ndarray[DTYPE_t, ndim=2] align_contact_map(str query_alignment,
                         str target_alignment,
-                        np.ndarray[np.int32_t, ndim=2] sparse_target_contact_map,
+                        cnp.ndarray[DTYPE_t, ndim=2] sparse_target_contact_map,
                         int generated_contacts=2):
     """
     Aligns a contact map based on the alignments of query and target sequences.
@@ -118,7 +121,7 @@ cpdef align_contact_map(str query_alignment,
             sparse_map_size += 2
 
     # Build the output contact map
-    cdef np.ndarray[np.int32_t, ndim=2] output_contact_map = np.zeros((query_index, query_index), dtype=np.int32)
+    cdef cnp.ndarray[DTYPE_t, ndim=2] output_contact_map = np.zeros((query_index, query_index), dtype=np.int32)
 
     # Fill the diagonal
     for i in range(query_index):
