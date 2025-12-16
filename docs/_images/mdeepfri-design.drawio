@@ -33,13 +33,11 @@
         <mxCell id="oikshHjOcAwH3rsg0z-a-60" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;Function prediction&lt;/b&gt;&lt;div&gt;MyProtein:GO:0016798&lt;br&gt;MyProtein:GO:0009055&lt;br&gt;....&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="170" x="450" y="275" as="geometry" />
         </mxCell>
-        <mxCell id="YZUZsylv92WlbZFYK05h-54" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="YZUZsylv92WlbZFYK05h-25">
+        <mxCell id="YZUZsylv92WlbZFYK05h-62" edge="1" parent="1" source="YZUZsylv92WlbZFYK05h-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="YZUZsylv92WlbZFYK05h-25">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="140" y="360" />
             </Array>
-            <mxPoint x="140" y="327.5" as="sourcePoint" />
-            <mxPoint x="250" y="360" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="YZUZsylv92WlbZFYK05h-8" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Stucture&lt;br&gt;available?" vertex="1">
