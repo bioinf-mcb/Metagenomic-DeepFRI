@@ -26,12 +26,12 @@ cpdef pairwise_sqeuclidean(float[:, ::1] X):
     cdef float[:, ::1] D = np.zeros((n, n), dtype=np.float32)
 
     with nogil:
-        for i in prange(n, schedule='static'):
+        for i in prange(n, schedule='static', chunksize=1):
             for j in range(i + 1, n):
                 d = 0.0
                 for k in range(m):
                     diff = X[i, k] - X[j, k]
-                    d = d + diff * diff
+                    d = d + (diff * diff)
 
                 D[i, j] = d
                 D[j, i] = d
