@@ -7,6 +7,8 @@ cimport numpy as cnp
 from libc.stdlib cimport free, malloc
 from libc.string cimport strlen
 
+from cython.parallel import prange
+
 ctypedef cnp.int32_t DTYPE_t
 
 
@@ -20,15 +22,17 @@ cpdef pairwise_sqeuclidean(float[:, ::1] X):
     cdef int m = X.shape[1]
     cdef int i, j, k
     cdef float d, diff
+
     cdef float[:, ::1] D = np.zeros((n, n), dtype=np.float32)
 
     with nogil:
-        for i in range(n):
+        for i in prange(n, schedule='static'):
             for j in range(i + 1, n):
-                d = 0
+                d = 0.0
                 for k in range(m):
                     diff = X[i, k] - X[j, k]
-                    d += diff * diff
+                    d = d + diff * diff
+
                 D[i, j] = d
                 D[j, i] = d
 
