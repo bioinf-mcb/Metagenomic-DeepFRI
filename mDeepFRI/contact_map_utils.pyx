@@ -13,6 +13,7 @@ ctypedef cnp.int32_t DTYPE_t
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
+@cython.initializedcheck(False)
 cpdef pairwise_sqeuclidean(float[:, ::1] X):
 
     cdef int n = X.shape[0]
