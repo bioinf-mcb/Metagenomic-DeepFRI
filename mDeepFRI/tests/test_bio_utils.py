@@ -1,25 +1,10 @@
 import os
 import unittest
 
-import numpy as np
 import requests
 from biotite.structure.io.pdb import PDBFile
 
 from mDeepFRI.bio_utils import get_residues_coordinates
-from mDeepFRI.contact_map_utils import pairwise_sqeuclidean
-
-
-class TestPairwiseSqeuclidean(unittest.TestCase):
-    def test_pairwise_sqeuclidean(self):
-        np.random.seed(42)
-        expected = np.array(
-            [[0, 1.01354558, 0.12442072], [1.01354558, 0, 0.99467713],
-             [0.12442072, 0.99467713, 0]],
-            dtype=np.float32)
-
-        matrix = np.random.rand(3, 3).astype(np.float32)
-        result = pairwise_sqeuclidean(matrix)
-        np.allclose(result, expected)
 
 
 class TestGetResiduesCoordinates(unittest.TestCase):

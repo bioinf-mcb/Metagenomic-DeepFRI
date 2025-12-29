@@ -257,7 +257,8 @@ PACKAGES = [SRC_DIR]
 
 install_requires = ["cython", "numpy", "requests"]
 setup_requires = ["cython", "requests", "numpy"]
-extra_compile_args = ["-O3"]
+extra_compile_args = ["-O3", "-fopenmp"]
+extra_link_args = ["-fopenmp"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
@@ -265,6 +266,7 @@ EXTENSIONS = [
               language="c++",
               libraries=["stdc++"],
               extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
               define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
                              ]),
     Extension("mDeepFRI.contact_map_utils",
@@ -272,6 +274,7 @@ EXTENSIONS = [
               language="c++",
               libraries=["stdc++"],
               extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
               define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")
                              ]),
 ]
