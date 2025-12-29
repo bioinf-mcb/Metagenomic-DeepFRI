@@ -170,9 +170,9 @@ def pairwise_against_database(query_id,
     Finds the best alignment of the query against the target.
     """
 
-    # find best hits in the database
     best_idx, best_target = best_hit_database(query_sequence, target_sequences,
                                               gap_open, gap_extend)
+
     # align the query against the best hit
     alignment, identity, query_coverage, target_coverage = align_pairwise(
         query_sequence, best_target, gap_open, gap_extend)
@@ -185,7 +185,6 @@ def pairwise_against_database(query_id,
                                        identity,
                                        query_coverage=query_coverage,
                                        target_coverage=target_coverage)
-
     return alignment_result
 
 
