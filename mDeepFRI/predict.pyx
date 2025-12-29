@@ -65,6 +65,7 @@ cdef class Predictor(object):
     cdef public str model_path
     cdef public int threads
     cdef public object session
+    cdef public list input_names
 
     def __init__(self, model_path: str, threads: int = 0, ):
         self.model_path = model_path
@@ -82,6 +83,7 @@ cdef class Predictor(object):
                         'CPUExecutionProvider'],
             sess_options=session_options,
         )
+        self.input_names = [node.name for node in self.session.get_inputs()]
 
     def forward_pass(self, seqres: str, cmap = None):
 
@@ -92,19 +94,18 @@ cdef class Predictor(object):
 
         S = seq2onehot(seqres)
         S = S.reshape(1, *S.shape)
-        inputs = self.session.get_inputs()
         # if cmap present use GCN with 2 inputs - sequence + cmap
         if cmap is not None:
             # GCN Branch
             A = cmap.reshape(1, cmap.shape[0], cmap.shape[1])
             inputs = {
-                self.input_name_1: A.astype(np.float32),
-                self.input_name_2: S.astype(np.float32)
+                self.input_names[0]: A.astype(np.float32),
+                self.input_names[1]: S.astype(np.float32)
             }
         else:
             # CNN Branch
             inputs = {
-                self.input_name_1: S.astype(np.float32)
+                self.input_names[0]: S.astype(np.float32)
             }
 
         # Run Inference
