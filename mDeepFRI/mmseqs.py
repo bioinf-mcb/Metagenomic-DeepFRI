@@ -84,7 +84,7 @@ def _convertalis(
     args = ",".join(columns)
     run_command(
         f"{MMSEQS_PATH} convertalis {query_db} {target_db} {result_db} {output_file} --format-mode 4 "
-        f"--format-output {args} --treads {threads}")
+        f"--format-output {args} --threads {threads}")
 
 
 class MMseqsResult(np.recarray):
