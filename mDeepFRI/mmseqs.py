@@ -68,6 +68,7 @@ def _convertalis(
     target_db: str,
     result_db: str,
     output_file: str,
+    threads: int,
     columns: Literal["query", "target", "fident", "alnlen", "mismatch",
                      "gapopen", "qstart", "qend", "tstart", "tend", "qcov",
                      "tcov", "evalue", "bits", "qseq", "tseq", "qheader",
@@ -83,7 +84,7 @@ def _convertalis(
     args = ",".join(columns)
     run_command(
         f"{MMSEQS_PATH} convertalis {query_db} {target_db} {result_db} {output_file} --format-mode 4 "
-        f"--format-output {args}")
+        f"--format-output {args} --treads {threads}")
 
 
 class MMseqsResult(np.recarray):
@@ -589,7 +590,8 @@ class QueryFile:
                     mmseqs_sensitivity, threads)
 
             output_file = Path(tmp_path) / "search_results.tsv"
-            _convertalis(input_db_path, target_db_path, result_db, output_file)
+            _convertalis(input_db_path, target_db_path, result_db, output_file,
+                         threads)
 
             result = MMseqsResult.from_mmseqs_result(
                 output_file,
