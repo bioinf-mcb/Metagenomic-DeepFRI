@@ -4,12 +4,11 @@ import numpy as np
 
 cimport cython
 cimport numpy as cnp
-from libc.stdlib cimport free, malloc
-from libc.string cimport strlen
+from libcpp.vector cimport vector
 
-from cython.parallel import prange
-
+# Define types for clarity and speed
 ctypedef cnp.int32_t DTYPE_t
+from cython.parallel import prange
 
 
 @cython.boundscheck(False)
@@ -89,58 +88,93 @@ cpdef cnp.ndarray[DTYPE_t, ndim=2] align_contact_map(str query_alignment,
     11. Return the aligned contact map as a numpy array.
     """
 
-    cdef int target_index = 0
-    cdef int query_index = 0
-    cdef int i, j, k, n
-    cdef int *target_to_query_indices = <int *>malloc(len(target_alignment) * sizeof(int))
-    cdef int *sparse_query_contact_map = <int *>malloc(len(query_alignment) * len(target_alignment) * 2 * sizeof(int))
-    cdef int sparse_map_size = 0
-    cdef int output_contact_map_size = query_index * query_index
+    # 1. Convert Python strings to C-strings (char*) for O(1) access
+    cdef bytes query_bytes = query_alignment.encode('ascii')
+    cdef bytes target_bytes = target_alignment.encode('ascii')
+    cdef char* q_ptr = query_bytes
+    cdef char* t_ptr = target_bytes
+    cdef int align_len = len(query_bytes)
 
-    # Map target residues to query residues based on the alignments
-    for i in range(len(query_alignment)):
-        if query_alignment[i] == "-":
-            target_to_query_indices[target_index] = -1
-            target_index += 1
+    # 2. Use C++ Vectors for dynamic memory management
+    # Replaces manual malloc/free and avoids pre-allocation guessing.
+    # target_to_query_map stores the query index for every target index.
+    cdef vector[int] target_to_query_map
+    target_to_query_map.reserve(align_len)
+
+    # flattened_contacts stores pairs (i, j) flatly: [i1, j1, i2, j2...]
+    cdef vector[int] sparse_query_contacts
+    sparse_query_contacts.reserve(align_len * 2)
+
+    cdef int query_idx = 0
+    cdef int target_idx = 0
+    cdef int i, j, k, row
+
+    # 3. First Pass: Compute Mapping and Generated Contacts
+    for i in range(align_len):
+        if q_ptr[i] == 45: # 45 is ASCII for '-'
+            # Gap in Query: Target has residue, Query does not.
+            # Map current target_idx to -1 (no equivalent in query).
+            target_to_query_map.push_back(-1)
+            target_idx += 1
         else:
-            if target_alignment[i] == "-":
+            # Query has residue
+            if t_ptr[i] == 45: # Gap in Target
+                # Generated contacts logic for insertions in Query
                 for j in range(1, generated_contacts + 1):
-                    sparse_query_contact_map[sparse_map_size] = query_index + j
-                    sparse_query_contact_map[sparse_map_size + 1] = query_index
-                    sparse_map_size += 2
-                    sparse_query_contact_map[sparse_map_size] = query_index - j
-                    sparse_query_contact_map[sparse_map_size + 1] = query_index
-                    sparse_map_size += 2
-                query_index += 1
+                    # Add (q + j, q)
+                    sparse_query_contacts.push_back(query_idx + j)
+                    sparse_query_contacts.push_back(query_idx)
+                    # Add (q - j, q)
+                    sparse_query_contacts.push_back(query_idx - j)
+                    sparse_query_contacts.push_back(query_idx)
+
+                query_idx += 1
             else:
-                target_to_query_indices[target_index] = query_index
-                query_index += 1
-                target_index += 1
+                # Match or Mismatch: Both have residues
+                target_to_query_map.push_back(query_idx)
+                query_idx += 1
+                target_idx += 1
 
-    # Translate the target residues index to query residues index
-    for i in range(sparse_target_contact_map.shape[0]):
-        if (target_to_query_indices[sparse_target_contact_map[i, 0]] != -1 and
-            target_to_query_indices[sparse_target_contact_map[i, 1]] != -1):
-            sparse_query_contact_map[sparse_map_size] = target_to_query_indices[sparse_target_contact_map[i, 0]]
-            sparse_query_contact_map[sparse_map_size + 1] = target_to_query_indices[sparse_target_contact_map[i, 1]]
-            sparse_map_size += 2
+    # 4. Second Pass: Translate Target Contacts
+    # Access numpy array via memoryview for raw C speed
+    cdef int[:, :] target_contacts_view = sparse_target_contact_map
+    cdef int num_target_contacts = sparse_target_contact_map.shape[0]
+    cdef int t_res_i, t_res_j
+    cdef int q_res_i, q_res_j
 
-    # Build the output contact map
-    cdef cnp.ndarray[DTYPE_t, ndim=2] output_contact_map = np.zeros((query_index, query_index), dtype=np.int32)
+    for row in range(num_target_contacts):
+        t_res_i = target_contacts_view[row, 0]
+        t_res_j = target_contacts_view[row, 1]
 
-    # Fill the diagonal
-    for i in range(query_index):
-        output_contact_map[i, i] = 1
+        # Bounds check for safety (optional, but good practice with raw vectors)
+        if t_res_i < target_to_query_map.size() and t_res_j < target_to_query_map.size():
+            q_res_i = target_to_query_map[t_res_i]
+            q_res_j = target_to_query_map[t_res_j]
 
-    # Fill the contacts from the sparse query contact map
-    for i in range(0, sparse_map_size, 2):
-        j = sparse_query_contact_map[i]
-        k = sparse_query_contact_map[i + 1]
-        if 0 <= j < query_index and 0 <= k < query_index:
-            output_contact_map[j, k] = 1
-            output_contact_map[k, j] = 1
+            # If both residues map to valid query positions
+            if q_res_i != -1 and q_res_j != -1:
+                sparse_query_contacts.push_back(q_res_i)
+                sparse_query_contacts.push_back(q_res_j)
 
-    free(target_to_query_indices)
-    free(sparse_query_contact_map)
+    # 5. Build Output Numpy Array
+    # We allocate this only once we know the final query_idx size
+    cdef cnp.ndarray[DTYPE_t, ndim=2] output_map = np.zeros((query_idx, query_idx), dtype=np.int32)
 
-    return output_contact_map
+    # Fill diagonal
+    for i in range(query_idx):
+        output_map[i, i] = 1
+
+    # Fill contacts from the sparse vector
+    cdef int p1, p2
+    cdef size_t total_sparse_entries = sparse_query_contacts.size()
+
+    for i in range(0, total_sparse_entries, 2):
+        p1 = sparse_query_contacts[i]
+        p2 = sparse_query_contacts[i+1]
+
+        # Boundary checks are crucial for generated contacts (which can go out of bounds)
+        if 0 <= p1 < query_idx and 0 <= p2 < query_idx:
+            output_map[p1, p2] = 1
+            output_map[p2, p1] = 1
+
+    return output_map

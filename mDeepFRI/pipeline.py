@@ -194,7 +194,8 @@ def _run_prediction_loop(predictor, data_iterable: iter, data_len: int,
                      total=data_len,
                      desc=description,
                      bar_format=BAR_FORMAT,
-                     file=sys.stdout):
+                     file=sys.stdout,
+                     mininterval=10):
         if net_type == "gcn":
             # item is (aln, aligned_cmap)
             aln, aligned_cmap = item
