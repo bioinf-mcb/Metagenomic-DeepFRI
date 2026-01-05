@@ -467,9 +467,10 @@ def predict_protein_function(
                     for term, score in sorted_term_score.items():
                         go_name = term_to_name.get(term, "Unknown")
                         aln_info = alignment_data.get(query_id, [np.nan] * 6)
+                        aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
                         fout.write(
                             f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
-                            f"\t{aln_info[1]}\t{aln_info[2]}\t{aln_info[3]}\t{aln_info[4]}\n"
+                            f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
                         )
 
     if remove_intermediate:
