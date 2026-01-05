@@ -5,6 +5,7 @@ from typing import Tuple
 
 import numpy as np
 import pyopal
+from scoring_matrices import ScoringMatrix
 
 from mDeepFRI.mmseqs import MMseqsResult
 from mDeepFRI.utils import (load_fasta_as_dict, retrieve_fasta_entries_as_dict,
@@ -104,7 +105,8 @@ class AlignmentResult:
 def best_hit_database(query,
                       target_sequences,
                       gap_open: int = 10,
-                      gap_extend: int = 1):
+                      gap_extend: int = 1,
+                      scoring_matrix: str = "VTML80"):
     """
     Find the best hit in the database and return index.
 
@@ -117,8 +119,13 @@ def best_hit_database(query,
         str: The best hit sequence.
     """
 
-    aligner = pyopal.Aligner(gap_open=gap_open, gap_extend=gap_extend)
-    target_database = pyopal.Database(target_sequences.values())
+    custom_scoring = ScoringMatrix.from_name(scoring_matrix)
+    custom_alphabet = custom_scoring.alphabet
+    aligner = pyopal.Aligner(scoring_matrix=custom_scoring,
+                             gap_open=gap_open,
+                             gap_extend=gap_extend)
+    target_database = pyopal.Database(target_sequences.values(),
+                                      alphabet=custom_alphabet)
 
     # Retrieve the best hit
     results = aligner.align(query,
@@ -134,7 +141,11 @@ def best_hit_database(query,
     return best_idx, best_seq
 
 
-def align_pairwise(query, target, gap_open: int = 10, gap_extend: int = 1):
+def align_pairwise(query,
+                   target,
+                   gap_open: int = 10,
+                   gap_extend: int = 1,
+                   scoring_matrix: str = "VTML80"):
     """
     Aligns the query against the target and returns the alignment.
 
@@ -149,8 +160,12 @@ def align_pairwise(query, target, gap_open: int = 10, gap_extend: int = 1):
 
     """
 
-    aligner = pyopal.Aligner(gap_open=gap_open, gap_extend=gap_extend)
-    database = pyopal.Database([target])
+    custom_scoring = ScoringMatrix.from_name(scoring_matrix)
+    custom_alphabet = custom_scoring.alphabet
+    aligner = pyopal.Aligner(scoring_matrix=custom_scoring,
+                             gap_open=gap_open,
+                             gap_extend=gap_extend)
+    database = pyopal.Database([target], alphabet=custom_alphabet)
     # Align the sequences
     alignment = aligner.align(query, database, algorithm="nw", mode="full")
     alignment_string = alignment[0].alignment
