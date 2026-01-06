@@ -14,9 +14,13 @@
 *A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation with [Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/). It incorporates [FoldComp](https://github.com/steineggerlab/foldcomp) databases of predicted protein structures for fast annotation of metagenomic gene catalogues.*
 
 ## 🔍 Overview
-Proteins perform most of the work of living cells. Amino acid sequence and structural features of proteins determine a wide range of functions: from binding specificity and conferring mechanical stability, to catalysis of biochemical reactions, transport, and signal transduction.
-DeepFRI is a neural network designed to predict protein function within the framework of the Gene Ontology (GO). The exponential growth in the number of available protein sequences, driven by advancements in low-cost sequencing technologies and computational methods (e.g. gene prediction), has resulted in a pressing need for efficient software to facilitate the annotation of protein databases.
-Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It incorporates novel databases of predicted structures (AlphaFold, ESMFold, MIP, etc.) and improves runtimes of DeepFRI by [2-12 times](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/weight_convert/onnx_vs_tf2.png)!
+Metagenomic-DeepFRI is a high-performance pipeline for annotating protein sequences with Gene Ontology (GO) terms using [DeepFRI](https://github.com/flatironinstitute/DeepFRI), a deep learning model for functional protein annotation.
+
+Protein function prediction is increasingly important as sequencing technologies generate vast numbers of novel sequences. Metagenomic-DeepFRI combines:
+- **Structure information** from FoldComp databases (AlphaFold, ESMFold, PDB, etc.)
+- **Sequence-based predictions** using DeepFRI's neural networks
+- **Fast searches** with MMseqs2 for database alignment
+- **Significant speedup** of [2-12×](https://github.com/bioinf-mcb/Metagenomic-DeepFRI/blob/main/weight_convert/onnx_vs_tf2.png) compared to standard DeepFRI
 
 ### 📋 Pipeline stages
 
@@ -36,9 +40,9 @@ Metagenomic-DeepFRI addresses such needs, building upon efficient libraries. It 
 * [ONNX](https://github.com/onnx/onnx)
 
 
-## Python requirements
-Python >= 3.9; < 3.12
-The app was tested for 3.11.
+## 📦 Requirements
+- **Python:** >= 3.9, < 3.12 (tested with 3.11)
+- **Dependencies:** Automatically installed via pip
 
 ## 🔧 Installation
 
@@ -98,34 +102,45 @@ The `logging` module writes output into `stderr`, so use `2>` to redirect it to 
 Other available parameters can be found upon command `mDeepFRI --help`.
 
 ## ✅ Results
-The output folder will contain:
-1. `{database_name}.search_results.tsv`
-2. `query.mmseqsDB` + index from MMseqs2 search.
-3. `results.tsv` - a final output from the DeepFRI model.
+The output folder will contain several files from different stages of the pipeline:
 
-### Example output (`results.tsv`)
-|  Protein     | GO_term/EC_numer | Score | Annotation                                   | Neural_net | DeepFRI_mode | DB_hit        | DB_name        |Identity |
-|--------------|------------------|-------|----------------------------------------------|------------|--------------|---------------|----------------|------------|
-| MIP_00215364 | GO:0016798       | 0.218 | hydrolase activity, acting on glycosyl bonds | gcn        | mf           | MIP_00215364  | mip_rosetta_hq |0.933      |
-| 1GVH_1 | GO:0009055       | 0.217 | electron transfer activity	                 | gnn        | mf           | 	AF-P24232-F1-model_v4 | afdb_swissprot_v4 | 1.0  |
-| unaligned | 3.2.1.-          | 0.215 | 3.2.1.-                        | cnn        | ec           | nan | nan | nan
+### Main Output Files
 
-This is an example of protein annotation with the AlphaFold database.
-- Protein - the name of the protein from the FASTA file.
-- GO_term/EC_numer - predicted GO term or EC number (dependent on mode)
-- Score - DeepFRI score, translates to model confidence in prediction. Details in [publication](https://www.nature.com/articles/s41467-021-23303-9).
-- Annotation - annotation from ontology
-- Neural_net - type of neural network used for prediction (gcn = Graph Convolutional Network; cnn = Convolutional Neural Network). GCN (Graph Convolutional Network) is used when structural information is available in the database, allowing for generally more confident predictions. When there are no proteins above similarity cut-off (50% identity by default), CNN is used.
-- DeepFRI_mode:
-   ```
-   mf = molecular_function
-   bp = biological_process
-   cc = cellular_component
-   ec = enzyme_commission
-   ```
-- DB_hit - name of the hit in the database. Empty if no hit was found.
-- DB_name - name of the database. Empty if no hit was found.
-- Identity - sequence identity between query and hit. Empty if no hit was found.
+1. **`results.tsv`** - Primary output file containing all functional predictions from the DeepFRI model.
+
+2. **`alignment_summary.tsv`** - Summary of alignment statistics for each query protein, showing which queries were successfully aligned to database structures.
+
+3. **`database_search/`** - Directory containing individual search results for each database queried:
+   - `{database_name}_results.tsv` - One file per database searched (e.g., `pdb100_230517_results.tsv`, `afdb_swissprot_v4_results.tsv`)
+
+4. **`prediction_matrix_*.tsv`** - Detailed prediction matrices for each ontology mode:
+   - `prediction_matrix_bp.tsv` - Biological Process predictions
+   - `prediction_matrix_cc.tsv` - Cellular Component predictions
+   - `prediction_matrix_ec.tsv` - Enzyme Commission predictions
+   - `prediction_matrix_mf.tsv` - Molecular Function predictions
+
+   These files contain the raw prediction scores for every protein × GO term combination and can be very large (>50MB).
+
+5. **`query.mmseqsDB`** + associated index files - MMseqs2 database created from input query sequences.
+
+### Primary Output Format (`results.tsv`)
+
+The main output file contains the following columns:
+
+- **protein** - Name of the protein from the input FASTA file.
+- **network_type** - Type of neural network used for prediction:
+  - `gcn` (Graph Convolutional Network) - Used when structural information is available from database alignment, providing generally more confident predictions.
+  - `cnn` (Convolutional Neural Network) - Used when no proteins above similarity cutoff (50% identity by default) are found.
+- **prediction_mode** - Ontology category: `mf` (Molecular Function), `bp` (Biological Process), `cc` (Cellular Component), or `ec` (Enzyme Commission).
+- **go_term** - Predicted GO term identifier or EC number.
+- **score** - DeepFRI confidence score for the prediction. Higher scores indicate greater confidence. See the [DeepFRI publication](https://www.nature.com/articles/s41467-021-23303-9) for details.
+- **go_name** - Human-readable annotation from the Gene Ontology or EC nomenclature.
+- **aligned** - Boolean indicating whether the query was successfully aligned to a database structure (`True`/`False`).
+- **target_id** - Identifier of the matched database entry (e.g., `3al6_D` for PDB chain). Empty if no hit was found.
+- **db_name** - Name of the database where the match was found (e.g., `pdb100_230517`, `afdb_swissprot_v4`).
+- **query_identity** - Sequence identity percentage between query and hit (0.0-1.0 scale). Empty if no hit was found.
+- **query_coverage** - Proportion of query sequence covered by the alignment (0.0-1.0 scale).
+- **target_coverage** - Proportion of target sequence covered by the alignment (0.0-1.0 scale).
 
 ## ⚙️Features
 ### 1. Prediction modes
@@ -133,14 +148,14 @@ The GO ontology contains three subontologies, defined by their root nodes:
 - Molecular Function (MF)
 - Biological Process (BP)
 - Cellular Component (CC)
-- Additionally, Metagenomic-DeepFRI v1.0 is able to predict Enzyme Comission number (EC).
+- Additionally, Metagenomic-DeepFRI v1.0 can predict Enzyme Commission (EC) numbers.
 By default, the tool makes predictions in all 4 categories. To select only a few pass the parameter `-p` or `--processing-modes` few times, i.e.:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path -p mf -p bp
 ```
 
 ### 2. Hierarchical database search
-Different databases have a different level of evidence. For example, PDB structures are real experimental structures, thus they are considered to be the data of highest quality. Therefore new proteins are first queried against PDB. Computational predictions differ by quality, i.e. AlphaFold predictions are often more accurate than ESMFold predictions. We provide an opporunity to search multiple databases in a hierarchical manner. For example, if you want to search AlphaFold database first, and then ESMFold, you can pass the parameter `-d` or `--databases` few times, i.e.:
+Different databases have a different level of evidence. For example, PDB structures are real experimental structures, thus they are considered to be the data of highest quality. Therefore new proteins are first queried against PDB. Computational predictions differ by quality, i.e. AlphaFold predictions are often more accurate than ESMFold predictions. You can search multiple databases in a hierarchical manner for maximum flexibility. For example, if you want to search AlphaFold database first, and then ESMFold, you can pass the parameter `-d` or `--databases` multiple times:
 ```
 mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/alphafold/database/ -d /path/to/another/esmcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path
 ```
@@ -149,7 +164,13 @@ mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/alphafold/da
 The first run of `mDeepFRI` with the database will create temporary files, needed for the pipeline. If you don't want to keep them for the next run add
 flag `--remove-intermediate`.
 
-### 4. CPU / GPU utilization
+### 4. Skipping prediction matrices
+By default, `mDeepFRI` writes detailed prediction matrix files (`prediction_matrix_*.tsv`) containing raw scores for every protein × GO term combination. These files can be very large (>50MB each). If you only need the final `results.tsv` file and want to save disk space, use the `--skip-matrix` flag:
+```
+mDeepFRI predict-function -i /path/to/protein/sequences -d /path/to/foldcomp/database/ -w /path/to/deepfri/weights/folder -o /output_path --skip-matrix
+```
+
+### 5. CPU / GPU utilization
 If argument `threads` is provided, the app will parallelize certain steps (alignment, contact map alignment, functional annotation).
 GPU is often used to speed up neural networks. Metagenomic-DeepFRI takes care of this and, if CUDA is installed on your machine, `mDeepFRI` will automatically use it for prediction. If not, the model will use CPUs.
 **Technical tip:** Single instance of DeepFRI on GPU requires 2GB VRAM. Every currently available GPU with CUDA support should be able to run the model.

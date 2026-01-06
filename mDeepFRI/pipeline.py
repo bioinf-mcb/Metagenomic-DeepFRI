@@ -1,3 +1,22 @@
+"""
+Pipeline module for protein function prediction using DeepFRI.
+
+This module orchestrates the complete Metagenomic-DeepFRI pipeline, including:
+1. Hierarchical database searches using MMseqs2
+2. Alignment of query sequences to database hits using PyOpal
+3. Contact map alignment for structure-based predictions
+4. DeepFRI-based functional annotation
+
+The pipeline can process proteins with or without structural information,
+using Graph Convolutional Networks (GCN) when structures are available,
+and Convolutional Neural Networks (CNN) when only sequences are available.
+
+Attributes:
+    ALIGNMENT_HEADER (list): Column names for alignment results TSV file.
+    FINAL_OUTPUT_HEADER (list): Column names for final prediction results.
+    NAN_ALIGNMENT_INFO (list): Default values for missing alignment information.
+"""
+
 import csv
 import logging
 import pathlib
@@ -43,8 +62,31 @@ FINAL_OUTPUT_HEADER = [
 NAN_ALIGNMENT_INFO = [np.nan] * 6
 
 
-# load sequences in query filtered by length
 def load_query_file(query_file: str, min_length: int = None, max_length=None):
+    """
+    Load and filter protein sequences from a FASTA file.
+
+    This function loads protein sequences from a FASTA file and optionally filters
+    them based on sequence length constraints.
+
+    Args:
+        query_file (str): Path to input FASTA file containing protein sequences.
+        min_length (int, optional): Minimum protein length in amino acids.
+            Sequences shorter than this will be filtered out. Defaults to None.
+        max_length (int, optional): Maximum protein length in amino acids.
+            Sequences longer than this will be filtered out. Defaults to None.
+
+    Returns:
+        QueryFile: QueryFile object containing loaded and filtered sequences.
+
+    Example:
+        >>> qf = load_query_file("proteins.fasta", min_length=30, max_length=5000)
+        >>> len(qf.sequences)
+        42
+
+    Raises:
+        FileNotFoundError: If the query_file does not exist.
+    """
     query_file = QueryFile(filepath=query_file)
     query_file.load_sequences()
     # filter out sequences
@@ -68,6 +110,65 @@ def hierarchical_database_search(query_file: QueryFile,
                                  overwrite: bool = False,
                                  tmpdir: str = None,
                                  threads: int = 1):
+    """
+    Perform hierarchical database searches for protein homologs.
+
+    Searches query sequences against multiple databases in a hierarchical manner,
+    starting with PDB100 (unless skipped), followed by user-specified databases.
+    Results are filtered and the best matches are retained for structure-based
+    annotation.
+
+    Args:
+        query_file (QueryFile): Object containing query sequences to search.
+        output_path (str): Path to directory for saving search results.
+        databases (Iterable[str], optional): List of paths to FoldComp databases
+            to search (in order). Common databases include afdb_swissprot,
+            esmatlas, etc. Defaults to empty list (only PDB if not skipped).
+        mmseqs_sensitivity (float, optional): Sensitivity for MMseqs2 search.
+            Range: 1.0-7.5, higher values are more sensitive but slower.
+            Defaults to 5.7.
+        min_bits (float, optional): Minimum bitscore threshold for hits.
+            Defaults to 0.
+        max_eval (float, optional): Maximum E-value threshold for hits.
+            Defaults to 1e-5.
+        min_ident (float, optional): Minimum sequence identity for alignment.
+            Range: 0.0-1.0. Defaults to 0.5 (50%).
+        min_coverage (float, optional): Minimum query/target coverage.
+            Range: 0.0-1.0. Defaults to 0.9 (90%).
+        top_k (int, optional): Maximum number of top hits to retain per sequence.
+            Defaults to 5.
+        skip_pdb (bool, optional): Skip searching against PDB100 database.
+            Defaults to False.
+        overwrite (bool, optional): Overwrite existing database files.
+            Defaults to False.
+        tmpdir (str, optional): Temporary directory for intermediate files.
+            If None, system default temp directory is used. Defaults to None.
+        threads (int, optional): Number of threads for parallel processing.
+            Defaults to 1.
+
+    Returns:
+        Tuple[Dict, Set]: Tuple containing:
+            - Dictionary mapping query IDs to list of alignment information
+            - Set of PDB hits (for tracking unique structures)
+
+    Raises:
+        FileNotFoundError: If database paths do not exist.
+        ValueError: If parameters are out of valid ranges.
+
+    Note:
+        The function creates intermediate files including MMseqs2 databases
+        and search results. These can be removed after prediction with
+        the remove_intermediate_files() function if storage is a concern.
+
+    Example:
+        >>> qf = load_query_file("proteins.fasta")
+        >>> alignments, pdb_hits = hierarchical_database_search(
+        ...     qf,
+        ...     output_path="./results",
+        ...     databases=["path/to/afdb_swissprot"],
+        ...     threads=4
+        ... )
+    """
 
     output_path = pathlib.Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -224,7 +325,8 @@ def predict_protein_function(
         remove_intermediate=False,
         threads: int = 1,
         save_structures: bool = False,
-        save_cmaps: bool = False):
+        save_cmaps: bool = False,
+        skip_matrix: bool = False):
 
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
@@ -384,47 +486,58 @@ def predict_protein_function(
         json_configs[mode] = config_path
         GOTERMS = get_json_values(config_path, "goterms")
 
-        # create output file for each mode
-        output_matrix = output_path / f"prediction_matrix_{mode}.tsv"
-        matrices[mode] = output_matrix
-        with open(output_matrix, "w", encoding="utf-8") as output_buffer:
-            tsv_writer = csv.writer(output_buffer, delimiter="\t")
-            tsv_writer.writerow(["protein", "network_type"] + GOTERMS)
+        # create output file for each mode (or in-memory buffer if skipping)
+        if skip_matrix:
+            # Use in-memory buffer instead of file
+            import io
+            output_buffer = io.StringIO()
+            matrices[mode] = output_buffer  # Store buffer for later reading
+        else:
+            output_matrix = output_path / f"prediction_matrix_{mode}.tsv"
+            matrices[mode] = output_matrix
+            output_buffer = open(output_matrix, "w", encoding="utf-8")
 
-            logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode],
-                        i + 1, len(deepfri_processing_modes))
+        tsv_writer = csv.writer(output_buffer, delimiter="\t")
+        tsv_writer.writerow(["protein", "network_type"] + GOTERMS)
 
-            # GCN prediction
-            gcn_prots = len(aligned_cmaps)
-            if gcn_prots > 0:
-                net_type = "gcn"
+        logger.info("Processing mode: %s; %i/%i", DEEPFRI_MODES[mode], i + 1,
+                    len(deepfri_processing_modes))
 
-                # GCN for queries with aligned contact map
-                gcn_path = deepfri_models_config[net_type][mode]
-                gcn = Predictor(gcn_path, threads=threads)
-                _run_prediction_loop(
-                    predictor=gcn,
-                    data_iterable=aligned_cmaps,
-                    data_len=len(aligned_cmaps),
-                    net_type=net_type,
-                    tsv_writer=tsv_writer,
-                    description=f"Predicting with GCN ({DEEPFRI_MODES[mode]})")
-                del gcn  # Explicitly free memory
+        # GCN prediction
+        gcn_prots = len(aligned_cmaps)
+        if gcn_prots > 0:
+            net_type = "gcn"
 
-            # CNN for queries without satisfying alignments
-            cnn_prots = len(unaligned_queries)
-            if cnn_prots > 0:
-                net_type = "cnn"
-                cnn_path = deepfri_models_config[net_type][mode]
-                cnn = Predictor(cnn_path, threads=threads)
-                _run_prediction_loop(
-                    predictor=cnn,
-                    data_iterable=unaligned_queries.items(),
-                    data_len=len(unaligned_queries),
-                    net_type=net_type,
-                    tsv_writer=tsv_writer,
-                    description=f"Predicting with CNN ({DEEPFRI_MODES[mode]})")
-                del cnn  # Explicitly free memory
+            # GCN for queries with aligned contact map
+            gcn_path = deepfri_models_config[net_type][mode]
+            gcn = Predictor(gcn_path, threads=threads)
+            _run_prediction_loop(
+                predictor=gcn,
+                data_iterable=aligned_cmaps,
+                data_len=len(aligned_cmaps),
+                net_type=net_type,
+                tsv_writer=tsv_writer,
+                description=f"Predicting with GCN ({DEEPFRI_MODES[mode]})")
+            del gcn  # Explicitly free memory
+
+        # CNN for queries without satisfying alignments
+        cnn_prots = len(unaligned_queries)
+        if cnn_prots > 0:
+            net_type = "cnn"
+            cnn_path = deepfri_models_config[net_type][mode]
+            cnn = Predictor(cnn_path, threads=threads)
+            _run_prediction_loop(
+                predictor=cnn,
+                data_iterable=unaligned_queries.items(),
+                data_len=len(unaligned_queries),
+                net_type=net_type,
+                tsv_writer=tsv_writer,
+                description=f"Predicting with CNN ({DEEPFRI_MODES[mode]})")
+            del cnn  # Explicitly free memory
+
+        # Close file buffer if writing to file (keep StringIO for reading later)
+        if not skip_matrix:
+            output_buffer.close()
 
     ### FORMAT AND CREATE FINAL OUTPUT FILES ###
     # combine mode-specific matrices into a single file
@@ -437,41 +550,83 @@ def predict_protein_function(
     final_output = output_path / "results.tsv"
     with open(final_output, "w", encoding="utf-8") as fout:
         fout.write("\t".join(FINAL_OUTPUT_HEADER) + "\n")
-        for mode, matrix_file in matrices.items():
+        for mode, matrix_source in matrices.items():
             json_path = json_configs[mode]
             GONAMES = get_json_values(json_path, "gonames")
-            with open(matrix_file, "r", encoding="utf-8") as matrix_input:
-                # convert wide to narrow format for GO terms with score > 0.1
-                tsv_reader = csv.reader(matrix_input, delimiter="\t")
-                # get term names from header
-                header = next(tsv_reader)
-                terms = header[2:]  # skip first two columns (Protein and Type)
-                term_to_name = {
-                    term: name
-                    for term, name in zip(terms, GONAMES)
-                }
-                # get ids with scores > 0.1
-                for row in tsv_reader:
-                    query_id = row[0]
-                    net_type = row[1]
-                    scores = row[2:]
-                    term_score = {
-                        terms[i]: float(scores[i])
-                        for i in range(len(terms)) if float(scores[i]) >= 0.1
+
+            # Handle both file paths and StringIO buffers
+            import io
+            if isinstance(matrix_source, io.StringIO):
+                # Read from in-memory buffer
+                matrix_source.seek(0)  # Reset to beginning
+                matrix_content = matrix_source.getvalue()
+                matrix_lines = matrix_content.strip().split('\n')
+                tsv_reader = csv.reader(matrix_lines, delimiter="\t")
+            else:
+                # Read from file
+                with open(matrix_source, "r",
+                          encoding="utf-8") as matrix_input:
+                    tsv_reader = csv.reader(matrix_input, delimiter="\t")
+                    # get term names from header
+                    header = next(tsv_reader)
+                    terms = header[
+                        2:]  # skip first two columns (Protein and Type)
+                    term_to_name = {
+                        term: name
+                        for term, name in zip(terms, GONAMES)
                     }
-                    sorted_term_score = dict(
-                        sorted(term_score.items(),
-                               key=lambda item: item[1],
-                               reverse=True))
-                    # print results and add go names
-                    for term, score in sorted_term_score.items():
-                        go_name = term_to_name.get(term, "Unknown")
-                        aln_info = alignment_data.get(query_id, [np.nan] * 6)
-                        aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
-                        fout.write(
-                            f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
-                            f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
-                        )
+                    # get ids with scores > 0.1
+                    for row in tsv_reader:
+                        query_id = row[0]
+                        net_type = row[1]
+                        scores = row[2:]
+                        term_score = {
+                            terms[i]: float(scores[i])
+                            for i in range(len(terms))
+                            if float(scores[i]) >= 0.1
+                        }
+                        sorted_term_score = dict(
+                            sorted(term_score.items(),
+                                   key=lambda item: item[1],
+                                   reverse=True))
+                        # print results and add go names
+                        for term, score in sorted_term_score.items():
+                            go_name = term_to_name.get(term, "Unknown")
+                            aln_info = alignment_data.get(
+                                query_id, [np.nan] * 6)
+                            aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
+                            fout.write(
+                                f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
+                                f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
+                            )
+                continue  # Skip to next mode after processing file
+
+            # Process in-memory buffer (same logic as file)
+            header = next(tsv_reader)
+            terms = header[2:]  # skip first two columns (Protein and Type)
+            term_to_name = {term: name for term, name in zip(terms, GONAMES)}
+            # get ids with scores > 0.1
+            for row in tsv_reader:
+                query_id = row[0]
+                net_type = row[1]
+                scores = row[2:]
+                term_score = {
+                    terms[i]: float(scores[i])
+                    for i in range(len(terms)) if float(scores[i]) >= 0.1
+                }
+                sorted_term_score = dict(
+                    sorted(term_score.items(),
+                           key=lambda item: item[1],
+                           reverse=True))
+                # print results and add go names
+                for term, score in sorted_term_score.items():
+                    go_name = term_to_name.get(term, "Unknown")
+                    aln_info = alignment_data.get(query_id, [np.nan] * 6)
+                    aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
+                    fout.write(
+                        f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
+                        f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
+                    )
 
     if remove_intermediate:
         for db in databases:

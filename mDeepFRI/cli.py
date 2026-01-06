@@ -1,3 +1,26 @@
+"""
+Command-line interface for Metagenomic-DeepFRI.
+
+This module provides the Click-based CLI for the Metagenomic-DeepFRI pipeline,
+including commands for:
+- Protein function prediction (predict-function)
+- Model weight downloading (get-models)
+- Utility operations (calculate-contact-map)
+
+The CLI offers a user-friendly interface to all pipeline features with
+comprehensive help messages, input validation, and progress reporting.
+
+Commands:
+    cli: Main command group
+    get_models: Download DeepFRI model weights
+    predict_function: Run protein function prediction pipeline
+    calculate_contact_map: Generate contact map from structure file
+
+Functions:
+    setup_logging: Configure logging for the application
+    common_params: Decorator for shared CLI parameters
+"""
+
 import importlib.metadata
 import logging
 import os
@@ -379,6 +402,13 @@ def search_databases(ctx, input, output, db_path, mmseqs_sensitivity,
     is_flag=True,
     help="Save contact maps of the top hits.",
 )
+@click.option(
+    "--skip-matrix",
+    default=False,
+    type=bool,
+    is_flag=True,
+    help="Skip writing prediction matrix files (saves disk space).",
+)
 @click.pass_context
 def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      angstrom_contact_thresh, generate_contacts,
@@ -387,7 +417,7 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
                      mmseqs_min_coverage, top_k, alignment_gap_open,
                      alignment_gap_extend, remove_intermediate, overwrite,
                      threads, skip_pdb, min_length, max_length, tmpdir,
-                     save_structures, save_cmaps):
+                     save_structures, save_cmaps, skip_matrix):
     """Predict protein function from sequence."""
 
     logger.info("Starting Metagenomic-DeepFRI.")
@@ -436,7 +466,8 @@ def predict_function(ctx, input, db_path, weights, output, processing_modes,
         alignment_gap_continuation=alignment_gap_extend,
         remove_intermediate=remove_intermediate,
         save_structures=save_structures,
-        save_cmaps=save_cmaps)
+        save_cmaps=save_cmaps,
+        skip_matrix=skip_matrix)
 
 
 @main.command()
