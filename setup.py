@@ -242,10 +242,18 @@ extra_compile_args = ["-O3", "-fopenmp"]
 extra_link_args = ["-fopenmp"]
 
 if target_system == "macos":
+    brew_prefix = os.environ.get("BREW_PREFIX", "/opt/homebrew")
+    if not Path(brew_prefix).exists():
+        brew_prefix = "/usr/local"
+    libomp_include = os.path.join(brew_prefix, "opt/libomp/include")
+    libomp_lib = os.path.join(brew_prefix, "opt/libomp/lib")
+    include_path = os.path.join(brew_prefix, "include")
+    lib_path = os.path.join(brew_prefix, "lib")
     extra_compile_args = [
-        "-O3", "-Xpreprocessor", "-fopenmp", "-I/opt/homebrew/include"
+        "-O3", "-Xpreprocessor", "-fopenmp", f"-I{libomp_include}",
+        f"-I{include_path}"
     ]
-    extra_link_args = ["-lomp", "-L/opt/homebrew/lib"]
+    extra_link_args = ["-lomp", f"-L{libomp_lib}", f"-L{lib_path}"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
