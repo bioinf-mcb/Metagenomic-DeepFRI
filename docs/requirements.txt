@@ -19,7 +19,7 @@ ipython ~=7.19
 pygments ~=2.4
 nbsphinx ~=0.8
 sphinxcontrib-jquery ~=4.1
-sphinx-click ~=5.0
+sphinx-click ~=6.0
 sphinxcontrib-bibtex ~=2.6
 sphinx-design
 pydata-sphinx-theme
