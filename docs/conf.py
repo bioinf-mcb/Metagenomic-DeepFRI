@@ -1,7 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
+# For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
@@ -9,10 +8,11 @@
 import datetime
 import os
 import re
-import tomllib
+import sys
 
 import semantic_version
-import sphinx_bootstrap_theme
+
+# -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -22,26 +22,28 @@ import sphinx_bootstrap_theme
 docssrc_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(docssrc_dir)
 
-# -- Project information -----------------------------------------------------
-import mDeepFRI  # noqa: E402
+# When building on ReadTheDocs, we can't provide a local version of the Cython
+# extensions, so we have to install the latest public version, and avoid
+# patching the PYTHONPATH with the local development folder
+if os.getenv("READTHEDOCS", "False") != "True":
+    sys.path.insert(0, project_dir)
 
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+import mDeepFRI  # noqa: e402
+
+# extract the project metadata from the module itself
 project = mDeepFRI.__name__
-author = re.match('(.*) <.*>', mDeepFRI.__author__).group(1)
+author = re.match("(.*) <.*>", mDeepFRI.__author__).group(1)
 year = datetime.date.today().year
-copyright = '{}, {}'.format("2022" if year == 2022 else "2020-{}".format(year),
+copyright = "{}, {}".format("2022" if year == 2022 else "2020-{}".format(year),
                             author)
 
 # extract the semantic version
 semver = semantic_version.Version.coerce(mDeepFRI.__version__)
 version = str(semver.truncate(level="patch"))
 release = str(semver)
-
-with open(os.path.join(project_dir, "pyproject.toml"), "rb") as f:
-    pyproject = tomllib.load(f)
-
-project_urls = pyproject.get("project", {}).get("urls", {})
-
-# -- Sphinx Setup ------------------------------------------------------------
 
 
 def setup(app):
@@ -58,21 +60,20 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
-    # "sphinx.ext.imgconverter",
     "sphinx.ext.napoleon",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
+    "sphinxcontrib.bibtex",
+    "sphinx_design",
     "sphinxcontrib.jquery",
-    "sphinx_bootstrap_theme",
-    "nbsphinx",
     "recommonmark",
-    "sphinx_click",
-    "IPython.sphinxext.ipython_console_highlighting"
+    "nbsphinx",
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
-bibtex_bibfiles = ['_static/bibtex/references.bib']
+bibtex_bibfiles = ["_static/bibtex/references.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -86,92 +87,68 @@ exclude_patterns = ['build']
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-# https://bootswatch.com/
-html_theme = "bootstrap"
-
-# Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-
-html_theme_options = {
-    # Bootswatch (http://bootswatch.com/) theme.
-    "bootswatch_theme":
-    "flatly",
-    # Choose Bootstrap version.
-    "bootstrap_version":
-    "3",
-    # Tab name for entire site. (Default: "Site")
-    "navbar_site_name":
-    "Documentation",
-    # HTML navbar class (Default: "navbar") to attach to <div> element.
-    # For black navbar, do "navbar navbar-inverse"
-    "navbar_class":
-    "navbar",
-    # Render the next and previous page links in navbar. (Default: true)
-    "navbar_sidebarrel":
-    True,
-    # Render the current pages TOC in the navbar. (Default: true)
-    "navbar_pagenav":
-    False,
-    # A list of tuples containing pages or urls to link to.
-    "navbar_links": [("GitHub", project_urls.get("Homepage", "#"), True)] +
-    [(k, v, True) for k, v in project_urls.items() if k in {"Zenodo", "PyPI"}],
-    "admonition_use_panel":
-    True,
-}
+#
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['_static/js', '_static/json']
+html_js_files = ["custom-icon.js"]
+html_css_files = ["custom.css"]
 
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = ['.rst', '.md']
-
-# The master toctree document.
-master_doc = 'index'
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
-
-html_sidebars = {
-    "*": ["localtoc.html"],
-    "api/*": ["localtoc.html"],
+html_theme_options = {
+    "external_links": [],
+    "show_toc_level":
+    2,
+    "use_edit_page_button":
+    True,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/bioinf-MCB/Metagenomic-DeepFRI",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/mdeepfri",
+            "icon": "fa-custom fa-pypi",
+        },
+    ],
+    "logo": {
+        "text": "mDeepFRI",
+        # "image_light": "_images/logo.png",
+        # "image_dark": "_images/logo.png",
+    },
+    "navbar_start": ["navbar-logo", "version-switcher"],
+    "navbar_align":
+    "left",
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
+    "switcher": {
+        "json_url":
+        "https://metagenomic-deepfri.readthedocs.io/en/latest/_static/switcher.json",
+        "version_match": version,
+    }
 }
 
-# -- Options for HTMLHelp output ------------------------------------------
+html_context = {
+    "github_user": "bioinf-MCB",
+    "github_repo": "Metagenomic-DeepFRI",
+    "github_version": "main",
+    "doc_path": "docs",
+}
+
+html_favicon = '_images/favicon.ico'
+
+# -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = mDeepFRI.__name__
-
-# -- Options for LaTeX output ---------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
+htmlhelp_basename = project
 
 # -- Extension configuration -------------------------------------------------
 
@@ -192,7 +169,7 @@ napoleon_use_rtype = False
 # -- Options for autodoc extension -------------------------------------------
 
 autoclass_content = "class"
-autodoc_member_order = 'groupwise'
+autodoc_member_order = "groupwise"
 autosummary_generate = []
 
 # -- Options for intersphinx extension ---------------------------------------
@@ -206,15 +183,25 @@ intersphinx_mapping = {
 # -- Options for recommonmark extension --------------------------------------
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
 
 # -- Options for nbsphinx extension ------------------------------------------
 
-nbsphinx_execute = 'auto'
+nbsphinx_execute = "auto"
 nbsphinx_execute_arguments = [
     "--InlineBackend.figure_formats={'svg', 'pdf'}",
     "--InlineBackend.rc={'figure.dpi': 96}",
 ]
+
+# -- Options for extlinks extension ------------------------------------------
+
+extlinks = {
+    "doi": ("https://doi.org/%s", "doi:%s"),
+    "pmid": ("https://pubmed.ncbi.nlm.nih.gov/%s", "PMID:%s"),
+    "pmc": ("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC%s", "PMC%s"),
+    "isbn": ("https://www.worldcat.org/isbn/%s", "ISBN:%s"),
+    "wiki": ("https://en.wikipedia.org/wiki/%s", "%s"),
+}
