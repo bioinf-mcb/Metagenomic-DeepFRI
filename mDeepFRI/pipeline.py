@@ -24,7 +24,7 @@ import pickle
 import sys
 from functools import partial
 from multiprocessing import Pool
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -62,7 +62,9 @@ FINAL_OUTPUT_HEADER = [
 NAN_ALIGNMENT_INFO = [np.nan] * 6
 
 
-def load_query_file(query_file: str, min_length: int = None, max_length=None):
+def load_query_file(query_file: str,
+                    min_length: Optional[int] = None,
+                    max_length: Optional[int] = None) -> QueryFile:
     """
     Load and filter protein sequences from a FASTA file.
 
@@ -108,8 +110,8 @@ def hierarchical_database_search(query_file: QueryFile,
                                  top_k: int = 5,
                                  skip_pdb: bool = False,
                                  overwrite: bool = False,
-                                 tmpdir: str = None,
-                                 threads: int = 1):
+                                 tmpdir: Optional[str] = None,
+                                 threads: int = 1) -> List[Database]:
     """
     Perform hierarchical database searches for protein homologs.
 
@@ -326,7 +328,8 @@ def predict_protein_function(
         threads: int = 1,
         save_structures: bool = False,
         save_cmaps: bool = False,
-        skip_matrix: bool = False):
+        skip_matrix: bool = False,
+        scoring_matrix: str = "VTML80"):
 
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
@@ -346,7 +349,8 @@ def predict_protein_function(
             sequence_db=db.sequence_db,
             alignment_gap_open=alignment_gap_open,
             alignment_gap_extend=alignment_gap_continuation,
-            threads=threads)
+            threads=threads,
+            scoring_matrix=scoring_matrix)
 
         try:
             # set a db name for alignments

@@ -22,7 +22,7 @@ Functions:
 import warnings
 from functools import partial
 from multiprocessing import Pool
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pyopal
@@ -50,16 +50,16 @@ def insert_gaps(sequence: str, reference: str,
         gapped_target (str): Target sequence with gaps.
     """
 
-    sequence = list(sequence)
-    reference = list(reference)
-    alignment_string = list(alignment_string)
+    sequence_list: list[str] = list(sequence)
+    reference_list: list[str] = list(reference)
+    alignment_list: list[str] = list(alignment_string)
 
-    for i, a in enumerate(alignment_string):
+    for i, a in enumerate(alignment_list):
         if a == "I":
-            sequence.insert(i, "-")
+            sequence_list.insert(i, "-")
         elif a == "D":
-            reference.insert(i, "-")
-    return "".join(sequence), "".join(reference)
+            reference_list.insert(i, "-")
+    return "".join(sequence_list), "".join(reference_list)
 
 
 class AlignmentResult:
@@ -109,11 +109,11 @@ class AlignmentResult:
                  target_name: str = "",
                  target_sequence: str = "",
                  alignment: str = "",
-                 query_identity: float = None,
-                 query_coverage: float = None,
-                 target_coverage: float = None,
-                 db_name: str = None,
-                 coords: np.ndarray = None):
+                 query_identity: Optional[float] = None,
+                 query_coverage: Optional[float] = None,
+                 target_coverage: Optional[float] = None,
+                 db_name: Optional[str] = None,
+                 coords: Optional[np.ndarray] = None):
 
         self.query_name = query_name
         self.query_sequence = query_sequence
@@ -125,6 +125,7 @@ class AlignmentResult:
         self.target_coverage = target_coverage
         self.insert_gaps()
         self.db_name = db_name
+        self.coords = coords
         self.target_coords = None
         self.cmap = None
         self.aligned_cmap = None
@@ -227,17 +228,19 @@ def pairwise_against_database(query_id,
                               query_sequence,
                               target_sequences,
                               gap_open: int = 10,
-                              gap_extend: int = 1):
+                              gap_extend: int = 1,
+                              scoring_matrix: str = "VTML80"):
     """
     Finds the best alignment of the query against the target.
     """
 
     best_idx, best_target = best_hit_database(query_sequence, target_sequences,
-                                              gap_open, gap_extend)
+                                              gap_open, gap_extend,
+                                              scoring_matrix)
 
     # align the query against the best hit
     alignment, identity, query_coverage, target_coverage = align_pairwise(
-        query_sequence, best_target, gap_open, gap_extend)
+        query_sequence, best_target, gap_open, gap_extend, scoring_matrix)
     # create an alignment object
     alignment_result = AlignmentResult(query_id,
                                        query_sequence,
@@ -267,7 +270,8 @@ def align_mmseqs_results(best_matches_filepath: str,
                          sequence_db: str,
                          alignment_gap_open: int = 10,
                          alignment_gap_extend: int = 1,
-                         threads: int = 1):
+                         threads: int = 1,
+                         scoring_matrix: str = "VTML80"):
 
     best_matches = MMseqsResult.from_best_matches(best_matches_filepath)
     # check if there are any best matches
@@ -290,7 +294,8 @@ def align_mmseqs_results(best_matches_filepath: str,
 
     align_partial = partial(pairwise_against_database,
                             gap_open=alignment_gap_open,
-                            gap_extend=alignment_gap_extend)
+                            gap_extend=alignment_gap_extend,
+                            scoring_matrix=scoring_matrix)
 
     # align the query against the best hit
     with Pool(threads) as pool:
