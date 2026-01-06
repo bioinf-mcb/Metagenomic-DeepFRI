@@ -40,6 +40,7 @@ References:
 """
 
 import os
+from importlib.metadata import version
 
 from mDeepFRI.mmseqs import QueryFile
 
@@ -83,3 +84,4 @@ __all__ = [
 ]
 
 __author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
+__version__ = version()
