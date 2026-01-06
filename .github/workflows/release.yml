@@ -57,6 +57,8 @@ jobs:
         CIBW_ARCHS: ${{ matrix.arch }}
         CIBW_BEFORE_ALL: ${{ matrix.os == 'linux' && 'yum install -y bzip2-devel xz-devel libgomp' || '' }}
         CIBW_BEFORE_BUILD: pip install cython
+        CFLAGS: "-Xpreprocessor -fopenmp -I/usr/local/include"
+        LDFLAGS: "-L/usr/local/lib -lomp"
         CIBW_ENVIRONMENT_MACOS: >-
           BREW_PREFIX="$(brew --prefix)"
           CFLAGS="-Xpreprocessor -fopenmp -I${BREW_PREFIX}/include"

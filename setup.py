@@ -242,8 +242,10 @@ extra_compile_args = ["-O3", "-fopenmp"]
 extra_link_args = ["-fopenmp"]
 
 if target_system == "macos":
-    extra_compile_args = ["-O3", "-Xpreprocessor", "-fopenmp"]
-    extra_link_args = ["-lomp"]
+    extra_compile_args = [
+        "-O3", "-Xpreprocessor", "-fopenmp", "-I/opt/homebrew/include"
+    ]
+    extra_link_args = ["-lomp", "-L/opt/homebrew/lib"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
