@@ -272,6 +272,27 @@ def align_mmseqs_results(best_matches_filepath: str,
                          alignment_gap_extend: int = 1,
                          threads: int = 1,
                          scoring_matrix: str = "VTML80"):
+    """
+    Aligns MMseqs2 search results sequence-wise.
+
+    This function takes the best matches from MMseqs2, retrieves the corresponding
+    target sequences from the database, and performs pairwise alignment using PyOpal.
+    It returns a list of AlignmentResult objects containing alignment statistics
+    and gapped sequences.
+
+    Args:
+        best_matches_filepath (str): Path to MMseqs2 best matches TSV file.
+        sequence_db (str): Path to FASTA database of target sequences.
+        alignment_gap_open (int, optional): Gap open penalty. Defaults to 10.
+        alignment_gap_extend (int, optional): Gap extension penalty. Defaults to 1.
+        threads (int, optional): Number of threads for parallel processing.
+            Defaults to 1.
+        scoring_matrix (str, optional): Scoring matrix for alignment.
+            Defaults to "VTML80".
+
+    Returns:
+        List[AlignmentResult]: List of alignment results for each query.
+    """
 
     best_matches = MMseqsResult.from_best_matches(best_matches_filepath)
     # check if there are any best matches

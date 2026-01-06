@@ -330,6 +330,48 @@ def predict_protein_function(
         save_cmaps: bool = False,
         skip_matrix: bool = False,
         scoring_matrix: str = "VTML80"):
+    """
+    Predict protein function using DeepFRI.
+
+    This function is the main entry point for the prediction pipeline. It aligns
+    query sequences to databases, generates contact maps, and runs DeepFRI
+    predictions for specified functional categories.
+
+    Args:
+        query_file (QueryFile): Object containing query sequences.
+        databases (Tuple[Database]): Tuple of database objects to search against.
+        weights (str): Path to folder containing DeepFRI model weights.
+        output_path (str): Path to directory for saving results.
+        deepfri_processing_modes (List[str], optional): List of modes to predict.
+            Options: "ec", "bp", "mf", "cc".
+            Defaults to ["ec", "bp", "mf", "cc"].
+        angstrom_contact_threshold (float, optional): Distance threshold for contact maps.
+            Defaults to 6.
+        generate_contacts (int, optional): Gap for generating contact maps.
+            Defaults to 2.
+        alignment_gap_open (float, optional): Gap open penalty for alignment.
+            Defaults to 10.
+        alignment_gap_continuation (float, optional): Gap extension penalty.
+            Defaults to 1.
+        remove_intermediate (bool, optional): Remove intermediate files.
+            Defaults to False.
+        threads (int, optional): Number of threads for parallel processing.
+            Defaults to 1.
+        save_structures (bool, optional): Save aligned structures to disk.
+            Defaults to False.
+        save_cmaps (bool, optional): Save generated contact maps to disk.
+            Defaults to False.
+        skip_matrix (bool, optional): Skip writing full prediction matrices.
+            Defaults to False.
+        scoring_matrix (str, optional): Scoring matrix for alignment.
+            Defaults to "VTML80".
+
+    Returns:
+        None: Results are written to files in output_path.
+
+    See Also:
+        hierarchical_database_search: For the initial search step.
+    """
 
     # load DeepFRI model
     deepfri_models_config = load_deepfri_config(weights)
