@@ -66,6 +66,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinxcontrib.bibtex",
+    "sphinx_click",
     "sphinx_design",
     "sphinxcontrib.jquery",
     "recommonmark",
