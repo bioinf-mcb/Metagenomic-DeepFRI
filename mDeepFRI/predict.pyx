@@ -15,15 +15,6 @@ import onnxruntime as rt
 @cython.cdivision(True)
 @cython.initializedcheck(False)
 cpdef np.ndarray[float, ndim=2] seq2onehot(str seq):
-    """
-    Converts a protein sequence to 26-dim one-hot encoding.
-
-    Args:
-        seq (str): protein sequence
-
-    Returns:
-        np.ndarray: one-hot encoding of the protein sequence
-    """
 
     cdef bytes seq_bytes = seq.encode('ascii')
     cdef const unsigned char[:] seq_view = seq_bytes
@@ -57,11 +48,6 @@ cpdef np.ndarray[float, ndim=2] seq2onehot(str seq):
     return np.asarray(onehot_view)
 
 cdef class Predictor(object):
-    """
-    Class for loading trained models and computing GO/EC predictions
-    and class activation maps (CAMs).
-    """
-
     cdef public str model_path
     cdef public int threads
     cdef public object session
@@ -86,7 +72,6 @@ cdef class Predictor(object):
         self.input_names = [node.name for node in self.session.get_inputs()]
 
     def forward_pass(self, seqres: str, cmap = None):
-
         cdef np.ndarray A
         cdef np.ndarray prediction
         cdef np.ndarray y
