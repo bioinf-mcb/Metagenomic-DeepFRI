@@ -6,10 +6,10 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import configparser
 import datetime
 import os
 import re
+import tomllib
 
 import semantic_version
 import sphinx_bootstrap_theme
@@ -36,13 +36,10 @@ semver = semantic_version.Version.coerce(mDeepFRI.__version__)
 version = str(semver.truncate(level="patch"))
 release = str(semver)
 
-# extract the project URLs from ``setup.cfg``
-cfgparser = configparser.ConfigParser()
-cfgparser.read(os.path.join(project_dir, "setup.cfg"))
-project_urls = dict(
-    map(str.strip, line.split(" = ", 1))
-    for line in cfgparser.get("metadata", "project_urls").splitlines()
-    if line.strip())
+with open(os.path.join(project_dir, "pyproject.toml"), "rb") as f:
+    pyproject = tomllib.load(f)
+
+project_urls = pyproject.get("project", {}).get("urls", {})
 
 # -- Sphinx Setup ------------------------------------------------------------
 
@@ -116,8 +113,7 @@ html_theme_options = {
     "navbar_pagenav":
     False,
     # A list of tuples containing pages or urls to link to.
-    "navbar_links":
-    [("GitHub", cfgparser.get("metadata", "url").strip(), True)] +
+    "navbar_links": [("GitHub", project_urls.get("Homepage", "#"), True)] +
     [(k, v, True) for k, v in project_urls.items() if k in {"Zenodo", "PyPI"}],
     "admonition_use_panel":
     True,
