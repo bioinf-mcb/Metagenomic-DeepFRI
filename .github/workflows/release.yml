@@ -12,42 +12,56 @@ jobs:
     strategy:
       matrix:
         os: [linux, macos]
-        arch: [x86_64, arm64]
-        python: [cp39, cp310, cp311, cp312, cp313]
+        arch: [x86_64, aarch64]
+        python: [cp311, cp312]
         exclude:
-          # Linux only supports x86_64
-          - os: linux
-            arch: arm64
           # Linux and macOS x86_64 don't have cp312 and cp313
           - os: linux
             python: cp312
-          - os: linux
-            python: cp313
+          # macOS does not use aarch64 label (uses arm64)
+          - os: macos
+            arch: aarch64
         include:
           # Map configurations to runners and platforms
           - os: linux
-            runner: ubuntu-20.04
+            runner: ubuntu-22.04
             platform: manylinux_x86_64
+          - os: linux
+            arch: aarch64
+            runner: ubuntu-22.04
+            platform: manylinux_aarch64
           - os: macos
-            runner: macOS-13
+            runner: macos-latest
             platform: macosx_x86_64
           - os: macos
-            arch: arm64
+            arch: aarch64
+            runner: macos-latest
             platform: macosx_arm64
     steps:
     - uses: actions/checkout@v4
+
+    # macOS: Install only libomp.
+    - name: Install OpenMP (macOS)
+      if: matrix.os == 'macos'
+      run: |
+        brew install libomp
 
     - name: Build wheels
       uses: pypa/cibuildwheel@v2.21.3
       env:
         CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform }}
-        CIBW_ARCHS: ${{ matrix.arch }}
-        CIBW_BEFORE_ALL: ${{ matrix.os == 'linux' && 'yum install -y bzip2-devel xz-devel' || '' }}
+        CIBW_ARCHS: ${{ (matrix.os == 'macos' && matrix.arch == 'aarch64') && 'arm64' || matrix.arch }}
+        CIBW_BEFORE_ALL: ${{ matrix.os == 'linux' && 'yum install -y bzip2-devel xz-devel libgomp' || '' }}
         CIBW_BEFORE_BUILD: pip install cython
+        CIBW_ENVIRONMENT_MACOS: >-
+          BREW_PREFIX="$(brew --prefix)"
+          CFLAGS="-Xpreprocessor -fopenmp -I${BREW_PREFIX}/include"
+          CXXFLAGS="-Xpreprocessor -fopenmp -I${BREW_PREFIX}/include"
+          LDFLAGS="-L${BREW_PREFIX}/lib -lomp"
         CIBW_TEST_COMMAND: python -m unittest mDeepFRI.tests -vv
         CIBW_BUILD_VERBOSITY: 2
         CIBW_TEST_REQUIRES: importlib-resources
-        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos' && '13' || '' }}
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os == 'macos' && '14' || '' }}
       with:
         output-dir: dist
 
@@ -79,14 +93,17 @@ jobs:
 
   test-sdist:
     runs-on: ubuntu-latest
-    name: Test source distribution
+    name: Test source distribution - Python ${{ matrix.python-version }}
     needs:
     - sdist
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
     steps:
-    - name: Setup Python 3.13
+    - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: ${{ matrix.python-version }}
     - name: Download built source distribution
       uses: actions/download-artifact@v4
       with:
