@@ -236,8 +236,14 @@ PACKAGES = [SRC_DIR]
 
 install_requires = ["cython", "numpy", "requests"]
 setup_requires = ["cython", "requests", "numpy"]
+
+target_system = _detect_target_system(sysconfig.get_platform())
 extra_compile_args = ["-O3", "-fopenmp"]
 extra_link_args = ["-fopenmp"]
+
+if target_system == "macos":
+    extra_compile_args = ["-O3", "-Xpreprocessor", "-fopenmp"]
+    extra_link_args = ["-lomp"]
 
 EXTENSIONS = [
     Extension("mDeepFRI.predict",
