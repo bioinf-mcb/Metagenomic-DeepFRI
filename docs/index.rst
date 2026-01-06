@@ -8,22 +8,35 @@ Welcome to Metagenomic-DeepFRI's documentation! |Stars|
 Overview
 --------
 
-Protein function is dependent upon 3-dimensional conformation, often likened to a lock and key relationship.
-Metagenomic-DeepFRI is a pioneering tool that brings the power of structure-based functional annotation to metagenomic data, enabling researchers to uncover the functional potential of microbial communities.
+Metagenomic-DeepFRI is a high-performance pipeline for annotating protein sequences
+with Gene Ontology (GO) terms using `DeepFRI <https://github.com/flatironinstitute/DeepFRI>`_,
+a deep learning model for functional protein annotation.
 
-Key Features
-------------
+Protein function prediction is increasingly important as sequencing technologies
+generate vast numbers of novel sequences. Metagenomic-DeepFRI combines:
 
-1. **Scalable structure processing:** Leveraging the compression capabilities of `FoldComp <https://github.com/steineggerlab/foldcomp/>`_, Metagenomic-DeepFRI efficiently handles massive datasets of predicted protein structures.
-2. **Structural template identification:** The tool utilizes `MMseqs2 <https://github.com/soedinglab/MMseqs2>`_ to identify the best template protein for functional annotation.
-3. **Functional prediction:** Building upon the `DeepFRI <https://github.com/flatironinstitute/DeepFRI>`_ framework, Metagenomic-DeepFRI predicts protein function with high accuracy, enabling inference of the functional capabilities of proteins in metagenomic datasets.
+- **Structure information** from FoldComp databases (AlphaFold, ESMFold, PDB, etc.)
+- **Sequence-based predictions** using DeepFRI's neural networks
+- **Fast searches** with MMseqs2 for database alignment
+- **Significant speedup** of 2-12× compared to standard DeepFRI implementation
 
-By integrating these features, Metagenomic-DeepFRI offers a powerful solution for functional annotation of metagenomic data, facilitating an understanding of microbial communities and their roles in various ecosystems.
+Pipeline Stages
+^^^^^^^^^^^^^^^
 
-**Metagenomic-DeepFRI** is a joint project between research institutions:
+1. Search proteins similar to query in PDB and supply FoldComp databases with MMseqs2.
+2. Find the best alignment among MMseqs2 hits using PyOpal.
+3. Align target protein contact map to query protein with unknown structure.
+4. Run DeepFRI with the structure if found in the database, otherwise run DeepFRI
+   with sequence only.
 
-* `Structural and Functional Genomics Lab, Sano Centre for Computational Medicine, Krakow, Poland <https://www.tomaszlab.org>`_
-* `Systems Biology Research Group, Center for Computational Biology, Flatiron Institute, New York, USA <https://www.simonsfoundation.org/flatiron/center-for-computational-biology/>`_
+Built With
+^^^^^^^^^^
+
+- `MMseqs2 <https://github.com/soedinglab/MMseqs2>`_ - Fast sequence search
+- `pyOpal <https://github.com/althonos/pyOpal>`_ - SIMD-accelerated pairwise alignment
+- `DeepFRI <https://github.com/flatironinstitute/DeepFRI>`_ - Deep learning protein function prediction
+- `FoldComp <https://github.com/steineggerlab/foldcomp>`_ - Protein structure compression
+- `ONNX <https://github.com/onnx/onnx>`_ - Neural network inference
 
 Setup
 -----
