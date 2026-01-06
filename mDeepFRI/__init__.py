@@ -81,3 +81,5 @@ __all__ = [
     "QueryFile",
     "MMSeqsResult",
 ]
+
+__author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
