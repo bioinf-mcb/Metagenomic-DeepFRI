@@ -1,3 +1,31 @@
+"""
+MMseqs2 integration module for fast protein sequence searching.
+
+This module provides Python bindings and utilities for MMseqs2 (Many-vs-Many
+sequence searching), enabling fast similarity searches against large protein
+databases. It also includes utilities for FoldComp database manipulation and
+result parsing.
+
+Key Features:
+    - Fast similarity search using MMseqs2
+    - Support for FoldComp compressed structure databases
+    - Query file handling with sequence filtering
+    - Comprehensive result parsing and filtering
+    - Multi-threaded searching capability
+
+Classes:
+    ValueRange: Annotation class for parameter range validation.
+    QueryFile: Class for managing query protein sequences.
+    MMseqsResult: Dataclass for storing search results.
+
+Functions:
+    _createdb: Convert FASTA to MMseqs2 database format.
+    _createindex: Create MMseqs2 database index for fast searches.
+    _search: Perform MMseqs2 similarity search.
+    _convertalis: Convert MMseqs2 results to alignment format.
+    extract_fasta_foldcomp: Extract FASTA sequences from FoldComp database.
+"""
+
 import csv
 import os
 import tempfile
@@ -20,29 +48,87 @@ FOLDCOMP_PATH = Path(mDeepFRI.__path__[0]).parent / "foldcomp_bin"
 
 @dataclass
 class ValueRange:
+    """
+    Range constraint for parameter validation.
+
+    This dataclass can be used with type annotations to document and validate
+    acceptable parameter ranges in function signatures.
+
+    Attributes:
+        min (float): Minimum acceptable value (inclusive).
+        max (float): Maximum acceptable value (inclusive).
+
+    Example:
+        >>> range_constraint = ValueRange(min=1.0, max=7.5)
+        >>> range_constraint.min
+        1.0
+        >>> range_constraint.max
+        7.5
+    """
     min: float
     max: float
 
 
 def _createdb(sequences_file, db_path):
     """
-    Converts FASTA file to a DB format needed for MMseqs2 search/
-    This function should generate five files,
-    e.g. queryDB, queryDB_h and its corresponding index file queryDB.index,
-    queryDB_h.index and queryDB.lookup from the FASTA QUERY.fasta input sequences.
+    Convert FASTA file to MMseqs2 database format.
 
-    sequence_file (str): path to FASTA file.
-    db_path (str): path to output db file.
+    This function converts a FASTA sequence file into the binary database format
+    required by MMseqs2. It generates multiple files including the main database,
+    header database, and associated index files.
+
+    Args:
+        sequences_file (str): Path to input FASTA file containing protein sequences.
+        db_path (str): Path prefix for output database files. Multiple files will be
+            created with this prefix (e.g., db_path, db_path_h, db_path.index).
 
     Returns:
         None
-    """
 
+    Raises:
+        FileNotFoundError: If sequences_file does not exist.
+        RuntimeError: If MMseqs2 command fails.
+
+    Note:
+        This function creates the following files:
+        - {db_path}: Main database file
+        - {db_path}_h: Header database file
+        - {db_path}.index: Database index
+        - {db_path}_h.index: Header index
+        - {db_path}.lookup: Lookup table
+
+    See Also:
+        _createindex: Index the created database for fast searches.
+    """
     run_command(
         f"{MMSEQS_PATH} createdb {sequences_file} {db_path} --dbtype 1")
 
 
 def _createindex(db_path: str, threads: int = 1):
+    """
+    Create index for an MMseqs2 database.
+
+    Indexing enables fast lookup of sequences and significantly speeds up
+    subsequent similarity searches. This is a required step before performing
+    searches with the database.
+
+    Args:
+        db_path (str): Path to MMseqs2 database to index.
+        threads (int, optional): Number of threads for indexing. Defaults to 1.
+
+    Returns:
+        None
+
+    Raises:
+        RuntimeError: If MMseqs2 command fails.
+
+    Note:
+        This function uses a temporary directory for intermediate files which
+        are automatically cleaned up upon completion.
+
+    See Also:
+        _createdb: Create database from FASTA file.
+    """
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
             f"{MMSEQS_PATH} createindex {db_path} {tmp_path} --threads {threads}"
@@ -56,6 +142,44 @@ def _search(query_db: str,
             mmseqs_sensitivity: Annotated[float,
                                           ValueRange(min=1.0, max=7.5)] = 5.7,
             threads: int = 1):
+    """
+    Perform MMseqs2 similarity search.
+
+    Searches query sequences against a target database using MMseqs2's
+    efficient sequence searching algorithm. Results are stored in MMseqs2
+    database format and can be converted to human-readable alignment format
+    using _convertalis.
+
+    Args:
+        query_db (str): Path to query MMseqs2 database.
+        target_db (str): Path to target MMseqs2 database.
+        result_db (str): Path prefix for output result database files.
+        mmseqs_max_eval (float, optional): Maximum E-value threshold for hits.
+            Defaults to 10e-5 (1e-4).
+        mmseqs_sensitivity (float, optional): Sensitivity of the search.
+            Range: 1.0 (very fast, low sensitivity) to 7.5 (slow, high sensitivity).
+            Defaults to 5.7 (recommended balance).
+        threads (int, optional): Number of threads for parallel searching.
+            Defaults to 1.
+
+    Returns:
+        None
+
+    Raises:
+        RuntimeError: If MMseqs2 command fails.
+        FileNotFoundError: If query_db or target_db do not exist.
+
+    Note:
+        Intermediate files are stored in a temporary directory which is
+        automatically cleaned up upon completion.
+
+    Example:
+        >>> _search("query.mmseqsDB", "target.mmseqsDB", "results.mmseqsDB")
+
+    See Also:
+        _convertalis: Convert results to alignment format.
+        _createindex: Prepare database for searching.
+    """
     with tempfile.TemporaryDirectory() as tmp_path:
         run_command(
             f"{MMSEQS_PATH} search -e {mmseqs_max_eval} --threads {threads} "

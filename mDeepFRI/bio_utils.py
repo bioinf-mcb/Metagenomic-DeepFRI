@@ -1,3 +1,25 @@
+"""
+Biological utilities for structure processing and contact map generation.
+
+This module provides utilities for:
+- Loading protein structures from PDB/CIF files and FoldComp databases
+- Extracting C-alpha coordinates
+- Generating contact maps from structures
+- Aligning contact maps between query and target sequences
+- Handling non-standard amino acid residues
+
+The module integrates with Biotite for structure parsing and FoldComp for
+compressed structure databases, enabling efficient processing of large-scale
+structural annotations.
+
+Functions:
+    build_align_contact_map: Complete pipeline for contact map alignment.
+    decompress_and_decode: Decompress FoldComp structure to Biotite object.
+    get_calpha_coordinates: Extract C-alpha atom coordinates.
+    construct_contact_map: Generate contact map from coordinates.
+    align_coordinates: Align coordinates based on sequence alignment.
+"""
+
 import logging
 import sys
 from io import StringIO

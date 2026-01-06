@@ -1,3 +1,24 @@
+"""
+Sequence alignment module using PyOpal for protein alignments.
+
+This module provides utilities for performing pairwise protein sequence alignments
+using PyOpal, a Python wrapper for the SIMD-accelerated Opal alignment library.
+It handles alignment of query sequences to database hits from MMseqs2 searches
+and provides alignment statistics including identity, coverage, and gaps.
+
+The module optimizes alignment by batching sequences and using parallel processing,
+making it suitable for aligning large numbers of protein sequences.
+
+Classes:
+    AlignmentResult: Container for pairwise alignment results and statistics.
+
+Functions:
+    insert_gaps: Insert gaps into sequences based on alignment string.
+    _pyopal_align: Internal function for PyOpal alignment.
+    align_batch: Align batch of sequences in parallel.
+    align_mmseqs_results: Align all MMseqs2 hits to their targets.
+"""
+
 import warnings
 from functools import partial
 from multiprocessing import Pool
@@ -43,18 +64,44 @@ def insert_gaps(sequence: str, reference: str,
 
 class AlignmentResult:
     """
-    Class for storing pairwise alignment results.
+    Container for pairwise protein alignment results and statistics.
+
+    This class stores the results of a protein sequence alignment, including
+    the aligned sequences with gaps, alignment statistics (identity, coverage),
+    and optional structural information (coordinates, contact maps).
 
     Attributes:
-        query_name (str): Name of the query sequence.
-        query_sequence (str): Query sequence.
-        target_name (str): Name of the target sequence.
-        target_sequence (str): Target sequence.
-        alignment (str): Alignment string.
-        gapped_sequence (str): Query sequence with gaps.
-        gapped_target (str): Target sequence with gaps.
-        identity (float): Identity between two sequences.
-        coords (np.ndarray): Coordinates of the C-alpha atoms in structure.
+        query_name (str): Identifier of the query sequence.
+        query_sequence (str): Ungapped query protein sequence.
+        target_name (str): Identifier of the target (reference) sequence.
+        target_sequence (str): Ungapped target protein sequence.
+        alignment (str): Alignment string in CIGAR-like format.
+            'M' = match/mismatch, 'I' = insertion, 'D' = deletion.
+        query_identity (float): Sequence identity as fraction (0.0-1.0) of
+            matching residues to alignment length.
+        query_coverage (float): Fraction (0.0-1.0) of query sequence covered
+            by the alignment.
+        target_coverage (float): Fraction (0.0-1.0) of target sequence covered
+            by the alignment.
+        db_name (str): Name of the database from which target was retrieved.
+        gapped_sequence (str): Query sequence with gaps ('-') inserted for alignment.
+        gapped_target (str): Target sequence with gaps ('-') inserted for alignment.
+        target_coords (np.ndarray, optional): C-alpha atom coordinates from target structure.
+        cmap (np.ndarray, optional): Contact map of target structure.
+        aligned_cmap (np.ndarray, optional): Contact map aligned to query sequence.
+
+    Example:
+        >>> result = AlignmentResult(
+        ...     query_name="protein1",
+        ...     query_sequence="MSKGEELFT",
+        ...     target_name="1GFL_A",
+        ...     target_sequence="MSKGEELFTGV",
+        ...     alignment="MMMMMMMMMM",
+        ...     query_identity=0.90,
+        ...     query_coverage=0.82
+        ... )
+        >>> print(result.gapped_sequence)
+        'MSKGEELFT'
     """
     def __init__(self,
                  query_name: str = "",

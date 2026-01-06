@@ -1,3 +1,44 @@
+"""
+Metagenomic-DeepFRI: High-performance protein function annotation pipeline.
+
+This module provides a pipeline for annotating protein sequences with Gene Ontology (GO)
+terms using DeepFRI, a deep learning model for functional protein annotation. It combines
+structure information from FoldComp databases, sequence-based predictions using DeepFRI's
+neural networks, and fast searches with MMseqs2 for database alignment.
+
+Key Features:
+    - Structure information from FoldComp databases (AlphaFold, ESMFold, PDB, etc.)
+    - Sequence-based predictions using DeepFRI's neural networks
+    - Fast searches with MMseqs2 for database alignment
+    - 2-12× speedup compared to standard DeepFRI
+
+Attributes:
+    DEEPFRI_MODES (dict): Dictionary mapping prediction modes to their descriptions.
+        - "bp": Gene Ontology Biological Process
+        - "cc": Gene Ontology Cellular Component
+        - "mf": Gene Ontology Molecular Function
+        - "ec": Enzyme Commission numbers
+
+Example:
+    Basic usage of the pipeline::
+
+        from mDeepFRI.pipeline import hierarchical_database_search
+        from mDeepFRI.mmseqs import QueryFile
+
+        query_file = QueryFile(filepath="proteins.fasta")
+        hierarchical_database_search(
+            query_file=query_file,
+            output_path="./results",
+            databases=["path/to/database"],
+            threads=4
+        )
+
+References:
+    - DeepFRI: https://github.com/flatironinstitute/DeepFRI
+    - FoldComp: https://github.com/steineggerlab/foldcomp
+    - MMseqs2: https://github.com/soedinglab/MMseqs2
+"""
+
 import os
 
 from mDeepFRI.mmseqs import QueryFile

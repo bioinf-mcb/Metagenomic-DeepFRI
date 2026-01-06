@@ -1,3 +1,26 @@
+"""
+Utility functions for file I/O, downloads, and system operations.
+
+This module provides general-purpose utilities used throughout the
+Metagenomic-DeepFRI pipeline, including:
+- Command execution with output capture
+- FASTA file parsing and manipulation
+- Model weight downloading from Hugging Face
+- JSON configuration loading
+- File cleanup operations
+- Custom warning handlers
+
+Functions:
+    run_command: Execute shell commands with real-time output.
+    load_fasta_as_dict: Load FASTA sequences into dictionary.
+    retrieve_fasta_entries_as_dict: Extract specific FASTA entries.
+    download_weights: Download model weights from repository.
+    load_deepfri_config: Load DeepFRI model configuration.
+    get_json_values: Parse GO/EC terms from JSON config.
+    remove_intermediate_files: Clean up temporary pipeline files.
+    stdout_warn: Custom warning handler for structured logging.
+"""
+
 import gzip
 import json
 import re
@@ -16,14 +39,30 @@ from pysam import FastaFile, FastxFile, tabix_compress
 
 def run_command(command):
     """
-    Runs a command and returns its output.
+    Execute shell command with real-time output streaming.
+
+    Runs a shell command and streams stdout/stderr in real-time while
+    capturing the complete output. Useful for long-running commands
+    where progress monitoring is important.
 
     Args:
-        command (str): Command to run.
-        timeout (int): Timeout in seconds.
+        command (str): Shell command to execute. Can include pipes,
+            redirects, and other shell features.
 
     Returns:
-        str: Command output.
+        str: Complete command output (combined stdout/stderr).
+
+    Raises:
+        RuntimeError: If command exits with non-zero return code.
+
+    Example:
+        >>> run_command("echo 'Hello World'")
+        'Hello World\\n'
+        >>> run_command("mmseqs createdb input.fasta output.db")
+
+    Note:
+        This function prints output in real-time, making it suitable for
+        commands that produce progress updates or large amounts of output.
     """
 
     process = subprocess.Popen(command,
