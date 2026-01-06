@@ -2,8 +2,8 @@
 setuptools >=46.4
 cython ~=3.0
 pysam ~=0.21
-pyopal ~=0.5
-numpy ~=1.19
+pyopal ~=0.7
+numpy
 tqdm
 foldcomp
 biotite
@@ -12,7 +12,7 @@ biotite
 
 # sphinx documentation dependencies
 semantic_version ~=2.8
-sphinx >=4.0
+sphinx >=5.0
 recommonmark ~=0.7
 pygments-style-monokailight ~=0.4
 ipython ~=7.19
@@ -21,6 +21,5 @@ nbsphinx ~=0.8
 sphinxcontrib-jquery ~=4.1
 sphinx-click ~=5.0
 sphinxcontrib-bibtex ~=2.6
-
-# sphinx-bootstrap-theme ~=0.7 with patched admonition
-https://github.com/althonos/sphinx-bootstrap-theme/archive/master.zip
+sphinx-design
+pydata-sphinx-theme
