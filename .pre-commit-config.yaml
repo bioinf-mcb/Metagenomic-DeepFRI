@@ -38,9 +38,22 @@ repos:
       - id: validate-pyproject
         # Optional extra validations from SchemaStore:
         additional_dependencies: ["validate-pyproject-schema-store[all]"]
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.2.0
-  #   hooks:
-  #   -   id: mypy
-  #       args: [--no-strict-optional, --ignore-missing-imports]
-  #       exclude: (docs|tests)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.2.0
+    hooks:
+    -   id: mypy
+        args: [--no-strict-optional, --ignore-missing-imports]
+        exclude: (docs|tests)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-toml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-ast
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix']
