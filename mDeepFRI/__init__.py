@@ -84,4 +84,5 @@ __all__ = [
 ]
 
 __author__ = "Valentyn Bezshapkin <valentyn.bezshapkin@micro.biol.ethz.ch>"
-__version__ = version()
+
+__version__ = version(__name__)
