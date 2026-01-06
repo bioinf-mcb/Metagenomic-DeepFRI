@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Annotated, Dict, Iterable, List, Literal
+from typing import Annotated, Callable, Dict, Iterable, List, Literal, Optional
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -187,24 +187,18 @@ def _search(query_db: str,
         )
 
 
-def _convertalis(
-    query_db: str,
-    target_db: str,
-    result_db: str,
-    output_file: str,
-    threads: int,
-    columns: Literal["query", "target", "fident", "alnlen", "mismatch",
-                     "gapopen", "qstart", "qend", "tstart", "tend", "qcov",
-                     "tcov", "evalue", "bits", "qseq", "tseq", "qheader",
-                     "theader", "qaln", "taln", "qframe", "tframe", "mismatch",
-                     "qcov", "tcov", "qset", "qsetid", "tset", "tsetid",
-                     "taxid", "taxname", "taxlineage", "qorfstart", "qorfend",
-                     "torfstart", "torfend", "ppos"] = [
-                         "query", "target", "fident", "alnlen", "mismatch",
-                         "gapopen", "qstart", "qend", "tstart", "tend", "qcov",
-                         "tcov", "evalue", "bits"
-                     ]):
-
+def _convertalis(query_db: str,
+                 target_db: str,
+                 result_db: str,
+                 output_file: str,
+                 threads: int,
+                 columns: list[str] | None = None):
+    if columns is None:
+        columns = [
+            "query", "target", "fident", "alnlen", "mismatch", "gapopen",
+            "qstart", "qend", "tstart", "tend", "qcov", "tcov", "evalue",
+            "bits"
+        ]
     args = ",".join(columns)
     run_command(
         f"{MMSEQS_PATH} convertalis {query_db} {target_db} {result_db} {output_file} --format-mode 4 "
@@ -456,7 +450,7 @@ class MMseqsResult(np.recarray):
         return cls(result_arr, query_fasta, database)
 
     @classmethod
-    def from_best_matches(cls, filepath: str):
+    def from_best_matches(cls, filepath: str) -> 'MMseqsResult':
         """
         Load best matches from TSV file.
 
@@ -550,7 +544,7 @@ class QueryFile:
         self.sequences = retrieve_fasta_entries_as_dict(filepath, ids)
 
     def load_sequences(self,
-                       ids: Iterable[str] = None,
+                       ids: Optional[list[str]] = None,
                        sort: bool = True) -> None:
         """
         Load sequences from FASTA file. Sequences are stored in a dictionary with sequence
@@ -606,7 +600,8 @@ class QueryFile:
                 raise ValueError(
                     f"Sequence with ID {seq_id} not found in {self.filepath}")
 
-    def filter_sequences(self, condition: callable = None):
+    def filter_sequences(self,
+                         condition: Optional[Callable[[str], bool]] = None):
         """
         Filter sequences by a custom condition.
 

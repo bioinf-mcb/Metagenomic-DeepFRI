@@ -3,7 +3,7 @@ import warnings
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import foldcomp
 import numpy as np
@@ -69,7 +69,8 @@ def create_pdb_mmseqs(threads: int = 1):
     return pdb_db
 
 
-def get_pdb_structure(pdb_id: str, save_directory: str = None) -> str:
+def get_pdb_structure(pdb_id: str,
+                      save_directory: Optional[str] = None) -> str:
     """
     Get PDB structure from the RCSB PDB database.
 
@@ -93,9 +94,11 @@ def get_pdb_structure(pdb_id: str, save_directory: str = None) -> str:
 
 # TODO: pdbfixer should remove error catching in this function
 # only needed to run a function with multiprocessing
-def get_pdb_seq_coords(pdb_id_chain: str,
-                       query_name: str,
-                       save_directory: str = None) -> Tuple[str, np.ndarray]:
+def get_pdb_seq_coords(
+    pdb_id_chain: str,
+    query_name: str,
+    save_directory: Optional[str] = None
+) -> Tuple[Optional[str], Optional[np.ndarray]]:
     """
     Get a sequence and coordinates of a protein chain from the PDB database.
 
@@ -125,10 +128,10 @@ def get_pdb_seq_coords(pdb_id_chain: str,
 
 
 def extract_calpha_coords(db: Database,
-                          target_ids: list,
-                          query_ids: list,
-                          save_directory: str = None,
-                          threads: int = 1) -> list:
+                          target_ids: list[str],
+                          query_ids: list[str],
+                          save_directory: Optional[str] = None,
+                          threads: int = 1) -> list[tuple]:
 
     if "pdb100" in db.name:
         # add save option

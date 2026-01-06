@@ -116,7 +116,7 @@ def download_file(url, path):
             shutil.copyfileobj(r.raw, f)
 
 
-def download_model_weights(output_path: str,
+def download_model_weights(output_filepath: str,
                            version: Literal["1.0", "1.1"] = "1.1") -> None:
     """
     Downloads model weights and configs from the internet.
@@ -130,7 +130,7 @@ def download_model_weights(output_path: str,
     """
     from mDeepFRI import cnn_model_links, gcn_model_links
 
-    output_path = Path(output_path)
+    output_path = Path(output_filepath)
     try:
         output_path.mkdir()
     except FileExistsError:
@@ -151,8 +151,8 @@ def download_model_weights(output_path: str,
             download_file(url, output_path / url.split("/")[-1])
 
 
-def generate_config_json(weights_path: str, version: Literal["1.0",
-                                                             "1.1"]) -> None:
+def generate_config_json(weights_filepath: str,
+                         version: Literal["1.0", "1.1"]) -> None:
     """
     Generates a config json file.
 
@@ -164,7 +164,7 @@ def generate_config_json(weights_path: str, version: Literal["1.0",
         None
     """
 
-    weights_path = Path(weights_path)
+    weights_path = Path(weights_filepath)
     config = {
         "gcn": {
             "bp": None,

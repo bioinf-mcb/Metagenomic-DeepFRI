@@ -23,7 +23,7 @@ Functions:
 import logging
 import sys
 from io import StringIO
-from typing import List, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import foldcomp
 import numpy as np
@@ -283,7 +283,7 @@ def extract_residues_coordinates(
         structure_string: str,
         chain: str = "A",
         filetype: Literal["mmcif", "pdb"] = "mmcif",
-        save_directory: str = None) -> Tuple[str, np.ndarray]:
+        save_directory: Optional[str] = None) -> Tuple[str, np.ndarray]:
     """
     Extracts residues and coordinates from structural string.
     Automatically processes PDB and mmCIF files.
@@ -302,7 +302,7 @@ def extract_residues_coordinates(
     return (residues, coords)
 
 
-def foldcomp_sniff_suffix(idx: str, database_path: str) -> str:
+def foldcomp_sniff_suffix(idx: str, database_path: str) -> Optional[str]:
     """
     Sniff suffix for FoldComp database.
 

@@ -17,6 +17,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from mDeepFRI.mmseqs import _createdb, _createindex, extract_fasta_foldcomp
 
@@ -60,7 +61,7 @@ class Database:
     foldcomp_db: Path
     sequence_db: Path
     mmseqs_db: Path
-    mmseqs_result: Path = None
+    mmseqs_result: Optional[Path] = None
 
     def __post_init__(self):
         self.foldcomp_db = Path(self.foldcomp_db)
