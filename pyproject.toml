@@ -1,13 +1,16 @@
 [project]
 name = "mDeepFRI"
-version = "1.1.8"
+version = "1.1.9"
 description = "Pipeline for searching and aligning contact maps for proteins, and function prediction with DeepFRI."
 readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
+license-files = [
+    "LICENSE"
+]
 authors = [
     { name = "Valentyn Bezshapkin", email = "valentyn.bezshapkin@micro.biol.ethz.ch" }
 ]
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.11,<3.13"
 keywords = ["bioinformatics", "protein", "function", "deep-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -16,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
     "Topic :: Scientific/Engineering :: Bio-Informatics"
@@ -59,6 +61,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["mDeepFRI", "mDeepFRI.*"]
 
 [tool.setuptools.package-data]
 "mDeepFRI" = ["assets/*.pkl"]

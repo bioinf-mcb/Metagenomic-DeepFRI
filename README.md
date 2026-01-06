@@ -58,7 +58,7 @@ with `MMseqs2`.
 
 ## 📦 Requirements
 
-- **Python:** >= 3.9, < 3.14 (tested with 3.11 and 3.13)
+- **Python:** >= 3.11, < 3.13 (tested with 3.11)
 - **Dependencies:** Automatically installed via pip
 
 ## 🔧 Installation

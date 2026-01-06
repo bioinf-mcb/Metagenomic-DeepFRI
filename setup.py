@@ -1,4 +1,3 @@
-import configparser
 import os
 import re
 import shutil
@@ -10,7 +9,6 @@ import requests
 from setuptools import Command, Extension, find_packages, setup
 from setuptools.command.build import build as _build
 from setuptools.command.build_ext import build_ext as _build_ext
-from setuptools.command.sdist import sdist as _sdist
 
 try:
     from Cython.Build import cythonize
@@ -18,9 +16,6 @@ except ImportError as err:
     cythonize = err
 
 # --- Utils -----------------------------------------------------------------
-
-os.environ["CC"] = "gcc"
-os.environ["CXX"] = "g++"
 
 
 def _detect_target_machine(platform):
@@ -236,22 +231,6 @@ class build(_build):
         _build_binaries.run()
 
 
-class sdist(_sdist):
-    """A `sdist` that generates a `pyproject.toml` on the fly.
-    """
-    def run(self):
-        # build `pyproject.toml` from `setup.cfg`
-        c = configparser.ConfigParser()
-        c.add_section("build-system")
-        c.set("build-system", "requires",
-              str(self.distribution.setup_requires))
-        c.set("build-system", 'build-backend', '"setuptools.build_meta"')
-        with open("pyproject.toml", "w") as pyproject:
-            c.write(pyproject)
-        # run the rest of the packaging
-        _sdist.run(self)
-
-
 SRC_DIR = "mDeepFRI"
 PACKAGES = [SRC_DIR]
 
@@ -285,8 +264,7 @@ setup(
     cmdclass={
         'build_ext': build_ext,
         'build_binaries': build_binaries,
-        'build': build,
-        'sdist': sdist
+        'build': build
     },
     packages=find_packages(),
     package_data={
