@@ -300,10 +300,18 @@ def align_mmseqs_results(best_matches_filepath: str,
         return []
 
     query_dict = load_fasta_as_dict(best_matches.query_fasta)
+
+    # if UniProt header is used, extract second part as sequence ID
+    for qid in list(query_dict.keys()):
+        if "|" in qid:
+            new_qid = qid.split("|")[1]
+            query_dict[new_qid] = query_dict.pop(qid)
+
     unique_queries = {
         query: best_matches.get_query_targets(query)
         for query in best_matches.get_queries()
     }
+
     target_ids = best_matches.get_targets()
     target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
 
@@ -318,11 +326,17 @@ def align_mmseqs_results(best_matches_filepath: str,
                             gap_extend=alignment_gap_extend,
                             scoring_matrix=scoring_matrix)
 
+    query_ids = list(unique_queries.keys())
+    print(query_ids)
+    print(query_dict.keys())
+    query_sequences = [query_dict[qid] for qid in query_ids]
+    target_sequences = [partial_databases[qid] for qid in query_ids]
+
     # align the query against the best hit
     with Pool(threads) as pool:
         alignments = pool.starmap(
-            align_partial,
-            [(query_id, query_dict[query_id], partial_databases[query_id])
-             for query_id in unique_queries])
+            align_partial, [(query_id, query_sequence, target_sequence)
+                            for query_id, query_sequence, target_sequence in
+                            zip(query_ids, query_sequences, target_sequences)])
 
     return alignments
