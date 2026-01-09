@@ -367,7 +367,7 @@ class MMseqsResult(np.recarray):
         try:
             final_table = np.concatenate(top_k)
         except ValueError:
-            final_table = np.empty(0, dtype=self.MMSEQS_DTYPE)
+            final_table = np.empty(0, dtype=None)
 
         return MMseqsResult(final_table, self.query_fasta, self.database)
 
@@ -573,8 +573,9 @@ class QueryFile:
                     self.sequences[entry.name] = entry.sequence
 
         # sort sequences by length
-        self.sequences = dict(
-            sorted(self.sequences.items(), key=lambda x: len(x[1])))
+        if sort:
+            self.sequences = dict(
+                sorted(self.sequences.items(), key=lambda x: len(x[1])))
 
     def remove_sequences(self, ids: List[str]):
         """

@@ -142,6 +142,17 @@ class TestMMseqsResult(unittest.TestCase):
         best_matches = self.result.find_best_matches(k=2)
         self.assertEqual(len(best_matches), 5)
 
+    def test_find_best_matches_empty(self):
+        empty_data = np.array([],
+                              dtype=[("query", "U10"), ("target", "U10"),
+                                     ("qcov", int), ("tcov", int),
+                                     ("fident", float), ("bits", float),
+                                     ("evalue", float)]).view(np.recarray)
+        result = MMseqsResult(empty_data, self.query_fasta, self.database)
+        best_matches = result.find_best_matches(k=5)
+        self.assertEqual(len(best_matches), 0)
+        self.assertIsInstance(best_matches, MMseqsResult)
+
     def test_from_mmseqs_result(self):
         filepath = self.out_tsv
         with open(filepath, "w", newline="") as f:

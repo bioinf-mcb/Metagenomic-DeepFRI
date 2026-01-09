@@ -327,8 +327,6 @@ def align_mmseqs_results(best_matches_filepath: str,
                             scoring_matrix=scoring_matrix)
 
     query_ids = list(unique_queries.keys())
-    print(query_ids)
-    print(query_dict.keys())
     query_sequences = [query_dict[qid] for qid in query_ids]
     target_sequences = [partial_databases[qid] for qid in query_ids]
 
