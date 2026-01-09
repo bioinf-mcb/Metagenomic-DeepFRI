@@ -91,6 +91,10 @@ def load_query_file(query_file: str,
     """
     query_file = QueryFile(filepath=query_file)
     query_file.load_sequences()
+    removed_seleno = query_file.remove_selenocysteine()
+    if removed_seleno:
+        logger.info("Removed %d selenoproteins (U residues): %s",
+                    len(removed_seleno), ", ".join(removed_seleno))
     # filter out sequences
     if min_length or max_length:
         query_file.filter_sequences(

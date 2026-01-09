@@ -642,6 +642,29 @@ class QueryFile:
         if not self.sequences:
             raise ValueError("No sequences left after filtering.")
 
+    def remove_selenocysteine(self) -> list[str]:
+        """
+        Remove sequences containing selenocysteine (U) and return their IDs.
+
+        Returns:
+            list[str]: IDs of sequences that were removed.
+
+        Raises:
+            ValueError: If no sequences are loaded.
+        """
+        if not self.sequences:
+            raise ValueError(
+                "No sequences loaded. Use load_sequences() or load_ids() before removing selenocysteine sequences."
+            )
+
+        removed = [
+            seq_id for seq_id, seq in self.sequences.items() if "U" in seq
+        ]
+        for seq_id in removed:
+            self.filtered_out[seq_id] = self.sequences.pop(seq_id)
+
+        return removed
+
     def search(
             self,
             database_path: str,

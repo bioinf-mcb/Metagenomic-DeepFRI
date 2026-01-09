@@ -1,4 +1,4 @@
-<!-- markdownlint-disable-file MD024 -->
+<!-- markdownlint-disable-file MD024 MD013 -->
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -11,31 +11,35 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 [Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.9...HEAD
 
+### Fixed
+
+- error with processing `UniProt` headers ([#101](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/101))
+- error for no alignment result with `MMseqs`
+- critical error for selenoproteins is now a `info` ([#102](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/102))
+
 ## [Release]
 
 ## [1.1.9] - 2026-01-06
 
+[1.1.9]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.8...v1.1.9
+
 ### Added
 
-- `--alignment-min-coverage` parameter to filter low
-coverage alignments
-- `generate-config` CLI command - generate config file
-in case models are downloaded manually
-- `calculate-maps` CLI command - calculates all contact maps from
-PDB/MMCIF in directory (#100)
-- prediction matrices - predicted vectors allow to compare proteins
-with the help of distance analysis (#79)
+- `--alignment-min-coverage` parameter to filter low coverage alignments
+- `generate-config` CLI command - generate config file in case models are downloaded manually
+- `calculate-maps` CLI command - calculates all contact maps from PDB/MMCIF in directory ([#100](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/100))
+- prediction matrices - predicted vectors allow to compare proteins with the help of distance analysis ([#79](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/79))
 - custom scoring matrices - default `VTML80`
-- support for python < 3.14
+- support for python < 3.13
 
 ### Fixed
 
 - Skipping extraction of broken structures from `highquality_clust30`,
 which caused segmentation fault (<https://github.com/steineggerlab/foldcomp/issues/56>)
 - all output from the software log to `stdout`
-- `np.genfromtext` bug (#96)
-- contact map wrapping (#99)
-- query file losing sequences (#92)
+- `np.genfromtext` bug ([#96](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/96))
+- contact map wrapping ([#99](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/99))
+- query file losing sequences ([#92](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/92))
 - `MMseqs` convertalis unlimited thread usage
 
 ## [1.1.8] - 2024-06-26
@@ -59,7 +63,7 @@ which caused segmentation fault (<https://github.com/steineggerlab/foldcomp/issu
 
 ### Fixed
 
-- resolved old naming issues (closes #84)
+- resolved old naming issues ([#84](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/84))
 
 ## [1.1.6] - 2024-06-04
 
@@ -78,8 +82,8 @@ which caused segmentation fault (<https://github.com/steineggerlab/foldcomp/issu
 ### Added
 
 - improved logging
-- support for ESM databases (closes #80)
-- corrected structures retrieval from PDB (closes #81, #83)
+- support for ESM databases ([#80](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/80))
+- corrected structures retrieval from PDB ([#81](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/81), [#83](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/83))
   - correct non-standard amino acids
   - remove base pairs
 

@@ -1,5 +1,7 @@
 # project specific files
 data/
+benchmark_temp/
+emapper*/
 test_database/
 models/
 notebooks/*
