@@ -297,6 +297,26 @@ Otherwise, the model will use CPUs.
 Every currently available GPU with CUDA support should be able to run the
 model.
 
+**Troubleshooting GPU usage:**
+If `onnxruntime` cannot find CUDA libraries despite them being installed,
+you might see errors like:
+
+```bash
+[W:onnxruntime:Default, onnxruntime_pybind_state.cc:1013 CreateExecutionProviderFactoryInstance]
+Failed to create CUDAExecutionProvider. Require cuDNN 9.* and CUDA 12.*.
+```
+
+To fix this, add the library paths to `LD_LIBRARY_PATH`.
+If you installed `nvidia-*` packages via pip,
+you can dynamically find and export the paths:
+
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(python -c 'import os, nvidia.cudnn,
+nvidia.cublas, nvidia.cuda_runtime;
+print(":".join([os.path.join(m.__path__[0], "lib") for m
+in [nvidia.cudnn, nvidia.cublas, nvidia.cuda_runtime]]))')
+```
+
 ## 🔖 Citations
 
 Metagenomic-DeepFRI is a scientific software. If you use it
