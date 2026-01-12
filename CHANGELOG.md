@@ -15,9 +15,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - error with processing `UniProt` headers ([#101](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/101))
 - error for no alignment result with `MMseqs`
-- critical error for selenoproteins is now a `info` ([#102](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/102))
-
-## [Release]
+- critical error for selenoproteins is now an `info` ([#102](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/issues/102))
+- uppercase sequences before `pyopal` to avoid alphabet errors
 
 ## [1.1.9] - 2026-01-06
 

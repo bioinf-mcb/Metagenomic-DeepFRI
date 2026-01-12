@@ -150,6 +150,16 @@ class AlignmentResult:
             self.query_sequence, self.target_sequence, self.alignment)
 
 
+def _uppercase_sequence(seq: str) -> str:
+    """Return an uppercased sequence (safe for None)."""
+    return seq.upper() if seq else seq
+
+
+def _uppercase_sequences_dict(seqs: dict[str, str]) -> dict[str, str]:
+    """Return a new dict with all sequence values uppercased."""
+    return {k: _uppercase_sequence(v) for k, v in seqs.items()}
+
+
 def best_hit_database(query,
                       target_sequences,
                       gap_open: int = 10,
@@ -157,15 +167,9 @@ def best_hit_database(query,
                       scoring_matrix: str = "VTML80"):
     """
     Find the best hit in the database and return index.
-
-    Args:
-        query (str): The query sequence.
-        target_sequences (dict): The target sequences.
-
-    Returns:
-        int: The index of the best hit.
-        str: The best hit sequence.
     """
+    query = _uppercase_sequence(query)
+    target_sequences = _uppercase_sequences_dict(target_sequences)
 
     custom_scoring = ScoringMatrix.from_name(scoring_matrix)
     custom_alphabet = custom_scoring.alphabet
@@ -196,17 +200,9 @@ def align_pairwise(query,
                    scoring_matrix: str = "VTML80"):
     """
     Aligns the query against the target and returns the alignment.
-
-    Args:
-        query (str): The query sequence.
-        target (str): The target sequence.
-        aligner (pyopal.Aligner): The aligner object.
-
-    Returns:
-        str: The alignment of the query against the target.
-        float: The identity of the alignment.
-
     """
+    query = _uppercase_sequence(query)
+    target = _uppercase_sequence(target)
 
     custom_scoring = ScoringMatrix.from_name(scoring_matrix)
     custom_alphabet = custom_scoring.alphabet
@@ -233,6 +229,7 @@ def pairwise_against_database(query_id,
     """
     Finds the best alignment of the query against the target.
     """
+    query_sequence = _uppercase_sequence(query_sequence)
 
     best_idx, best_target = best_hit_database(query_sequence, target_sequences,
                                               gap_open, gap_extend,
@@ -274,32 +271,14 @@ def align_mmseqs_results(best_matches_filepath: str,
                          scoring_matrix: str = "VTML80"):
     """
     Aligns MMseqs2 search results sequence-wise.
-
-    This function takes the best matches from MMseqs2, retrieves the corresponding
-    target sequences from the database, and performs pairwise alignment using PyOpal.
-    It returns a list of AlignmentResult objects containing alignment statistics
-    and gapped sequences.
-
-    Args:
-        best_matches_filepath (str): Path to MMseqs2 best matches TSV file.
-        sequence_db (str): Path to FASTA database of target sequences.
-        alignment_gap_open (int, optional): Gap open penalty. Defaults to 10.
-        alignment_gap_extend (int, optional): Gap extension penalty. Defaults to 1.
-        threads (int, optional): Number of threads for parallel processing.
-            Defaults to 1.
-        scoring_matrix (str, optional): Scoring matrix for alignment.
-            Defaults to "VTML80".
-
-    Returns:
-        List[AlignmentResult]: List of alignment results for each query.
     """
-
     best_matches = MMseqsResult.from_best_matches(best_matches_filepath)
     # check if there are any best matches
     if best_matches.size == 0:
         return []
 
     query_dict = load_fasta_as_dict(best_matches.query_fasta)
+    query_dict = _uppercase_sequences_dict(query_dict)
 
     # if UniProt header is used, extract second part as sequence ID
     for qid in list(query_dict.keys()):
@@ -314,6 +293,7 @@ def align_mmseqs_results(best_matches_filepath: str,
 
     target_ids = best_matches.get_targets()
     target_seqs = retrieve_fasta_entries_as_dict(sequence_db, target_ids)
+    target_seqs = _uppercase_sequences_dict(target_seqs)
 
     # create partial databases
     partial_databases = {
