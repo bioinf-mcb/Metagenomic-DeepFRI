@@ -1,11 +1,45 @@
-import os
+import gzip
 import shutil
 import subprocess
 import time
+from pathlib import Path
 
 import numpy as np
 
 np.random.seed(42)
+
+
+def cleanup_file(file_path):
+    """Delete a file if it exists."""
+    if file_path.exists():
+        print(f"[CLEANUP] Removing {file_path}")
+        file_path.unlink()
+
+
+def move_and_concat_prediction_files(source_dir: Path, tool_name: str,
+                                     output_folder: Path):
+    """
+    Concatenate all gzipped prediction files in source_dir and move as a single gzipped file to output_folder.
+    """
+    pred_files = list(source_dir.glob("*preds*.gz"))
+    if not pred_files:
+        print(f"[WARN] No gzipped prediction files found in {source_dir}")
+        return
+
+    combined_file = output_folder / f"{tool_name}_go_preds.tsv"
+    print(
+        f"[CONCAT] Combining {len(pred_files)} gzipped files into {combined_file}"
+    )
+
+    with open(combined_file, "w") as outfile:
+        for pred_file in pred_files:
+            with gzip.open(pred_file, "rt") as infile:
+                for line in infile:
+                    outfile.write(line)
+            # Remove the original file after concatenation
+            pred_file.unlink()
+
+    print(f"[DONE] Combined gzipped predictions saved to: {combined_file}")
 
 
 def generate_fasta(count, filename):
@@ -15,15 +49,12 @@ def generate_fasta(count, filename):
         str(count), '-s', '42', '-o', filename, '-2',
         '../data/databases/afdb_swissprot_v4.fasta.gz'
     ]
-    try:
-        subprocess.run(command,
-                       check=True,
-                       stdout=subprocess.DEVNULL,
-                       stderr=subprocess.PIPE,
-                       universal_newlines=True)
-    except subprocess.CalledProcessError as err:
-        print(f"seqkit sample failed for count={count}: {err.stderr}")
-        return False
+
+    subprocess.run(command,
+                   check=True,
+                   stdout=subprocess.DEVNULL,
+                   stderr=subprocess.PIPE,
+                   universal_newlines=True)
 
     # mutate 5-80% of sequences to make them novel
     mutated_filename = filename.replace('.fasta', '_mutated.fasta')
@@ -58,33 +89,31 @@ def run_benchmark():
     counts = [10, 100, 1000, 10000]
 
     # Create temporary directory for outputs
-    temp_dir = 'benchmark_temp'
-    os.makedirs(temp_dir, exist_ok=True)
+    temp_dir = Path('benchmark_temp_gpu')
+    temp_dir.mkdir(exist_ok=True)
 
     results = []
-    tsv_path = 'benchmark_results.tsv'
+    tsv_path = 'benchmark_results_gpu.tsv'
 
     def persist_results():
-        header = [
-            'count', 'eggnog_fast_time', 'eggnog_default_time',
-            'eggnog_ultra-sensitive_time', 'deepfri_time'
-        ]
+        header = ['count', 'deepfri_time', 'deepgometa_time']
         with open(tsv_path, 'w') as f:
             f.write("\t".join(header) + "\n")
             for cnt in counts:
                 row = [str(cnt)]
-                for sens in ['fast', 'default', 'ultra-sensitive']:
-                    time_entry = next(
-                        (r for r in results
-                         if r['count'] == cnt and f'eggnog_{sens}_time' in r),
-                        None)
-                    row.append(f"{time_entry[f'eggnog_{sens}_time']:.2f}"
-                               if time_entry else "NA")
+
                 deepfri_entry = next(
                     (r for r in results
                      if r['count'] == cnt and 'deepfri_time' in r), None)
                 row.append(f"{deepfri_entry['deepfri_time']:.2f}"
                            if deepfri_entry else "NA")
+
+                deepgometa_entry = next(
+                    (r for r in results
+                     if r['count'] == cnt and 'deepgometa_time' in r), None)
+                row.append(f"{deepgometa_entry['deepgometa_time']:.2f}"
+                           if deepgometa_entry else "NA")
+
                 f.write("\t".join(row) + "\n")
 
     fasta_files = []
@@ -96,8 +125,11 @@ def run_benchmark():
         stderr_target = subprocess.PIPE
         log_file = None
         if log_path:
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
-            log_file = open(log_path, "a", encoding="utf-8")
+            # os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            # log_path is Path or str
+            path_obj = Path(log_path)
+            path_obj.parent.mkdir(exist_ok=True, parents=True)
+            log_file = open(path_obj, "a", encoding="utf-8")
             stdout_target = log_file
             stderr_target = subprocess.STDOUT
         try:
@@ -131,8 +163,9 @@ def run_benchmark():
 
     print("Generating FASTA files...")
     for count in counts:
-        filename = os.path.join(temp_dir, f'protein_sequences_{count}.fasta')
-        if generate_fasta(count, filename):
+        filename = temp_dir / f'protein_sequences_{count}.fasta'
+        # generate_fasta expects str
+        if generate_fasta(count, str(filename)):
             fasta_files.append((count, filename))
             print(f"Generated {filename}")
         else:
@@ -140,50 +173,53 @@ def run_benchmark():
             persist_results()
 
     try:
-        for count_value, fasta in fasta_files:
-            abs_fasta = os.path.abspath(fasta)
-            print(f"\nProcessing {fasta}...")
-
-            # Benchmarking EggNOG
-            sensitivities = {
-                'fast': ['--sensmode', 'fast'],
-                'default': [],
-                'ultra-sensitive': ['--sensmode', 'ultra-sensitive']
-            }
-
-            for sens_name, sens_flags in sensitivities.items():
-                eggnog_out_prefix = abs_fasta.replace('.fasta',
-                                                      f'_eggnog_{sens_name}')
-
-                # -m diamond for speed
-                cmd = [
-                    'conda', 'run', '-n', 'eggnog', 'emapper.py', '-i',
-                    abs_fasta, '-o', eggnog_out_prefix, '--data_dir',
-                    '../data/databases', '--cpu', '16', '--override',
-                    '--pfam_realign', 'none'
-                ] + sens_flags
-
-                run_step(cmd, f"EggNOG {sens_name}",
-                         f'eggnog_{sens_name}_time', count_value)
+        for count_value, fasta_path in fasta_files:
+            abs_fasta = str(fasta_path.resolve())
+            print(f"\nProcessing {fasta_path}...")
 
             # Benchmarking Metagenomic-DeepFRI
-            deepfri_out = abs_fasta.replace('.fasta', '')
+            deepfri_out = str(fasta_path).replace('.fasta', '')
 
             # Run Metagenomic-DeepFRI
-            deepfri_log = os.path.join(temp_dir, f"deepfri_{count_value}.log")
+            deepfri_log = temp_dir / f"deepfri_{count_value}.log"
             cmd = [
                 'conda', 'run', '-n', 'deepfri', 'mDeepFRI',
                 'predict-function', '-i', abs_fasta, '-d',
                 '../data/databases/afdb_swissprot_v4', '-d',
                 '../data/databases/highquality_clust30', '-w', '../models',
-                '-o', deepfri_out, '-t', '16'
+                '-o', deepfri_out, '-t', '8'
             ]
 
             run_step(cmd,
                      "Metagenomic-DeepFRI",
                      'deepfri_time',
                      count_value,
-                     log_path=deepfri_log)
+                     log_path=str(deepfri_log))
+
+            # Benchmarking DeepGOMeta
+            script = "../protfunc_eval/vendor/deepgometa/predict.py"
+            model = "../protfunc_eval/vendor/deepgometa/data"
+            deepgo_log = temp_dir / f"deepgo_{count_value}.log"
+
+            cmd_deepgo = [
+                "conda", "run", "-n", "deepgometa", "python3", script,
+                "--data-root", model, "-if", abs_fasta
+            ]
+
+            # Using run_step for deepgo
+            if run_step(cmd_deepgo,
+                        "DeepGOMeta",
+                        'deepgometa_time',
+                        count_value,
+                        log_path=str(deepgo_log)):
+                # Cleanup intermediate ESM file
+                cleanup_file(fasta_path.parent / "example_esm.pkl")
+
+                # Move predictions to output folder
+                move_and_concat_prediction_files(fasta_path.parent,
+                                                 f"deepgometa_{count_value}",
+                                                 temp_dir)
+
     finally:
         persist_results()
 

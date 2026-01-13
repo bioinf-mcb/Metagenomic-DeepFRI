@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-file MD024 MD013 -->
 # 🍳 Metagenomic-DeepFRI [![Stars](https://img.shields.io/github/stars/bioinf-MCB/Metagenomic-DeepFRI.svg?style=social&maxAge=3600&label=Star)](https://github.com/bioinf-MCB/Metagenomic-DeepFRI/stargazers)
 
 [![Support Ukraine](https://img.shields.io/badge/Support-Ukraine-FFD500?style=flat&labelColor=005BBB)](https://u24.gov.ua/)
@@ -311,10 +312,7 @@ If you installed `nvidia-*` packages via pip,
 you can dynamically find and export the paths:
 
 ```bash
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(python -c 'import os, nvidia.cudnn,
-nvidia.cublas, nvidia.cuda_runtime;
-print(":".join([os.path.join(m.__path__[0], "lib") for m
-in [nvidia.cudnn, nvidia.cublas, nvidia.cuda_runtime]]))')
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(python -c 'import os, nvidia.cudnn, nvidia.cublas, nvidia.cuda_runtime; libs=[nvidia.cudnn, nvidia.cublas, nvidia.cuda_runtime]; print(":".join([os.path.join(m.__path__[0], "lib") for m in libs]))')
 ```
 
 ## 🔖 Citations

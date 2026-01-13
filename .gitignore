@@ -1,6 +1,7 @@
 # project specific files
 data/
 benchmark_temp/
+benchmark_temp_gpu/
 emapper*/
 test_database/
 models/
