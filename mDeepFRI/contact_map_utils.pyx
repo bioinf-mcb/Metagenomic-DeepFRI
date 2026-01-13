@@ -14,16 +14,17 @@ from cython.parallel import prange
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cpdef pairwise_sqeuclidean(float[:, ::1] X):
+cpdef pairwise_sqeuclidean(float[:, ::1] X, int threads=1):
     cdef int n = X.shape[0]
     cdef int m = X.shape[1]
     cdef int i, j, k
     cdef float d, diff
+    cdef int n_threads = threads
 
     cdef float[:, ::1] D = np.zeros((n, n), dtype=np.float32)
 
     with nogil:
-        for i in prange(n, schedule='static', chunksize=1):
+        for i in prange(n, schedule='static', chunksize=1, num_threads=n_threads):
             for j in range(i + 1, n):
                 d = 0.0
                 for k in range(m):
@@ -36,10 +37,15 @@ cpdef pairwise_sqeuclidean(float[:, ::1] X):
     return np.asarray(D)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+@cython.initializedcheck(False)
 cpdef cnp.ndarray[DTYPE_t, ndim=2] align_contact_map(str query_alignment,
                         str target_alignment,
                         cnp.ndarray[DTYPE_t, ndim=2] sparse_target_contact_map,
-                        int generated_contacts=2):
+                        int generated_contacts=2,
+                        int threads=1):
     cdef bytes query_bytes = query_alignment.encode('ascii')
     cdef bytes target_bytes = target_alignment.encode('ascii')
     cdef char* q_ptr = query_bytes
@@ -73,24 +79,8 @@ cpdef cnp.ndarray[DTYPE_t, ndim=2] align_contact_map(str query_alignment,
                 query_idx += 1
                 target_idx += 1
 
-    cdef int[:, :] target_contacts_view = sparse_target_contact_map
-    cdef int num_target_contacts = sparse_target_contact_map.shape[0]
-    cdef int t_res_i, t_res_j
-    cdef int q_res_i, q_res_j
-
-    for row in range(num_target_contacts):
-        t_res_i = target_contacts_view[row, 0]
-        t_res_j = target_contacts_view[row, 1]
-
-        if t_res_i < target_to_query_map.size() and t_res_j < target_to_query_map.size():
-            q_res_i = target_to_query_map[t_res_i]
-            q_res_j = target_to_query_map[t_res_j]
-
-            if q_res_i != -1 and q_res_j != -1:
-                sparse_query_contacts.push_back(q_res_i)
-                sparse_query_contacts.push_back(q_res_j)
-
     cdef cnp.ndarray[DTYPE_t, ndim=2] output_map = np.zeros((query_idx, query_idx), dtype=np.int32)
+    cdef int[:, :] output_view = output_map
 
     for i in range(query_idx):
         output_map[i, i] = 1
@@ -105,5 +95,23 @@ cpdef cnp.ndarray[DTYPE_t, ndim=2] align_contact_map(str query_alignment,
         if 0 <= p1 < query_idx and 0 <= p2 < query_idx:
             output_map[p1, p2] = 1
             output_map[p2, p1] = 1
+
+    cdef int[:, :] target_contacts_view = sparse_target_contact_map
+    cdef int num_target_contacts = sparse_target_contact_map.shape[0]
+    cdef int t_res_i, t_res_j
+    cdef int q_res_i, q_res_j
+    cdef int n_threads = threads
+
+    with nogil:
+        for row in prange(num_target_contacts, schedule='static', num_threads=n_threads):
+            t_res_i = target_contacts_view[row, 0]
+            t_res_j = target_contacts_view[row, 1]
+
+            if t_res_i < target_to_query_map.size() and t_res_j < target_to_query_map.size():
+                q_res_i = target_to_query_map[t_res_i]
+                q_res_j = target_to_query_map[t_res_j]
+
+                if q_res_i != -1 and q_res_j != -1:
+                    output_view[q_res_i, q_res_j] = 1
 
     return output_map

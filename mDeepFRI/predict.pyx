@@ -53,7 +53,7 @@ cdef class Predictor(object):
     cdef public object session
     cdef public list input_names
 
-    def __init__(self, model_path: str, threads: int = 0, ):
+    def __init__(self, model_path: str, threads: int = 1, ):
         self.model_path = model_path
         self.threads = threads
 
@@ -62,6 +62,7 @@ cdef class Predictor(object):
     def _load_model(self):
         session_options = rt.SessionOptions()
         session_options.intra_op_num_threads = self.threads
+        session_options.inter_op_num_threads = self.threads
 
         self.session = rt.InferenceSession(
             self.model_path,
