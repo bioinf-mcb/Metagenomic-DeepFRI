@@ -9,7 +9,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.9...HEAD
+[Unreleased]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.10...HEAD
+
+## [1.1.10] - 2026-01-16
+
+[1.1.10]: https://github.com/bioinf-MCB/Metagenomic-DeepFRI/compare/v1.1.9...v1.1.10
 
 ### Fixed
 

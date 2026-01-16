@@ -58,6 +58,7 @@ Contents
     API Reference <api/index>
     Examples <examples/index>
     Result Interpretation <results>
+    Changelog <changelog>
 
 
 .. list-table::
