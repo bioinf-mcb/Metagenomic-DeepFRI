@@ -56,10 +56,25 @@ ALIGNMENT_HEADER = [
 FINAL_OUTPUT_HEADER = [
     "protein", "network_type", "prediction_mode", "go_term", "score",
     "go_name", "aligned", "target_id", "db_name", "query_identity",
-    "query_coverage", "target_coverage"
+    "query_coverage", "target_coverage", "ic", "cogs", "supercogs"
 ]
 
 NAN_ALIGNMENT_INFO = [np.nan] * 6
+
+
+def load_go_to_cog(path: pathlib.Path):
+    mapping = {}
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader)
+        for row in reader:
+            go_term = row[0]
+            cogs = row[1].replace("{", "").replace("}", "").replace("'", "")
+            ic = row[4]
+            supercogs = row[5].replace("{", "").replace("}",
+                                                        "").replace("'", "")
+            mapping[go_term] = (ic, cogs, supercogs)
+    return mapping
 
 
 def load_query_file(query_file: str,
@@ -597,6 +612,14 @@ def predict_protein_function(
         next(tsv_reader)  # skip header
         alignment_data = {row[0]: row[1:] for row in tsv_reader}
 
+    go2cog_path = pathlib.Path(
+        __file__).parent / "assets" / "go2cog_USECLO_ALL.tsv"
+    if go2cog_path.exists():
+        go2cog_mapping = load_go_to_cog(go2cog_path)
+    else:
+        logger.warning(f"GO to COG mapping file not found at {go2cog_path}")
+        go2cog_mapping = {}
+
     final_output = output_path / "results.tsv"
     with open(final_output, "w", encoding="utf-8") as fout:
         fout.write("\t".join(FINAL_OUTPUT_HEADER) + "\n")
@@ -645,9 +668,11 @@ def predict_protein_function(
                             aln_info = alignment_data.get(
                                 query_id, [np.nan] * 6)
                             aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
+                            ic, cogs, supercogs = go2cog_mapping.get(
+                                term, (np.nan, np.nan, np.nan))
                             fout.write(
-                                f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
-                                f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
+                                f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}"
+                                f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\t{ic}\t{cogs}\t{supercogs}\n"
                             )
                 continue  # Skip to next mode after processing file
 
@@ -673,9 +698,11 @@ def predict_protein_function(
                     go_name = term_to_name.get(term, "Unknown")
                     aln_info = alignment_data.get(query_id, [np.nan] * 6)
                     aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
+                    ic, cogs, supercogs = go2cog_mapping.get(
+                        term, (np.nan, np.nan, np.nan))
                     fout.write(
-                        f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
-                        f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
+                        f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}"
+                        f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\t{ic}\t{cogs}\t{supercogs}\n"
                     )
 
     if remove_intermediate:

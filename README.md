@@ -15,7 +15,8 @@
 
 *A pipeline for annotation of genes with [DeepFRI](https://github.com/flatironinstitute/DeepFRI),
 a deep learning model for functional protein annotation with
-[Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/).
+[Gene Ontology (GO) terms](https://geneontology.org/docs/go-annotations/) and
+mapping to [Cluster of Orthologous Groups (COG)](https://www.ncbi.nlm.nih.gov/research/cog) categories.
 It incorporates [FoldComp](https://github.com/steineggerlab/foldcomp)
 databases of predicted protein structures for fast annotation of
 metagenomic gene catalogues.*
@@ -332,6 +333,9 @@ in an academic work, please cite the papers behind it:
 - Maranga et al. "Comprehensive Functional Annotation of Metagenomes and
   Microbial Genomes Using a Deep Learning-Based Method" mSystems (2023)
   <https://doi.org/10.1128/msystems.01178-22>
+- Szczerbiak P et al. "Large protein databases reveal structural complementarity
+  and functional locality". Nat. Commun. (2025).
+  <https://doi.org/10.1038/s41467-025-63250-3>
 
 ## 💭 Feedback
 
