@@ -31,6 +31,8 @@ dependencies = [
     "pyopal ~=0.7",
     "foldcomp",
     "tqdm",
+    "obonet >=0.3",
+    "networkx >=2.6",
     "onnxruntime-gpu; platform_system != 'Darwin' and platform_machine != 'aarch64' and platform_machine != 'arm64'",
     "onnxruntime; platform_system == 'Darwin' or platform_machine == 'aarch64' or platform_machine == 'arm64'"
 ]

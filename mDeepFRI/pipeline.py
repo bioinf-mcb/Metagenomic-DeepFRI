@@ -333,7 +333,9 @@ def predict_protein_function(
         save_structures: bool = False,
         save_cmaps: bool = False,
         skip_matrix: bool = False,
-        scoring_matrix: str = "VTML80"):
+        scoring_matrix: str = "VTML80",
+        propagate_go_terms: bool = False,
+        obo_path: Optional[str] = None):
     """
     Predict protein function using DeepFRI.
 
@@ -369,6 +371,13 @@ def predict_protein_function(
             Defaults to False.
         scoring_matrix (str, optional): Scoring matrix for alignment.
             Defaults to "VTML80".
+        propagate_go_terms (bool, optional): Propagate GO terms up the
+            ontology DAG using the true-path rule (is_a and part_of).
+            Downloads go-basic.obo automatically if needed.
+            Defaults to False.
+        obo_path (str, optional): Path to GO OBO file (go-basic.obo).
+            If None and propagate_go_terms is True, the file is downloaded
+            to the output directory automatically.
 
     Returns:
         None: Results are written to files in output_path.
@@ -646,7 +655,7 @@ def predict_protein_function(
                                 query_id, [np.nan] * 6)
                             aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
                             fout.write(
-                                f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
+                                f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}"
                                 f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
                             )
                 continue  # Skip to next mode after processing file
@@ -674,9 +683,27 @@ def predict_protein_function(
                     aln_info = alignment_data.get(query_id, [np.nan] * 6)
                     aligned, target_id, database, target_identity, query_cov, target_cov = aln_info
                     fout.write(
-                        f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}\t"
+                        f"{query_id}\t{net_type}\t{DEEPFRI_MODES[mode]}\t{term}\t{score:.4f}\t{go_name}"
                         f"\t{aligned}\t{target_id}\t{database}\t{target_identity}\t{query_cov}\t{target_cov}\n"
                     )
+
+    # GO-term propagation (true-path rule)
+    if propagate_go_terms:
+        from mDeepFRI.go_propagation import download_obo, propagate_results
+
+        if obo_path is None:
+            obo_file = output_path / "go-basic.obo"
+        else:
+            obo_file = pathlib.Path(obo_path)
+
+        download_obo(obo_file)
+
+        propagated_output = output_path / "results_propagated.tsv"
+        propagate_results(
+            results_path=final_output,
+            output_path=propagated_output,
+            obo_path=obo_file,
+        )
 
     if remove_intermediate:
         for db in databases:
